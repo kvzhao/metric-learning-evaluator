@@ -1,0 +1,23 @@
+# Configuration used for metric-learning evaluator.
+
+# database of attributes
+database: DatasetBackbone
+
+# list of evaluations
+evaluation:
+  # per evaluation config
+  mock:
+    - Color
+  ranking:
+    - Overall
+    - AllAttribute
+    - Color
+  classification:
+
+# upper-bound of the evaluation images
+container_size: 10000
+
+# tf-metric-learning config
+embedding_size: 2048
+
+logit_size: 1400
