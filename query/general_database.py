@@ -31,14 +31,20 @@ class QueryInterface(object):
                 attribute_names, list of str:
 
             image_id: 12 (Color.Red, Shape.Bottle, Pose.isFront)
+
             attribute_names: Color
             return: attribute_values: Color.Red
+
+
             attribute_names: Color.Blue
             return: attribute_values: []
+
             attribute_names: AllAttributes
             return: attribute_values: Color.Red, Shape.Bottle, Pose.isFront
+
             attribute_names: Color, Shape
             return: attribute_values: Color.Red, Shape.Bottle
+
             attribute_names: Color, Shape.Can
             return: attribute_values: "Color.Red" (list of str)
 
