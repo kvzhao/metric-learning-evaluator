@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](figures/tf-metric-evaluator.png)
+![](figures/tf-metric-evaluator_v0.2.jpg)
 
 
 ## Detailed Relation
