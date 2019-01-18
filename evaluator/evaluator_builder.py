@@ -60,16 +60,20 @@ class EvaluatorBuilder(object):
             
     """
     def __init__(self, eval_config):
-        """Evaluator Builder
+        """Evaluator Builder.
 
-          * parse the config
-          * allocate containers
-          * create evaluations
-          * add datum
-          * run evaluate
-          * (optional) get update_ops
+          The object builds evaluation functions according to the given configuration 
+          and manage shared data (embeddings, labels and attributes) in container objects.
+
+          Building procedure: (TODO @kv: update these steps)
+            * parse the config
+            * allocate containers
+            * create evaluations
+            * add datum
+            * run evaluate
+            * (optional) get update_ops
         """
-        # NOTE: should we back it up?
+
         self.eval_config = eval_config
 
         # Validation check of the eval_config
@@ -91,23 +95,24 @@ class EvaluatorBuilder(object):
         # TODO @kv: Consider seperating config_parser.
 
         # collect attribute types
-        attribute_types = []
+        qeury_attribute_names = []
         for _eval_type in self.eval_config[config_fields.evaluation]:
             if _eval_type in EVAL_METRICS_CLASS_DICT:
                 per_eval_qeury_commands = self.eval_config[config_fields.evaluation][_eval_type]
                 if per_eval_qeury_commands:
                     for cmd in per_eval_qeury_commands:
-                        attribute_types.append(cmd)
+                        qeury_attribute_names.append(cmd)
                 else:
                     # None of the commands exist, what process we should do?
                     pass
-        self.attribute_types = set(attribute_types)
+        self.qeury_attribute_names = set(qeury_attribute_names)
         # TODO: Handle the special attributname, like AllAttributes, Overall
 
         # If no database is given, some evaluation can not be execute.
         # TODO @kv: How to build evaluator in such situation?
         if not self.eval_config[config_fields.database]:
             print ('WARNING: No database is assigned, some evaluations can not be executed.')
+            # NOTE @kv: Should we ignore given attribure names & use category as attr_name?
 
         # allocate the shared embedding container
         embedding_size = self.eval_config[config_fields.embedding_size]
@@ -122,6 +127,7 @@ class EvaluatorBuilder(object):
         # Allocate general query interface
         database_type = self.eval_config[config_fields.database]
         if not database_type:
+            # TODO @kv: consistent check with query condition
             self.query_interface = None
         else:
             self.query_interface = QueryInterface(database_type)
@@ -150,6 +156,8 @@ class EvaluatorBuilder(object):
 
     def add_image_id_and_embedding(self, image_id, label_id, embedding, logit=None):
         """Add embedding and label for a sample to be used for evaluation.
+           If the query attribute names are given in config, this function will
+           search them on database automatically.
 
         Args:
             image_id, integer:
@@ -160,39 +168,17 @@ class EvaluatorBuilder(object):
                 Embedding, feature vector
         """
         self.embedding_container.add(image_id, label_id, embedding, logit)
+        # verbose for developing stage.
         if self.embedding_container.counts % 1000:
             print ('{} embeddings are added.'.format(self.embedding_container.counts))
         
         # TODO: consider move `add_image_id_and_query_attribute` here.
         # Collect all `attribute_name`
-        # if not evaluations_need_query:
-        # no need to query.
+        # if not evaluations_need_query: no quries are needed.
 
-    def add_image_id_and_query_attribute(self, image_id):
-        """Add image_id and query the attribute database.
-
-            @kv
-            This is a redundant function, we actually can query per attribute with
-            per image_id. So it should be implemented in `add_image_id_label_and_embedding`.
-
-            Also, this interface is problematic.
-
-        """
-
-        # query fo
-        attributes = self.query_interface.query(image_id)
-
-        self.attribute_container.add()
-        #if self.config_attr exist:
-        #    attributes = self.query_interface.query(image_id) # attribute container
-        #    self._attribute_container.add(attributes)
-        #self._attribute_container.add(label)        
-
-        for _eval_type in self.evaluations_need_query:
-            attribute_types = self.eval_config[_eval_type]
-            for attribute in attribute_types:
-                self.evaluations[_eval_type].attribute_container.add(image_id, )
-
+        if self.query_interface:
+            queried_attributes = self.query_interface.query(image_id, self.qeury_attribute_names)
+            self.attribute_container.add(image_id, queried_attributes)
 
     
     def evaluate(self):
@@ -236,10 +222,5 @@ class EvaluatorBuilder(object):
         
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""
-
-
-        # clear container
         self.embedding_container.clear()
-
-        if self._attribute_container:
-            self._attribute_container.clear()
+        self.attribute_container.clear()
