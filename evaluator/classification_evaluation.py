@@ -11,8 +11,10 @@ from evaluator.evaluation_base import MetricEvaluationBase
 
 class ClassificationEvaluation(MetricEvaluationBase):
 
-    def __init__(self, embedding_container):
-        super(ClassificationEvaluation, self).__init__(embedding_container)
+    def __init__(self, per_eval_config, embedding_container, attribute_container):
+        super(ClassificationEvaluation, self).__init__(per_eval_config, 
+                                             embedding_container,
+                                             attribute_container)
 
         print ('Create ClassificationEvaluation')
         # Allocate a local container for attribute

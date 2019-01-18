@@ -40,10 +40,13 @@ from query.general_database import QueryInterface
 from evaluator.classification_evaluation import ClassificationEvaluation
 from evaluator.mock_evaluation import MockEvaluation
 
+from evaluator.ranking_evaluation import RankingEvaluation
+
 # registered evaluation objects
 EVAL_METRICS_CLASS_DICT = {
     config_fields.mock: MockEvaluation,
     config_fields.classification: ClassificationEvaluation,
+    config_fields.ranking: RankingEvaluation,
 }
 
 class EvaluatorBuilder(object):
@@ -91,7 +94,6 @@ class EvaluatorBuilder(object):
         attribute_types = []
         for _eval_type in self.eval_config[config_fields.evaluation]:
             if _eval_type in EVAL_METRICS_CLASS_DICT:
-                print (_eval_type)
                 per_eval_qeury_commands = self.eval_config[config_fields.evaluation][_eval_type]
                 if per_eval_qeury_commands:
                     for cmd in per_eval_qeury_commands:
@@ -100,8 +102,7 @@ class EvaluatorBuilder(object):
                     # None of the commands exist, what process we should do?
                     pass
         self.attribute_types = set(attribute_types)
-        print (self.attribute_types)
-
+        # TODO: Handle the special attributname, like AllAttributes, Overall
 
         # If no database is given, some evaluation can not be execute.
         # TODO @kv: How to build evaluator in such situation?
@@ -138,12 +139,14 @@ class EvaluatorBuilder(object):
         self.evaluations = {}
         self.evaluations_need_query = []
         for _eval_type in self.evaluation_types:
-            _evaluation = EVAL_METRICS_CLASS_DICT[_eval_type](self.embedding_container, 
-                                                              self.attribute_container,
-                                                              per_eval_config)
+            per_eval_config = self.eval_config[config_fields.evaluation][_eval_type]
+            _evaluation = EVAL_METRICS_CLASS_DICT[_eval_type](per_eval_config,
+                                                              self.embedding_container,
+                                                              self.attribute_container)
             self.evaluations[_eval_type] = _evaluation
             if hasattr(_evaluation, 'attribute_container'):
                 self.evaluations_need_query.append(_eval_type)
+            # TODO @kv: consistent check between attribute & configs.
 
     def add_image_id_and_embedding(self, image_id, label_id, embedding, logit=None):
         """Add embedding and label for a sample to be used for evaluation.
@@ -192,11 +195,6 @@ class EvaluatorBuilder(object):
 
 
     
-    def get_attribute(self):
-        pass
-        # ranking_table = QueryInterface(eval_config_ranking) # attribute container
-        # ranking_evaluation(embedding_cont, ranking_table)
-
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
         

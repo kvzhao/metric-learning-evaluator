@@ -9,9 +9,8 @@ evaluation:
   mock:
     - Color
   ranking:
-    - Overall
-    - AllAttribute
     - Color
+    - Shape
   classification:
 
 # upper-bound of the evaluation images

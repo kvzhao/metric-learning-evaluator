@@ -13,8 +13,10 @@ from evaluator.evaluation_base import MetricEvaluationBase
 
 class MockEvaluation(MetricEvaluationBase):
 
-    def __init__(self, embedding_container):
-        super(MockEvaluation, self).__init__(embedding_container)
+    def __init__(self, per_eval_config, embedding_container, attribute_container):
+        super(MockEvaluation, self).__init__(per_eval_config, 
+                                             embedding_container,
+                                             attribute_container)
 
         print ('Create MockEvaluation')
         # this will be called at builder
@@ -22,4 +24,5 @@ class MockEvaluation(MetricEvaluationBase):
         #self.attribute_container = AttributeContainer()
 
     def compute(self):
-        _groups = self.attribute_container.group
+        # _groups = self.attribute_container.group
+        pass

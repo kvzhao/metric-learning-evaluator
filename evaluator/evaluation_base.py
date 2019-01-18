@@ -52,6 +52,7 @@ class EmbeddingContainer(object):
             embedding_size, int:
                 Dimension of the embedding vector, e.g. 1024 or 2048.
             logit_size, int:
+                Disable this by giving size equals to 0.
             container_size, int:
                 Number of embedding vector that container can store.
         
@@ -61,7 +62,10 @@ class EmbeddingContainer(object):
         self._container_size = container_size
         # logits, prelogits (embeddeing),
         self._embeddings = np.empty((container_size, embedding_size), dtype=np.float32)
-        self._logits = np.empty((container_size, logit_size), dtype=np.float32)
+        if logit_size == 0:
+            self._logits = None
+        else:
+            self._logits = np.empty((container_size, logit_size), dtype=np.float32)
         self._label_by_image_id = {}
         self._index_by_image_id = {}
         # orderness is maintained in _image_ids
@@ -85,6 +89,8 @@ class EmbeddingContainer(object):
 
         # assertions: embedding size, 
         assert embedding.shape[0] <= self._embedding_size, "Size of embedding vector is greater than the default."
+        # TODO @kv: Also check the logit size, and if it exists.
+
         # NOTE @kv: Do we have a better round-off?
         assert self._current < self._container_size, "The embedding container is out of capacity!"
 
@@ -226,19 +232,27 @@ class MetricEvaluationBase(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, embedding_container, attribute_container=None):
+    def __init__(self, per_eval_config, embedding_container, attribute_container=None):
         """Base Object for Evaluation.
           <Customized>Evaluation is the functional object which 
                       executes computation with metric functions.
 
           Args:
+            per_eval_config, list:
+                Configuration used for the EvaluationObject.
+                TODO @kv: Define the format:
+
             embedding_container, EmbeddingContainer:
             attribute_container, AttributeContrainer:
+                The attribute container can be `None` for some evaluation.
 
           NOTE:
             User would allocate `AttributeContainer` 
             in thier customized evaluation.
         """
+
+        if per_eval_config and not isinstance(per_eval_config, list):
+            raise ValueError('Evaluation Config is a list of required attributes.')
 
         # check the instance type.
         if not isinstance(embedding_container, EmbeddingContainer):
@@ -246,10 +260,11 @@ class MetricEvaluationBase(object):
         if attribute_container and not isinstance(embedding_container, EmbeddingContainer):
             raise ValueError('Attribute Conatiner is Needed.')
 
+        self._per_eval_config = per_eval_config
         self._embedding_container = embedding_container
         self._attribute_container = attribute_container
 
-        # Iterator for getting embeddings from given attribute_names
+        # TODO: Iterator for getting embeddings from given attribute_names
 
     @abstractmethod
     def compute(self):
