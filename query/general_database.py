@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from core.eval_standard_fileds import EvalConfigStandardFields as config_fields
+from core.eval_standard_fields import EvalConfigStandardFields as config_fields
 from query.datasetbackbone_wrapper import DatasetBackboneWrapper
 from query.zeus_wrapper import ZeusWrapper
 
