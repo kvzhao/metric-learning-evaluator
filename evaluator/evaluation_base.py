@@ -29,7 +29,7 @@ import logging
 import numpy as np
 
 class EmbeddingContainer(object):
-    """The container for Embeddings (image_id, label_id, embedding vector)
+    """The Data Container for Embeddings & Logit (image_id, label_id, embedding vector).
 
       operations:
         - add: put one datum in the container
@@ -152,27 +152,52 @@ class EmbeddingContainer(object):
         pass
 
 class AttributeContainer(object):
-    """The container for Attribute (Grouping table).
+    """The Data Container for Attributes (Grouping table).
 
-    Group: {
-        "Cup": [<id1>, <id2>, <id3>],
-        "Color.Red": [<id1>, <id2>, <id3>],
-    }
+      Usage:
+        User would add image_id & corresponding attributes into container
+        then, the managed structure can be returned.
+
+        Group: {
+            "Shape.Cup": [<image_id:1>, <image_id:2>, <image_id:3>],
+            "Color.Red": [<image_id:1>, <image_id:3>, <image_id:5>, ...],
+        }
+
+        ImageAttributes: {
+            image_id: ["Shape.Bottle", "Color.Blue", ...],
+        }
+
+      Operations:
+        - add: put one datum into container
+
     """
 
     def __init__(self):
+        """
+          Internal data structure:
+            groups:
+                The map of attribute_name to image_ids.
+                e.g. group[attribute_name] = [list of image_ids] (whose attribute is the same.)
+            TODO @kv: implement
+            image2attr:
+                The map of image_id to attributes.
+                e.g. image2attr[image_id] = [list of attributes in string].
+        """
 
         # attribute-id mapping, shallow key-value pair
         self._groups = defaultdict(list)
+        self._image2attr = defaultdict(list)
 
     # TODO @kv: modify to image_id: attribute_names
-    def add(self, attribute_name, image_ids):
+    def add(self, image_id, attributes):
         """Add the attribute with corresponding groupping indices.
 
           Args:
-            attribute_name, str:
-                The whole query command, e.g. Color.Red or Human.Height
-            image_ids, int or list.
+            image_id, int:
+                An image_id is used for query attributes.
+
+            attributes, list of str:
+                Attributes of the given image_id.
 
           Logic:
             if attr not exist:
@@ -181,21 +206,31 @@ class AttributeContainer(object):
                 
         """
         # type assertion
-        if not(type(image_ids) is int or type(image_ids) is list):
-            raise ValueError('image_ids should be int or list.')
-        if type(image_ids) is int:
-            image_ids = [image_ids]
+        if not type(image_id) is int:
+            raise ValueError('image_id should be an integer.')
+        if isinstance(attributes, str):
+            attributes = [attributes]
+        
+        if not all(isinstance(_attr, str) for _attr in attributes):
+            raise ValueError('attributes type should be str or list of str.')
+        
+        self._image2attr[image_id] = attributes
 
-        if attribute_name in self._groups:
-            self._groups[attribute_name].extend(image_ids)
-        else:
-            self._groups[attribute_name] = image_ids
+        for _attr in attributes:
+            if _attr in self._groups:
+                self._groups[_attr].extend(image_id)
+            else:
+                self._groups[_attr] = image_id
 
 
     @property
     def groups(self):
         # return attribute to image_ids
         return self._groups
+
+    @property
+    def image_attributes(self):
+        return self._image2attr
 
     @property
     def attr_lookup(self):
@@ -222,10 +257,11 @@ class AttributeContainer(object):
     def clear(self):
         # clear the internal dict.
         self._groups = defaultdict(list)
+        self._image2attr = defaultdict(list)
         
 
 class MetricEvaluationBase(object):    
-    """Interface for EvaluationObject which serves as the functional module.
+    """Interface for Evaluation Object which serves as the functional building block.
 
         Usage:
 
@@ -268,5 +304,9 @@ class MetricEvaluationBase(object):
 
     @abstractmethod
     def compute(self):
-        """Compute metrics."""
+        """Compute metrics.
+          Return:
+            metrics, dict:
+                TODO @kv: Define the standard return format.
+        """
         pass
