@@ -28,24 +28,35 @@ class QueryInterface(object):
         """Query function.
 
             Args:
-                attribute_names, list of str:
+                image_id, int:
+                    Unique index describing given image.
 
-            image_id: 12 (Color.Red, Shape.Bottle, Pose.isFront)
+                attribute_names, list of strings:
+            
+            Return:
+                attributes: list of strings:
+                    Attributes for given image_id.
 
-            attribute_names: Color
-            return: attribute_values: Color.Red
+            Usage examples:
 
+            Database:
+                image_id: 12, with three attributes: Color.Red, Shape.Bottle, Pose.isFront
 
-            attribute_names: Color.Blue
-            return: attribute_values: []
+            Query example with image_id = 12:
+                attribute_names: Color
+                return: attribute_values: Color.Red
 
-            attribute_names: AllAttributes
-            return: attribute_values: Color.Red, Shape.Bottle, Pose.isFront
+                attribute_names: Color.Blue
+                return: attribute_values: []
 
-            attribute_names: Color, Shape
-            return: attribute_values: Color.Red, Shape.Bottle
+                attribute_names: AllAttributes or None
+                return: attribute_values: Color.Red, Shape.Bottle, Pose.isFront
 
-            attribute_names: Color, Shape.Can
-            return: attribute_values: "Color.Red" (list of str)
+                attribute_names: Color, Shape
+                return: attribute_values: Color.Red, Shape.Bottle
 
+                attribute_names: Color, Shape.Can
+                return: attribute_values: "Color.Red" (list of str)
         """
+
+        pass
