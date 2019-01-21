@@ -154,6 +154,11 @@ class EvaluatorBuilder(object):
                 self.evaluations_need_query.append(_eval_type)
             # TODO @kv: consistent check between attribute & configs.
 
+    @property
+    def evaluation_names(self):
+        # NOTE: evaluation_types from config; evaluation_names from object instance.
+        return [_eval.evaluation_name for _, _eval in self.evaluations.items()]
+
     def add_image_id_and_embedding(self, image_id, label_id, embedding, logit=None):
         """Add embedding and label for a sample to be used for evaluation.
            If the query attribute names are given in config, this function will

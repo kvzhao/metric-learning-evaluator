@@ -320,6 +320,10 @@ class MetricEvaluationBase(object):
 
         self._evaluation_name = self.__class__.__name__
 
+    @property
+    def evaluation_name(self):
+        return self._evaluation_name
+
     @abstractmethod
     def compute(self):
         """Compute metrics.
