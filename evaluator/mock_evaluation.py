@@ -18,11 +18,20 @@ class MockEvaluation(MetricEvaluationBase):
                                              embedding_container,
                                              attribute_container)
 
+        """Mock Evaluation
+            This mock evaluation functional object is mainly used in testing.
+
+            * Check dimension when created
+            * Execute 'mock_metric' functions when computation
+
+        """
         print ('Create {}'.format(self._evaluation_name))
         # this will be called at builder
+
         # NOTE: Would the builder check this first?
-        #self.attribute_container = AttributeContainer()
+        self.attribute_container = AttributeContainer()
 
     def compute(self):
-        # _groups = self.attribute_container.group
-        pass
+        _img_ids = self._embedding_container.image_ids
+        _embeddings = self._embedding_container.embeddings
+        _groups = self._attribute_container.group
