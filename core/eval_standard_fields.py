@@ -12,6 +12,11 @@ class EvalStandardFields(object):
     image_class_text = 'image/class/text'
     image_class_label = 'image/class/label'
 
+    evaluation_name = 'evaluation_name'
+    metric_type = 'metric_type'
+
+    # Returned formats, Type of metrics
+    accuarcy = 'accuracy'
 
 class EvalConfigStandardFields(object):
     database = 'database'
@@ -25,9 +30,6 @@ class EvalConfigStandardFields(object):
     mock = 'mock'
     ranking = 'ranking'
     classification = 'classification'
-
-    # Types of metric
-    accuarcy = 'accuracy'
 
 
     # NOTE: maybe we do not need to predefine these requests
