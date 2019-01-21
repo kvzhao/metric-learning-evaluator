@@ -18,7 +18,7 @@ class MockEvaluation(MetricEvaluationBase):
                                              embedding_container,
                                              attribute_container)
 
-        print ('Create MockEvaluation')
+        print ('Create {}'.format(self._evaluation_name))
         # this will be called at builder
         # NOTE: Would the builder check this first?
         #self.attribute_container = AttributeContainer()

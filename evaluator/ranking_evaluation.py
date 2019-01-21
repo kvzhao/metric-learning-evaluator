@@ -18,7 +18,8 @@ class RankingEvaluation(MetricEvaluationBase):
                                              embedding_container,
                                              attribute_container)
 
-        print ('Create RankingEvaluation')
+        print ('Create {}'.format(self._evaluation_name))
+        # What we should do here?
 
     def compute(self):
         # _groups = self.attribute_container.group

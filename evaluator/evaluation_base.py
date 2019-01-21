@@ -68,6 +68,7 @@ class EmbeddingContainer(object):
             self._logits = np.empty((container_size, logit_size), dtype=np.float32)
         self._label_by_image_id = {}
         self._index_by_image_id = {}
+        self._image_id_by_label = defaultdict(list)
         # orderness is maintained in _image_ids
         self._image_ids = []
 
@@ -99,9 +100,13 @@ class EmbeddingContainer(object):
 
         self._embeddings[self._current, ...] = embedding
 
+        if logit is not None:
+            self._logits[self._current, ...] = logit
+
         # NOTE: same image_id maps to many embedding!?
         self._index_by_image_id[image_id] = self._current
         self._label_by_image_id[image_id] = label_id
+        self._image_id_by_label[label_id].append(image_id)
         self._image_ids.append(image_id)
 
         self._current += 1
@@ -114,7 +119,7 @@ class EmbeddingContainer(object):
         return self._embeddings[indices, ...]
 
     def get_label_by_image_ids(self, image_ids):
-        """Fetch the labels from given image ids."""
+        """Fetch the labels from given image_ids."""
         if type(image_ids) is int:
             return self._label_by_image_id[image_ids]
         elif type(image_ids) is list:
@@ -122,10 +127,21 @@ class EmbeddingContainer(object):
         else:
             raise ValueError('image_ids should be int or list.')
 
+    def get_image_ids_by_label(self, label_id):
+        """Fetch the image_ids from given label_id."""
+        if type(label_id) is not int:
+            raise ValueError('Query label id should be integer.')
+        return self._image_id_by_label[label_id]
+
     @property
     def embeddings(self):
         # get embeddings up to current index
         return self._embeddings[:self._current]
+
+    @property
+    def logits(self):
+        # get logits up to current index
+        return self._logits[:self._current]
 
     @property
     def image_ids(self):
@@ -134,7 +150,7 @@ class EmbeddingContainer(object):
 
     @property
     def counts(self):
-        return self._current + 1
+        return self._current
 
     def clear(self):
         # clear dictionaries
@@ -218,9 +234,9 @@ class AttributeContainer(object):
 
         for _attr in attributes:
             if _attr in self._groups:
-                self._groups[_attr].extend(image_id)
+                self._groups[_attr].append(image_id)
             else:
-                self._groups[_attr] = image_id
+                self._groups[_attr] = [image_id]
 
 
     @property
@@ -301,6 +317,8 @@ class MetricEvaluationBase(object):
         self._attribute_container = attribute_container
 
         # TODO: Iterator for getting embeddings from given attribute_names
+
+        self._evaluation_name = self.__class__.__name__
 
     @abstractmethod
     def compute(self):

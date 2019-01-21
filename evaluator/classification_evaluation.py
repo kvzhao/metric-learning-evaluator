@@ -16,7 +16,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
                                              embedding_container,
                                              attribute_container)
 
-        print ('Create ClassificationEvaluation')
+        print ('Create {}'.format(self._evaluation_name))
         # Allocate a local container for attribute
 
     def compute(self):
