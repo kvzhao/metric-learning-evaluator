@@ -7,6 +7,8 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 class EvalStandardFields(object):
+    """NOTE: What is the purpose of this?
+    """
     # input data
     image_id = 'image/id'
     image_class_text = 'image/class/text'
@@ -18,7 +20,24 @@ class EvalStandardFields(object):
     # Returned formats, Type of metrics
     accuarcy = 'accuracy'
 
+class AttributeStandardFields(object):
+    """Collection of Known Attributes.
+    """
+    # NOTE: maybe we do not need to predefine these requests
+    # Types of known query attributes
+
+    # Special keywords
+    overall = 'Overall' # no attribute is needed.
+    all_attributes = 'All_Attributes'
+
+    # General attribute types:
+    supercategory = 'supercategory'
+    color = 'color'
+    shape = 'shape'
+
 class EvalConfigStandardFields(object):
+    """Items for Evaluation Configuration
+    """
     database = 'database'
     evaluation = 'evaluation'
 
@@ -30,15 +49,6 @@ class EvalConfigStandardFields(object):
     mock = 'mock'
     ranking = 'ranking'
     classification = 'classification'
-
-
-    # NOTE: maybe we do not need to predefine these requests
-    # Types of known query attributes
-    overall = 'Overall' # no attribute is needed.
-    all_attributes = 'AllAttributes'
-    supercategory = 'supercategory'
-    color = 'color'
-    shape = 'shape'
 
     # System-related configs
     container_size = 'container_size'
