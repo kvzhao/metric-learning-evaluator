@@ -38,9 +38,7 @@ class EmbeddingContainer(object):
         - get_label_by_image_ids: query labels by image_ids
         - clear: clear the internal buffer
     
-      NOTE: Can we predefine the size of container
-      NOTE: Implement the container with numpy for performance?
-
+      NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with image_ids.
       TODO @kv: implement save & load.
       TODO @kv: Error-hanlding when current exceeds container_size
 
@@ -303,8 +301,8 @@ class MetricEvaluationBase(object):
             in thier customized evaluation.
         """
 
-        if per_eval_config and not isinstance(per_eval_config, list):
-            raise ValueError('Evaluation Config is a list of required attributes.')
+        if per_eval_config and not isinstance(per_eval_config, dict):
+            raise ValueError('Evaluation Config is a dictionary of required attributes.')
 
         # check the instance type.
         if not isinstance(embedding_container, EmbeddingContainer):
@@ -317,7 +315,6 @@ class MetricEvaluationBase(object):
         self._attribute_container = attribute_container
 
         # TODO: Iterator for getting embeddings from given attribute_names
-
         self._evaluation_name = self.__class__.__name__
 
     @property

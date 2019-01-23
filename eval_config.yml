@@ -6,12 +6,17 @@ database: DatasetBackbone
 # list of evaluations
 evaluation:
   # per evaluation config
-  mock:
-    - Color
-  ranking:
-    - Color
-    - Shape
-  classification:
+  # NOTE:
+  #    - per_eval_config should be dict rather than list.
+    mock:
+        Attr:
+            - Color
+    ranking:
+        Attr:
+            - Color
+            - Shape
+    classification:
+        Top_k: 5
 
 # upper-bound of the evaluation images
 container_size: 10000

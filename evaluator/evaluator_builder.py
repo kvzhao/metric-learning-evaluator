@@ -33,6 +33,7 @@ from evaluator.evaluation_base import AttributeContainer
 from evaluator.evaluation_base import MetricEvaluationBase
 
 from core.eval_standard_fields import EvalConfigStandardFields as config_fields
+from core.eval_standard_fields import AttributeStandardFields as attr_fields
 
 from query.general_database import QueryInterface
 
@@ -94,19 +95,6 @@ class EvaluatorBuilder(object):
 
         # TODO @kv: Consider seperating config_parser.
 
-        # collect attribute types
-        qeury_attribute_names = []
-        for _eval_type in self.eval_config[config_fields.evaluation]:
-            if _eval_type in EVAL_METRICS_CLASS_DICT:
-                per_eval_qeury_commands = self.eval_config[config_fields.evaluation][_eval_type]
-                if per_eval_qeury_commands:
-                    for cmd in per_eval_qeury_commands:
-                        qeury_attribute_names.append(cmd)
-                else:
-                    # None of the commands exist, what process we should do?
-                    pass
-        self.qeury_attribute_names = set(qeury_attribute_names)
-        # TODO: Handle the special attributname, like AllAttributes, Overall
 
         # If no database is given, some evaluation can not be execute.
         # TODO @kv: How to build evaluator in such situation?
@@ -134,25 +122,34 @@ class EvaluatorBuilder(object):
 
     def _build(self):
         """
-            Build evalution in list
+          Build:
+            Parse the config and create evaluators.
         """
 
         try:
             self.evaluation_types
         except:
             raise AttributeError('Evaluation list is not given.')
-
+        # Config Parser:
         self.evaluations = {}
         self.evaluations_need_query = []
+        required_attributes = []
         for _eval_type in self.evaluation_types:
+            if not _eval_type in EVAL_METRICS_CLASS_DICT:
+                print ('WARNING: {} is not registered would be skipped.')
+                continue
             per_eval_config = self.eval_config[config_fields.evaluation][_eval_type]
             _evaluation = EVAL_METRICS_CLASS_DICT[_eval_type](per_eval_config,
                                                               self.embedding_container,
                                                               self.attribute_container)
             self.evaluations[_eval_type] = _evaluation
-            if hasattr(_evaluation, 'attribute_container'):
-                self.evaluations_need_query.append(_eval_type)
             # TODO @kv: consistent check between attribute & configs.
+            # Collect all attributes would be queried
+            if config_fields.attr in per_eval_config:
+                _attrs = per_eval_config[config_fields.attr]
+                required_attributes.extend(_attrs)
+        # All attributes the evaluator needed.
+        self.required_attributes = list(set(required_attributes))
 
     @property
     def evaluation_names(self):
@@ -182,7 +179,9 @@ class EvaluatorBuilder(object):
         # if not evaluations_need_query: no quries are needed.
 
         if self.query_interface:
-            queried_attributes = self.query_interface.query(image_id, self.qeury_attribute_names)
+            if not self.required_attributes:
+                print ('WARNING: No required attributes are pre-defined.')
+            queried_attributes = self.query_interface.query(image_id, self.required_attributes)
             self.attribute_container.add(image_id, queried_attributes)
 
     
