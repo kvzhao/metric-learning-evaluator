@@ -119,9 +119,9 @@ class EmbeddingContainer(object):
     def get_label_by_image_ids(self, image_ids):
         """Fetch the labels from given image_ids."""
         if type(image_ids) is int:
-            return self._label_by_image_id[image_ids]
-        elif type(image_ids) is list:
-            return [self._label_by_image_id[img_id] for img_id in image_ids]
+            return np.asarray(self._label_by_image_id[image_ids])
+        elif isinstance(image_ids, list) or isinstance(image_ids, (np.ndarray, np.generic)):
+            return np.asarray([self._label_by_image_id[img_id] for img_id in image_ids])
         else:
             raise ValueError('image_ids should be int or list.')
 
@@ -129,7 +129,7 @@ class EmbeddingContainer(object):
         """Fetch the image_ids from given label_id."""
         if type(label_id) is not int:
             raise ValueError('Query label id should be integer.')
-        return self._image_id_by_label[label_id]
+        return np.asarray(self._image_id_by_label[label_id])
 
     @property
     def embeddings(self):
@@ -144,7 +144,7 @@ class EmbeddingContainer(object):
     @property
     def image_ids(self):
         # get all image_ids in conatiner
-        return self._image_ids
+        return np.asarray(self._image_ids)
 
     @property
     def counts(self):
@@ -282,37 +282,25 @@ class MetricEvaluationBase(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, per_eval_config, embedding_container, attribute_container=None):
+    def __init__(self, per_eval_config):
         """Base Object for Evaluation.
           <Customized>Evaluation is the functional object which 
                       executes computation with metric functions.
 
           Args:
-            per_eval_config, list:
+            per_eval_config, dict:
                 Configuration used for the EvaluationObject.
                 TODO @kv: Define the format:
 
-            embedding_container, EmbeddingContainer:
-            attribute_container, AttributeContrainer:
-                The attribute container can be `None` for some evaluation.
+          Init function:
+            parse the per_eval_config.
 
-          NOTE:
-            User would allocate `AttributeContainer` 
-            in thier customized evaluation.
         """
 
         if per_eval_config and not isinstance(per_eval_config, dict):
             raise ValueError('Evaluation Config is a dictionary of required attributes.')
 
-        # check the instance type.
-        if not isinstance(embedding_container, EmbeddingContainer):
-            raise ValueError('Embedded Conatiner is Needed.')
-        if attribute_container and not isinstance(embedding_container, EmbeddingContainer):
-            raise ValueError('Attribute Conatiner is Needed.')
-
         self._per_eval_config = per_eval_config
-        self._embedding_container = embedding_container
-        self._attribute_container = attribute_container
 
         # TODO: Iterator for getting embeddings from given attribute_names
         self._evaluation_name = self.__class__.__name__
@@ -322,10 +310,24 @@ class MetricEvaluationBase(object):
         return self._evaluation_name
 
     @abstractmethod
-    def compute(self):
+    def compute(self, embedding_container, attribute_container=None):
         """Compute metrics.
+          Args:
+            embedding_container, EmbeddingContainer:
+                The embedding container is necessary.
+
+            attribute_container, AttributeContrainer:
+                The attribute container is optional, it can be `None` for some evaluation.
+
           Return:
             metrics, dict:
                 TODO @kv: Define the standard return format.
         """
-        pass
+
+        # check the instance type.
+        if not isinstance(embedding_container, EmbeddingContainer):
+            raise ValueError('Embedded Conatiner is Needed.')
+        if attribute_container and not isinstance(embedding_container, EmbeddingContainer):
+            raise ValueError('Attribute Conatiner is Needed.')
+
+        ## Do the customized computation.
