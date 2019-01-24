@@ -1,6 +1,6 @@
 
 import numpy as np
-from evaluation_base import EmbeddingContainer, AttributeContainer
+from data_container import EmbeddingContainer, AttributeContainer
 
 import unittest
 from collections import defaultdict

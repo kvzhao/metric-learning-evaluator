@@ -5,7 +5,7 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluator.evaluation_base import EmbeddingContainer
+from evaluator.data_container import EmbeddingContainer
 from evaluator.evaluation_base import MetricEvaluationBase
 from evaluator.classification_evaluation import ClassificationEvaluation
 
@@ -29,20 +29,18 @@ class TestClassificationEvaluation(unittest.TestCase):
                   [0.8, 0.1, 0.1],
                   [0.6, 0.3, 0.2]]
 
-        labels = [[0, 1, 0],
-                  [1, 0, 0],
-                  [0, 0, 1]]
+        labels = [2, 1, 3]
 
         embed_container = EmbeddingContainer(embedding_size, logit_size, container_size=10)
 
         # Iteratively adding datum
         for img_id, (emd, logit, label) in enumerate(zip(embeddings, logits, labels)):
-            label_id = np.argmax(label)
+            label_id = label
             embed_container.add(img_id, label_id, emd, logit)
 
 
-        cls_eval = ClassificationEvaluation(per_eval_config, embed_container, None)
-        cls_eval.compute()
+        cls_eval = ClassificationEvaluation(per_eval_config)
+        cls_eval.compute(embed_container, None)
 
 if __name__ == '__main__':
     unittest.main()

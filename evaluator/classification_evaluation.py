@@ -8,8 +8,9 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 
-from evaluator.evaluation_base import EmbeddingContainer
 from evaluator.evaluation_base import MetricEvaluationBase
+from metrics.accuracy_scores import top_k_accuracy
+from core.eval_standard_fields import AttributeStandardFields as attr_fields
 
 class ClassificationStandardFields(object):
     # top k accuracy
@@ -19,44 +20,58 @@ eval_fields = ClassificationStandardFields
 
 class ClassificationEvaluation(MetricEvaluationBase):
 
-    def __init__(self, per_eval_config, embedding_container, attribute_container):
-        super(ClassificationEvaluation, self).__init__(per_eval_config, 
-                                             embedding_container,
-                                             attribute_container)
+    def __init__(self, per_eval_config):
+        super(ClassificationEvaluation, self).__init__(per_eval_config)
         """Classification Evaluation
             The evaluation computes accuracy from given logits and return top_k.
-            
-            If attribute is provided, also check the eval_config.
+            If attributes are provided, calculate top_k accuracy per attribute.
         """
 
         print ('Create {}'.format(self._evaluation_name))
-        # Allocate a local container for attribute
         
         # Parse the per_eval_config;
-
         if eval_fields.top_k in per_eval_config:
             _top_k = per_eval_config[eval_fields.top_k]
             # TODO @kv:make sure the given number if legal
-            self.top_k = _top_k
+            if isinstance(_top_k, list):
+                self.top_k = _top_k
+            elif isinstance(_top_k, int):
+                self.top_k = [_top_k]
+            else:
+                print ('WARNING: Illegal `Top_k` is given, use top-1 and top-5 as default.')
+                self.top_k = [1, 5]
         else:
-            print ('WARNING: No `Top_k` is given, use top-5 as default.')
-            self.top_k = 5
+            print ('WARNING: No `Top_k` is given, use top-1 and top-5 as default.')
+            self.top_k = [1, 5]
 
-    def compute(self):
+    def compute(self, embedding_container, attribute_container=None):
         """Compute Accuracy.
 
             Get compute probabilities from logits and compare with label
             from embedding_container.
         """
 
-        if not isinstance(self._embedding_container.logits,
+        if not isinstance(embedding_container.logits,
                          (np.ndarray, np.generic)):
             raise AttributeError('Logits should be provided when {} is performed'.format(self.evaluation_name))
         
-        img_ids = self._embedding_container.image_ids
-        logits = self._embedding_container.logits
-        labels = self._embedding_container.get_label_by_image_ids(img_ids)
+        img_ids = embedding_container.image_ids
 
-        predict_labels = np.argmax(logits, axis=1)
+        # NOTE: Make sure that length of inputs are equal.
 
-        print (predict_labels, labels)
+        # Evaluate overall if attribute not given
+        if not attribute_container:
+            logits = embedding_container.logits
+            gt_labels = embedding_container.get_label_by_image_ids(img_ids)
+
+            for k in self.top_k:
+                acc_k = top_k_accuracy(logits, gt_labels, k)
+                eval_results[eval_fields.top_k][k] = acc_k
+
+        # Evaluate Per Attributes
+        else:
+            _attributes = self._per_eval_config[attr_fields.attr]
+            for _attr in _attributes:
+                pass
+ 
+        return eval_results

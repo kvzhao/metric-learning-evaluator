@@ -7,16 +7,19 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluator.evaluation_base import EmbeddingContainer
-from evaluator.evaluation_base import AttributeContainer
+from evaluator.data_container import EmbeddingContainer
+from evaluator.data_container import AttributeContainer
 from evaluator.evaluation_base import MetricEvaluationBase
+
+
+class MockStandardFields(object):
+    # metric type
+    distance = 'distance' # mock metric type
 
 class MockEvaluation(MetricEvaluationBase):
 
-    def __init__(self, per_eval_config, embedding_container, attribute_container):
-        super(MockEvaluation, self).__init__(per_eval_config, 
-                                             embedding_container,
-                                             attribute_container)
+    def __init__(self, per_eval_config):
+        super(MockEvaluation, self).__init__(per_eval_config)
 
         """Mock Evaluation
             This mock evaluation functional object is mainly used in testing.
@@ -28,10 +31,8 @@ class MockEvaluation(MetricEvaluationBase):
         print ('Create {}'.format(self._evaluation_name))
         # this will be called at builder
 
-        # NOTE: Would the builder check this first?
-        self.attribute_container = AttributeContainer()
 
-    def compute(self):
-        _img_ids = self._embedding_container.image_ids
-        _embeddings = self._embedding_container.embeddings
-        _groups = self._attribute_container.group
+    def compute(self, embedding_container, attribute_container=None):
+        _img_ids = embedding_container.image_ids
+        _embeddings = embedding_container.embeddings
+        _groups = attribute_container.group

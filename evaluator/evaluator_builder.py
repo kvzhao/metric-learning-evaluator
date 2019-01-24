@@ -28,8 +28,10 @@ sys.path.insert(0, os.path.abspath(
 import yaml
 import numpy as np
 
-from evaluator.evaluation_base import EmbeddingContainer
-from evaluator.evaluation_base import AttributeContainer
+from evaluator.data_container import EmbeddingContainer
+from evaluator.data_container import AttributeContainer
+
+
 from evaluator.evaluation_base import MetricEvaluationBase
 
 from core.eval_standard_fields import EvalConfigStandardFields as config_fields
@@ -102,7 +104,7 @@ class EvaluatorBuilder(object):
             print ('WARNING: No database is assigned, some evaluations can not be executed.')
             # NOTE @kv: Should we ignore given attribure names & use category as attr_name?
 
-        # allocate the shared embedding container
+        # allocate shared embedding containers
         embedding_size = self.eval_config[config_fields.embedding_size]
         container_size = self.eval_config[config_fields.container_size]
         logit_size = self.eval_config[config_fields.logit_size]
@@ -126,28 +128,28 @@ class EvaluatorBuilder(object):
             Parse the config and create evaluators.
         """
 
+        # TODO: Remove these try & catch
         try:
             self.evaluation_types
         except:
             raise AttributeError('Evaluation list is not given.')
-        # Config Parser:
+
+        # Parse the Configuration
         self.evaluations = {}
-        self.evaluations_need_query = []
         required_attributes = []
         for _eval_type in self.evaluation_types:
             if not _eval_type in EVAL_METRICS_CLASS_DICT:
                 print ('WARNING: {} is not registered would be skipped.')
                 continue
             per_eval_config = self.eval_config[config_fields.evaluation][_eval_type]
-            _evaluation = EVAL_METRICS_CLASS_DICT[_eval_type](per_eval_config,
-                                                              self.embedding_container,
-                                                              self.attribute_container)
+            _evaluation = EVAL_METRICS_CLASS_DICT[_eval_type](per_eval_config)
+            # add evaluation object to the list
             self.evaluations[_eval_type] = _evaluation
-            # TODO @kv: consistent check between attribute & configs.
-            # Collect all attributes would be queried
+            # add attributes to the list
             if config_fields.attr in per_eval_config:
                 _attrs = per_eval_config[config_fields.attr]
                 required_attributes.extend(_attrs)
+
         # All attributes the evaluator needed.
         self.required_attributes = list(set(required_attributes))
 
@@ -169,6 +171,8 @@ class EvaluatorBuilder(object):
             embedding, list or numpy array:
                 Embedding, feature vector
         """
+
+        # NOTE: If we call classification, then add logit.
         self.embedding_container.add(image_id, label_id, embedding, logit)
         # verbose for developing stage.
         if self.embedding_container.counts % 1000:
@@ -189,20 +193,18 @@ class EvaluatorBuilder(object):
         """Execute given evaluations and returns a dictionary of metrics.
         
           Return:
-            total_metrics, dict:
+            total_metrics, dict (deep structure):
 
-          1. 
-            - img_id -> all attributes
-        
-          2. Create attribute containers with respect to each evlautions
-                - query database with eval_config
         """
 
         total_metrics = {}
 
+        #TODO: Pass containers when compute. (functional objects)
+
         for _eval_type, _evaluation in self.evaluations.items():
-            metrics = _evaluation.compute()
-            total_metrics[_eval_type] = metrics
+            # Pass the container to the evaluation objects.
+            per_eval_metrics = _evaluation.compute(self.embedding_container, self.attribute_container)
+            total_metrics[_eval_type] = per_eval_metrics 
 
         return total_metrics
 
