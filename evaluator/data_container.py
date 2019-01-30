@@ -23,6 +23,8 @@ from collections import defaultdict
 
 import numpy as np
 
+from core.eval_standard_fields import ConfigStandardFields as config_fields
+
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Logit (image_id, label_id, embedding vector).
 
@@ -93,7 +95,7 @@ class EmbeddingContainer(object):
 
         self._embeddings[self._current, ...] = embedding
 
-        if logit is not None:
+        if not logit is None:
             self._logits[self._current, ...] = logit
 
         # NOTE: same image_id maps to many embedding!?
@@ -108,15 +110,17 @@ class EmbeddingContainer(object):
         """Fetch batch of embedding vectors by given image ids."""
         if not (type(image_ids) is int or type(image_ids) is list):
             raise ValueError('image_ids should be int or list.')
+        if isinstance(image_ids, int):
+            image_ids = [image_ids]
         indices = [self._index_by_image_id[img_id] for img_id in image_ids]
         return self._embeddings[indices, ...]
 
     def get_label_by_image_ids(self, image_ids):
         """Fetch the labels from given image_ids."""
         if type(image_ids) is int:
-            return np.asarray(self._label_by_image_id[image_ids])
-        elif isinstance(image_ids, list) or isinstance(image_ids, (np.ndarray, np.generic)):
-            return np.asarray([self._label_by_image_id[img_id] for img_id in image_ids])
+            return self._label_by_image_id[image_ids]
+        elif isinstance(image_ids, list):
+            return [self._label_by_image_id[img_id] for img_id in image_ids]
         else:
             raise ValueError('image_ids should be int or list.')
 
@@ -124,7 +128,7 @@ class EmbeddingContainer(object):
         """Fetch the image_ids from given label_id."""
         if type(label_id) is not int:
             raise ValueError('Query label id should be integer.')
-        return np.asarray(self._image_id_by_label[label_id])
+        return self._image_id_by_label[label_id]
 
     @property
     def embeddings(self):
@@ -138,8 +142,12 @@ class EmbeddingContainer(object):
 
     @property
     def image_ids(self):
-        # get all image_ids in conatiner
-        return np.asarray(self._image_ids)
+        # get all image_ids in container
+        return self._image_ids
+
+    @property
+    def index_by_image_ids(self):
+        return self._index_by_image_id
 
     @property
     def counts(self):
@@ -167,11 +175,13 @@ class AttributeContainer(object):
         User would add image_id & corresponding attributes into container
         then, the managed structure can be returned.
 
-        Group: {
+      case 1:
+        Groups: {
             "Shape.Cup": [<image_id:1>, <image_id:2>, <image_id:3>],
             "Color.Red": [<image_id:1>, <image_id:3>, <image_id:5>, ...],
         }
 
+      case 2:
         ImageAttributes: {
             image_id: ["Shape.Bottle", "Color.Blue", ...],
         }
@@ -187,7 +197,6 @@ class AttributeContainer(object):
             groups:
                 The map of attribute_name to image_ids.
                 e.g. group[attribute_name] = [list of image_ids] (whose attribute is the same.)
-            TODO @kv: implement
             image2attr:
                 The map of image_id to attributes.
                 e.g. image2attr[image_id] = [list of attributes in string].
@@ -234,11 +243,16 @@ class AttributeContainer(object):
 
     @property
     def groups(self):
-        # return attribute to image_ids
+        """Return attribute to image_ids
+            e.g. {'Color.Red': [0, 2, 5, ...], }
+        """
         return self._groups
 
     @property
     def image_attributes(self):
+        """Return image_id to attributes
+            e.g. {'2': ['Color.Red', 'Shape.Bottle', ...], }
+        """
         return self._image2attr
 
     @property
@@ -267,3 +281,52 @@ class AttributeContainer(object):
         # clear the internal dict.
         self._groups = defaultdict(list)
         self._image2attr = defaultdict(list)
+
+class ResultContainer(object):
+    """
+      The evaluation result container handles the computation outcomes
+      and save them into the unified data structure.
+    """
+
+    def __init__(self, metrics, attributes):
+        """
+          Args:
+            metrics, dict:
+                Generated from ConfigParser.get_per_eval_metrics()
+
+            attributes, list of str:
+                Generated from ConfigParser.get_per_eval_attributes()
+
+        """
+        self._results = {}
+        # allocate the dictionary
+        if not isinstance(attributes, list):
+            attributes = [attributes]
+
+        for metric, _ in metrics.items():
+            self._results[metric] = {}
+            for attr in attributes:
+                self._results[metric][attr] = {}
+
+    def __repr__(self):
+        """
+            Print the Result in structure.
+                maybe markdown.
+        """
+        pass
+
+    def add(self, metric, attribute, threshold, value):
+        """Add one result
+            * create dict if key does not exist
+        """
+
+        if not metric in self._results:
+            self._results[metric] = {}
+        if not attribute in self._results[metric]:
+            self._results[metric][attribute] = {}
+
+        self._results[metric][attribute][threshold] = value
+
+    @property
+    def results(self):
+        return self._results
