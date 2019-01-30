@@ -1,10 +1,15 @@
 # Metric Learning Evaluator
 
-## Overview
+## System Architecture Overview
 
 ![](figures/tf-metric-evaluator_v0.2.png)
 
-
+### Description
+- EvaluationBuilder
+- EmbeddingContainer
+- AttributeContainer
+- QueryIterface
+- Metrics
 
 ## TODOs
 
@@ -14,27 +19,81 @@
 - How to execute offline evaluation without embedder?
 - Define the standard format of evaluation results.
 
+## Configuration
+
+There are 5 required items should be defined in the configuration.
+- database
+- evaluation
+- container_size
+- embedding_size
+- logit_size
+
+
+### `evaluation`
+
+Define type of metrics and attribute in each evaluations, like:
+
+```python
+classification:
+    Top_k:
+        - 5
+    Attr:
+        - Color
+        - Shape
+```
+
+The format of `per_eval_config` is `dict` of `list`:
+
+```python
+
+evaluation_name:
+    metric_type:
+        - value_0
+        - value_1
+    Attr:
+        - attribute_0
+        - attribute_1
+```
+
+
 ## Evaluated Results
 
 ```python
 
 eval_results = {
+    # e.g. classification
     'evaluation_name':
     {
+        # e.g. top_k accuracy
+        # NOTE: maybe this layer would be cancelled .
         'metric_type':
         {
-            'per_category':
+            # level of attributes
+            'attribute_type':
             {
-                'some_threshold': [values]
+                # e.g. IoU, top k
+                'threshold': value # or list of values?
             },
-
-            'per_attribute': {}, #?
-            'thresholds': [], # values
         }
     }
 }
 
 ```
+
+### Example
+
+### Report Writer
+
+## Customized Evaluation
+
+Steps:
+
+- Standard Fields
+  - Evaluation Standard Fields
+  - Metric Standard Fiedls
+  - Attribute Standard Fields
+- Registration
+
 
 ## Cooperative Repo
 - tf-metric-learning
