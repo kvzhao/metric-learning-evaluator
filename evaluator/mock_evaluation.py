@@ -11,6 +11,8 @@ from evaluator.data_container import EmbeddingContainer
 from evaluator.data_container import AttributeContainer
 from evaluator.evaluation_base import MetricEvaluationBase
 
+from core.eval_standard_fields import MetricStandardFields as metric_fields
+
 
 class MockStandardFields(object):
     # metric type
@@ -18,8 +20,8 @@ class MockStandardFields(object):
 
 class MockEvaluation(MetricEvaluationBase):
 
-    def __init__(self, per_eval_config):
-        super(MockEvaluation, self).__init__(per_eval_config)
+    def __init__(self, config):
+        super(MockEvaluation, self).__init__(config)
 
         """Mock Evaluation
             This mock evaluation functional object is mainly used in testing.
@@ -31,8 +33,22 @@ class MockEvaluation(MetricEvaluationBase):
         print ('Create {}'.format(self._evaluation_name))
         # this will be called at builder
 
+        self._available_metrics = [
+            metric_fields.mAP,
+            metric_fields.top_k,
+        ]
+
 
     def compute(self, embedding_container, attribute_container=None):
-        _img_ids = embedding_container.image_ids
-        _embeddings = embedding_container.embeddings
-        _groups = attribute_container.group
+
+        img_ids = embedding_container.image_ids
+        embeddings = embedding_container.embeddings
+
+        if attribute_container:
+            groups = attribute_container.groups
+
+        per_eval_attributes = self._config.get_per_eval_attributes(self.evaluation_name)
+        per_eval_metrics = self._config.get_per_eval_metrics(self.evaluation_name)
+
+
+        return {}

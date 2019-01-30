@@ -7,7 +7,7 @@
 
     Example usage of the Evaluator:
     ------------------------------
-    evaluator = EvaluatorBuilder(eval_config)
+    evaluator = EvaluatorBuilder(config)
 
     # Embedding and label for image 1.
     evaluator.add_single_embedding_and_label(...)
@@ -34,8 +34,11 @@ from evaluator.data_container import AttributeContainer
 
 from evaluator.evaluation_base import MetricEvaluationBase
 
-from core.eval_standard_fields import EvalConfigStandardFields as config_fields
+from core.eval_standard_fields import ConfigStandardFields as config_fields
 from core.eval_standard_fields import AttributeStandardFields as attr_fields
+from core.eval_standard_fields import EvaluationStandardFields as eval_fields
+
+from core.config_parser import ConfigParser
 
 from query.general_database import QueryInterface
 
@@ -44,25 +47,21 @@ from evaluator.classification_evaluation import ClassificationEvaluation
 from evaluator.mock_evaluation import MockEvaluation
 
 from evaluator.ranking_evaluation import RankingEvaluation
+from evaluator.facenet_evaluation import FacenetEvaluation
 
 # registered evaluation objects
-EVAL_METRICS_CLASS_DICT = {
-    config_fields.mock: MockEvaluation,
-    config_fields.classification: ClassificationEvaluation,
-    config_fields.ranking: RankingEvaluation,
+REGISTERED_EVALUATION_OBJECTS = {
+    eval_fields.mock: MockEvaluation,
+    eval_fields.classification: ClassificationEvaluation,
+    eval_fields.ranking: RankingEvaluation,
+    eval_fields.facenet: FacenetEvaluation,
 }
 
 class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
-
-    Config:
-        RankEvaluation
-            All
-        RankEvaluation
-            Shape.Cup
-            
     """
-    def __init__(self, eval_config):
+
+    def __init__(self, config_path):
         """Evaluator Builder.
 
           The object builds evaluation functions according to the given configuration 
@@ -77,50 +76,28 @@ class EvaluatorBuilder(object):
             * (optional) get update_ops
         """
 
-        self.eval_config = eval_config
-
-        # Validation check of the eval_config
-        minimum_requirements_of_config = [
-            config_fields.container_size,
-            config_fields.embedding_size,
-            config_fields.logit_size,
-            config_fields.evaluation,
-            config_fields.database,
-        ]
-        for req in minimum_requirements_of_config:
-            if not req in self.eval_config:
-                raise ValueError('''The given configuration is not legal. It should
-                    contain `evaluation`, `container_size`, `embedding_size` and `database`.''')
-        self.evaluation_types = self.eval_config[config_fields.evaluation]
-        if not self.evaluation_types:
-            raise ValueError('No any evaluation is given in eval_config.')
-
-        # TODO @kv: Consider seperating config_parser.
-
-
-        # If no database is given, some evaluation can not be execute.
-        # TODO @kv: How to build evaluator in such situation?
-        if not self.eval_config[config_fields.database]:
-            print ('WARNING: No database is assigned, some evaluations can not be executed.')
-            # NOTE @kv: Should we ignore given attribure names & use category as attr_name?
+        self.config = ConfigParser(config_path)
 
         # allocate shared embedding containers
-        embedding_size = self.eval_config[config_fields.embedding_size]
-        container_size = self.eval_config[config_fields.container_size]
-        logit_size = self.eval_config[config_fields.logit_size]
-        self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
-        self.attribute_container = AttributeContainer() # NOTE: modify its implementation
+        embedding_size = self.config.embedding_size
+        container_size = self.config.container_size
+        logit_size = self.config.logit_size
 
-        # Build evaluations
+        self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
+
+        # TODO @kv: If no attributes are given, do not allocate it?
+        self.attribute_container = AttributeContainer()
+
         self._build()
 
         # Allocate general query interface
-        database_type = self.eval_config[config_fields.database]
-        if not database_type:
+        if not self.config.database_type:
             # TODO @kv: consistent check with query condition
             self.query_interface = None
         else:
-            self.query_interface = QueryInterface(database_type)
+            self.query_interface = QueryInterface(self.config.database_type)
+
+        print (self.config.required_attributes)
 
     def _build(self):
         """
@@ -128,30 +105,13 @@ class EvaluatorBuilder(object):
             Parse the config and create evaluators.
         """
 
-        # TODO: Remove these try & catch
-        try:
-            self.evaluation_types
-        except:
-            raise AttributeError('Evaluation list is not given.')
-
         # Parse the Configuration
         self.evaluations = {}
-        required_attributes = []
-        for _eval_type in self.evaluation_types:
-            if not _eval_type in EVAL_METRICS_CLASS_DICT:
-                print ('WARNING: {} is not registered would be skipped.')
+        for eval_name in self.config.evaluation_names:
+            if not eval_name in REGISTERED_EVALUATION_OBJECTS:
+                print ('WARNING: {} is not registered would be skipped.'.format(eval_name))
                 continue
-            per_eval_config = self.eval_config[config_fields.evaluation][_eval_type]
-            _evaluation = EVAL_METRICS_CLASS_DICT[_eval_type](per_eval_config)
-            # add evaluation object to the list
-            self.evaluations[_eval_type] = _evaluation
-            # add attributes to the list
-            if config_fields.attr in per_eval_config:
-                _attrs = per_eval_config[config_fields.attr]
-                required_attributes.extend(_attrs)
-
-        # All attributes the evaluator needed.
-        self.required_attributes = list(set(required_attributes))
+            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](self.config)
 
     @property
     def evaluation_names(self):
@@ -165,7 +125,7 @@ class EvaluatorBuilder(object):
 
         Args:
             image_id, integer:
-                A integer identitfier for the image.
+                A integer identifier for the image.
             label_id, integer:
                 An index of label.
             embedding, list or numpy array:
@@ -175,7 +135,7 @@ class EvaluatorBuilder(object):
         # NOTE: If we call classification, then add logit.
         self.embedding_container.add(image_id, label_id, embedding, logit)
         # verbose for developing stage.
-        if self.embedding_container.counts % 1000:
+        if self.embedding_container.counts % 1000 == 0:
             print ('{} embeddings are added.'.format(self.embedding_container.counts))
         
         # TODO: consider move `add_image_id_and_query_attribute` here.
@@ -183,9 +143,9 @@ class EvaluatorBuilder(object):
         # if not evaluations_need_query: no quries are needed.
 
         if self.query_interface:
-            if not self.required_attributes:
+            if not self.config.required_attributes:
                 print ('WARNING: No required attributes are pre-defined.')
-            queried_attributes = self.query_interface.query(image_id, self.required_attributes)
+            queried_attributes = self.query_interface.query(image_id, self.config.required_attributes)
             self.attribute_container.add(image_id, queried_attributes)
 
     
@@ -193,18 +153,19 @@ class EvaluatorBuilder(object):
         """Execute given evaluations and returns a dictionary of metrics.
         
           Return:
-            total_metrics, dict (deep structure):
-
+            total_metrics, dict:
         """
 
         total_metrics = {}
 
         #TODO: Pass containers when compute. (functional objects)
 
-        for _eval_type, _evaluation in self.evaluations.items():
+        for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
-            per_eval_metrics = _evaluation.compute(self.embedding_container, self.attribute_container)
-            total_metrics[_eval_type] = per_eval_metrics 
+            print ('Execute {}'.format(_eval_name))
+            per_eval_metrics = _evaluation.compute(self.embedding_container,
+                                                   self.attribute_container)
+            total_metrics[_eval_name] = per_eval_metrics 
 
         return total_metrics
 
@@ -224,7 +185,17 @@ class EvaluatorBuilder(object):
           A dictionary of metric names to tuple of value_op and update_op that can
           be used as eval metric ops in `tf.estimator.EstimatorSpec`. 
         """
-        pass
+        def update_op(image_ids_batched,):
+            pass
+
+        #update_op = tf.py_func()
+
+        def first_value_func():
+            pass
+        def value_func_factory(metric_name):
+            def value_func():
+                pass
+            return value_func
         
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""

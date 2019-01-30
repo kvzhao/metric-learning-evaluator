@@ -8,47 +8,46 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 
+from evaluator.data_container import ResultContainer
 from evaluator.evaluation_base import MetricEvaluationBase
-from metrics.accuracy_scores import top_k_accuracy
+from metrics.scores import top_k_accuracy
+
 from core.eval_standard_fields import AttributeStandardFields as attr_fields
+from core.eval_standard_fields import EvaluationStandardFields as eval_fields
+from core.eval_standard_fields import MetricStandardFields as metric_fields
 
-class ClassificationStandardFields(object):
-    # top k accuracy
-    top_k = 'Top_k'
 
-eval_fields = ClassificationStandardFields
 
 class ClassificationEvaluation(MetricEvaluationBase):
 
-    def __init__(self, per_eval_config):
-        super(ClassificationEvaluation, self).__init__(per_eval_config)
+    def __init__(self, config):
+        super(ClassificationEvaluation, self).__init__(config)
         """Classification Evaluation
-            The evaluation computes accuracy from given logits and return top_k.
+            The evaluation computes accuracy from given logits and return top_k accuracy.
             If attributes are provided, calculate top_k accuracy per attribute.
         """
 
         print ('Create {}'.format(self._evaluation_name))
-        
-        # Parse the per_eval_config;
-        if eval_fields.top_k in per_eval_config:
-            _top_k = per_eval_config[eval_fields.top_k]
-            # TODO @kv:make sure the given number if legal
-            if isinstance(_top_k, list):
-                self.top_k = _top_k
-            elif isinstance(_top_k, int):
-                self.top_k = [_top_k]
-            else:
-                print ('WARNING: Illegal `Top_k` is given, use top-1 and top-5 as default.')
-                self.top_k = [1, 5]
-        else:
-            print ('WARNING: No `Top_k` is given, use top-1 and top-5 as default.')
-            self.top_k = [1, 5]
+
+        # Define the available metrics.
+        self._available_metrics = [
+            metric_fields.top_k,
+        ]
 
     def compute(self, embedding_container, attribute_container=None):
         """Compute Accuracy.
 
             Get compute probabilities from logits and compare with label
             from embedding_container.
+            
+          Args:
+            embedding_container, EmbeddingContainer 
+
+            attribute_container, AttributeContainer
+
+          Return:
+            results, ResultContainer
+
         """
 
         if not isinstance(embedding_container.logits,
@@ -58,20 +57,27 @@ class ClassificationEvaluation(MetricEvaluationBase):
         img_ids = embedding_container.image_ids
 
         # NOTE: Make sure that length of inputs are equal.
+        per_eval_attributes = self._config.get_per_eval_attributes(self.evaluation_name)
+        per_eval_metrics = self._config.get_per_eval_metrics(self.evaluation_name)
+
+        result_container = ResultContainer(per_eval_metrics, per_eval_attributes)
+
+        if attr_fields.all_classes not in per_eval_attributes and attribute_container:
+            has_attributes = True
+        else:
+            has_attributes = False
 
         # Evaluate overall if attribute not given
-        if not attribute_container:
+        if not has_attributes:
             logits = embedding_container.logits
             gt_labels = embedding_container.get_label_by_image_ids(img_ids)
+            gt_labels = np.asarray(gt_labels)
 
-            for k in self.top_k:
-                acc_k = top_k_accuracy(logits, gt_labels, k)
-                eval_results[eval_fields.top_k][k] = acc_k
-
-        # Evaluate Per Attributes
-        else:
-            _attributes = self._per_eval_config[attr_fields.attr]
-            for _attr in _attributes:
-                pass
+            for metric, thresholds in per_eval_metrics.items():
+                if metric in self._available_metrics:
+                    if metric == metric_fields.top_k:
+                        for k in thresholds:
+                            top_k_acc = top_k_accuracy(logits, gt_labels, k)
+                            result_container.add(metric, attr_fields.none, k, top_k_acc)
  
-        return eval_results
+        return result_container.results

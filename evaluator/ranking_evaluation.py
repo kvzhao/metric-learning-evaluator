@@ -1,5 +1,4 @@
 """
-    The Example of the EvaluationObject
 """
 
 import os
@@ -13,12 +12,13 @@ from evaluator.evaluation_base import MetricEvaluationBase
 
 class RankingEvaluation(MetricEvaluationBase):
 
-    def __init__(self, per_eval_config):
-        super(RankingEvaluation, self).__init__(per_eval_config)
+    def __init__(self, config):
+        """Ranking
+
+        """
+        super(RankingEvaluation, self).__init__(config)
 
         print ('Create {}'.format(self._evaluation_name))
-        # What we should do here?
 
     def compute(self, embedding_container, attribute_container=None):
-        # _groups = self.attribute_container.group
         pass
