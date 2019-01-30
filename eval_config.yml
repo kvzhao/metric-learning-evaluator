@@ -1,27 +1,48 @@
 # Configuration used for metric-learning evaluator.
 
-# database of attributes
-database: DatasetBackbone
-
-# list of evaluations
-evaluation:
-  # per evaluation config
-  # NOTE:
-  #    - per_eval_config should be dict rather than list.
-    mock:
-        Attr:
-            - Color
-    ranking:
-        Attr:
-            - Color
-            - Shape
-    classification:
-        Top_k: 5
+# database: Zeus | DatasetBackbone | None
+database:
+#database: DatasetBackbone
 
 # upper-bound of the evaluation images
 container_size: 10000
 
 # tf-metric-learning config
 embedding_size: 2048
+logit_size: 0
 
-logit_size: 1400
+# list of evaluations
+evaluation:
+  # per evaluation config
+  # NOTE:
+  #    - per_eval_config should be dict rather than list.
+
+    MockEvaluation: # consider this type
+        Attr:
+            - All_Classes
+
+    RankingEvaluation:
+        Attr:
+            - Color
+            - Shape
+        Top_k:
+            - 1
+            - 5
+
+    ClassificationEvaluation:
+    # for classifer
+        Top_k:
+            - 1
+            - 5
+        Labelmap:
+            - path
+
+    FacenetEvaluation:
+        # path to the list of pairs
+        Pairlist:
+            - path
+        Distance:
+            - L1
+            - L2
+        DistanceThreshold:
+            - 1.0

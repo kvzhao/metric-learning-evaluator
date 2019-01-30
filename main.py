@@ -21,11 +21,8 @@ from evaluator.evaluator_builder import EvaluatorBuilder
 def main(args):
 
     # open file
-    with open(args.config, 'r') as fp:
-        eval_config = yaml.load(fp)
-
-    evaluator = EvaluatorBuilder(eval_config)
-
+    evaluator = EvaluatorBuilder(args.config)
+    
 
 if __name__ == '__main__':
     import argparse
@@ -37,7 +34,5 @@ if __name__ == '__main__':
     # Read data from args or config.
     parser.add_argument('--data_dir', '-dd', type=str, default=None,
         help='Path to the source dataset, tfrecord | dataset_backbone.')
-
     args = parser.parse_args()
-
     main(args)
