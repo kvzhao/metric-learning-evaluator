@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from core.eval_standard_fields import EvalConfigStandardFields as config_fields
+from core.eval_standard_fields import ConfigStandardFields as config_fields
 from query.datasetbackbone_wrapper import DatasetBackboneWrapper
 from query.zeus_wrapper import ZeusWrapper
 
@@ -24,14 +24,15 @@ class QueryInterface(object):
 
         self.backend_db = DATABASE_DICT[database_type]
 
-    def query(self, image_id, attriute_names):
-        """Query function.
+    def query(self, image_id, required_attribute_names):
+        """Query function:
 
             Args:
                 image_id, int:
                     Unique index describing given image.
 
-                attribute_names, list of strings:
+                required_attribute_names, list of strings:
+                    Kind of filtering condition for querying database.
             
             Return:
                 attributes: list of strings:
@@ -59,4 +60,4 @@ class QueryInterface(object):
                 return: attribute_values: "Color.Red" (list of str)
         """
 
-        pass
+        return ["MOCK_QUERIED_RESULTS", "MOCK_FETCHED_ATTRIBUTES"]
