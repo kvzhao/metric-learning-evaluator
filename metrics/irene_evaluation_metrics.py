@@ -64,7 +64,7 @@ def calculate_pid_topk_recall(que_paths, que_emb_array, que_labels, db_paths, db
             same_retrieval += 1
         else:
             dst_dir = os.path.join(failed_dir, que_paths[i].split('/')[4], que_paths[i].split('/')[5])
-            if os.path.exists(dst_dir) != True:
+            if os.path.exists(dst_dir) is True:
                 os.makedirs(dst_dir)
             dst = os.path.join(dst_dir, que_paths[i].split('/')[-1])
             copyfile(que_paths[i], dst)

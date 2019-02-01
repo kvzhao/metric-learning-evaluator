@@ -23,14 +23,13 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '..')))  # noqa
 
 import yaml
 import numpy as np
 
 from evaluator.data_container import EmbeddingContainer
 from evaluator.data_container import AttributeContainer
-
 
 from evaluator.evaluation_base import MetricEvaluationBase
 
@@ -56,6 +55,7 @@ REGISTERED_EVALUATION_OBJECTS = {
     eval_fields.ranking: RankingEvaluation,
     eval_fields.facenet: FacenetEvaluation,
 }
+
 
 class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.

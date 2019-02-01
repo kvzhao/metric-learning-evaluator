@@ -5,12 +5,13 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '..')))  # noqa
 
 import numpy as np
 
 from scipy.spatial import distance_matrix
 from sklearn.metrics.pairwise import euclidean_distances
+
 
 def pairwise_euclidean_distance(vector_1, vector_2):
     """Calculate the distance between two vectors.
@@ -41,11 +42,12 @@ def batch_euclidean_distances(vector, matrix, p=2):
     if isinstance(vector, (np.generic, np.ndarray)) and len(vector.shape) == 1:
         vector = np.expand_dims(vector, axis=0)
 
-    assert(vector.shape[0] == matrix.shape[1], 'Dimension of the row should match.')
+    assert(vector.shape[0] == matrix.shape[1]), 'Dimension of the row should match.'
 
     distances = np.squeeze(distance_matrix(vector, matrix, p), axis=0)
 
     return distances
+
 
 def batch_some_distances(vector, matrix):
     # implement for testing
