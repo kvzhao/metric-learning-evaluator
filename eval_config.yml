@@ -5,10 +5,11 @@ database:
 #database: DatasetBackbone
 
 # upper-bound of the evaluation images
-container_size: 10000
+container_size: 30000
 
 # tf-metric-learning config
 embedding_size: 2048
+# Close the logit option.
 logit_size: 0
 
 # list of evaluations
@@ -16,33 +17,31 @@ evaluation:
   # per evaluation config
   # NOTE:
   #    - per_eval_config should be dict rather than list.
-
-    MockEvaluation: # consider this type
-        Attr:
-            - All_Classes
-
-    RankingEvaluation:
-        Attr:
-            - Color
-            - Shape
-        Top_k:
-            - 1
-            - 5
-
-    ClassificationEvaluation:
-    # for classifer
-        Top_k:
-            - 1
-            - 5
-        Labelmap:
-            - path
-
     FacenetEvaluation:
         # path to the list of pairs
-        Pairlist:
-            - path
-        Distance:
-            - L1
-            - L2
-        DistanceThreshold:
+        pair:
+            path_pairlist:
+            sample_method: uniform_class
+            sample_ratio: 1.0
+        distance_threshold:
+            - 0.25
+            - 0.5
+            - 0.75
             - 1.0
+            - 1.25
+            - 1.5
+            - 1.75
+            - 2.0
+
+# template of per evaluation config
+#   MockEvaluation:
+#       system:
+#           path:
+#       metric:
+#           metric_type:
+#               -
+#               - list
+#           metric_type: int
+#       attribute:
+#            - attribute_type_1
+#            - attribute_type_2

@@ -117,16 +117,15 @@ class EmbeddingContainer(object):
 
     def get_label_by_image_ids(self, image_ids):
         """Fetch the labels from given image_ids."""
-        if type(image_ids) is int:
-            return self._label_by_image_id[image_ids]
-        elif isinstance(image_ids, list):
+        if isinstance(image_ids, list):
             return [self._label_by_image_id[img_id] for img_id in image_ids]
         else:
-            raise ValueError('image_ids should be int or list.')
+            return self._label_by_image_id[image_ids]
+            #raise ValueError('image_ids should be int or list.')
 
     def get_image_ids_by_label(self, label_id):
         """Fetch the image_ids from given label_id."""
-        if type(label_id) is not int:
+        if not np.issubdtype(type(label_id), np.integer):
             raise ValueError('Query label id should be integer.')
         return self._image_id_by_label[label_id]
 
@@ -144,6 +143,10 @@ class EmbeddingContainer(object):
     def image_ids(self):
         # get all image_ids in container
         return self._image_ids
+
+    @property
+    def image_id_groups(self):
+        return self._image_id_by_label
 
     @property
     def index_by_image_ids(self):
@@ -286,6 +289,9 @@ class ResultContainer(object):
     """
       The evaluation result container handles the computation outcomes
       and save them into the unified data structure.
+
+      NOTE:
+        Structure of the result_container:
     """
 
     def __init__(self, metrics, attributes):
@@ -303,29 +309,34 @@ class ResultContainer(object):
         if not isinstance(attributes, list):
             attributes = [attributes]
 
-        for metric, _ in metrics.items():
-            self._results[metric] = {}
-            for attr in attributes:
-                self._results[metric][attr] = {}
+        for attr in attributes:
+            self._results[attr] = {}
+            for metric, _ in metrics.items():
+                self._results[attr][metric] = {}
 
     def __repr__(self):
         """
             Print the Result in structure.
                 maybe markdown.
         """
-        pass
+        result_string = ''
+        for _attr_name, _metirc in self._results.items():
+            for _metric_name, _threshold in _metirc.items():
+                for _thres, _value in _threshold.items():
+                    result_string += '{}-{}@{}: {}\n'.format(
+                        _metric_name, _attr_name, _thres, _value)
+        return result_string
 
-    def add(self, metric, attribute, threshold, value):
+    def add(self, attribute, metric, threshold, value):
         """Add one result
             * create dict if key does not exist
         """
 
-        if not metric in self._results:
-            self._results[metric] = {}
-        if not attribute in self._results[metric]:
-            self._results[metric][attribute] = {}
-
-        self._results[metric][attribute][threshold] = value
+        if not attribute in self._results:
+            self._results[attribute] = {}
+        if not metric in self._results[attribute]:
+            self._results[attribute][metric] = {}
+        self._results[attribute][metric][threshold] = value
 
     @property
     def results(self):

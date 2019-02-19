@@ -1,5 +1,5 @@
 
-"""
+"""Functions used for calculating distances.
 """
 
 import os
@@ -13,12 +13,9 @@ from scipy.spatial import distance_matrix
 from sklearn.metrics.pairwise import euclidean_distances
 
 
-def pairwise_euclidean_distance(vector_1, vector_2):
-    """Calculate the distance between two vectors.
-      Return:
-        dist, float
-    """
-    return euclidean_distances(vector_1, vector_2)
+def pairwise_euclidean_distance(vector_1, vector_2, p=2):
+    """Calculate the distance between two vectors."""
+    return euclidean_distances(vector_1, vector_2, p)
 
 
 def batch_euclidean_distances(vector, matrix, p=2):
@@ -43,12 +40,59 @@ def batch_euclidean_distances(vector, matrix, p=2):
         vector = np.expand_dims(vector, axis=0)
 
     assert(vector.shape[0] == matrix.shape[1]), 'Dimension of the row should match.'
-
     distances = np.squeeze(distance_matrix(vector, matrix, p), axis=0)
+    return distances
+
+def euclidean_distance(matrixA, matrixB):
+    """
+      Args:
+        matrixA: 2D numpy array
+        matrixB: 2D numpy array
+      Return:
+        distances: 
+    """
+    if not isinstance(matrixA, (np.generic, np.ndarray)):
+        matrixA = np.asarray(matrixA)
+    if not isinstance(matrixB, (np.generic, np.ndarray)):
+        matrixB = np.asarray(matrixB)
+
+    if not matrixA.shape[0] == matrixB.shape[0]:
+        print ("")
+    
+    distances = np.sum(np.square(np.subtract(matrixA, matrixB)), axis=1)
 
     return distances
 
+def euclidean_distance_filter(matrixA, matrixB, thresholds=[0.5, 1.0]):
+    """
+      Args:
+        matrixA: 2d numpy array
+        matrixB
+      Return:
+        positives: A dictionary of list
 
-def batch_some_distances(vector, matrix):
-    # implement for testing
+      NOTE:
+        Should we use normalized distance?
+    """
+    positives = {}
+
+    if isinstance(thresholds, float):
+        thresholds = [thresholds]
+    else:
+        # as some iterable
+        pass
+
+    for threshold in thresholds:
+        distances = euclidean_distance(matrixA, matrixB)
+        positive = np.less(distances, threshold)
+        positives[threshold] = positive
+
+    return positives
+
+
+def cosine_distance():
+    pass
+
+
+def consine_distance_filter():
     pass

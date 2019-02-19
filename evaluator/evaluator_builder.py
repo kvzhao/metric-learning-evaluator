@@ -140,7 +140,7 @@ class EvaluatorBuilder(object):
         
         # TODO: consider move `add_image_id_and_query_attribute` here.
         # Collect all `attribute_name`
-        # if not evaluations_need_query: no quries are needed.
+        # if not evaluations_need_query: no queries are needed.
 
         if self.query_interface:
             if not self.config.required_attributes:

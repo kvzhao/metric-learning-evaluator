@@ -1,4 +1,4 @@
-# Metric Learning Evaluator
+****# Metric Learning Evaluator
 
 ## System Architecture Overview
 
@@ -20,6 +20,9 @@
 - Define the standard format of evaluation results.
 
 ## Configuration
+
+Usage:
+     The configuration is used to change hyper-parameters but not change metric items.
 
 There are 5 required items should be defined in the configuration.
 - database
@@ -64,12 +67,12 @@ eval_results = {
     # e.g. classification
     'evaluation_name':
     {
-        # e.g. top_k accuracy
-        # NOTE: maybe this layer would be cancelled .
-        'metric_type':
+        # level of attributes
+        'attribute_type':
         {
-            # level of attributes
-            'attribute_type':
+            # e.g. top_k accuracy
+            # NOTE: maybe this layer would be cancelled .
+            'metric_type':
             {
                 # e.g. IoU, top k
                 'threshold': value # or list of values?

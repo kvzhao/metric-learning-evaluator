@@ -18,8 +18,8 @@ def top_k_accuracy_1d():
 def calculate_positive_by_distance(distances, threshold, actual_issame):
     """
       Args:
-        distances, 1D numpy array
-        threshold, float
+        distances: 1D numpy array
+        threshold: a float
         actual_issame, 1D numpy array of boolean
 
       Returns:

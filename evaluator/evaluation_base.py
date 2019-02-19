@@ -41,7 +41,7 @@ class MetricEvaluationBase(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, config):
+    def __init__(self, config_parser):
         """Base Object for Evaluation.
           <Customized>Evaluation is the functional object which 
                       executes computation with metric functions.
@@ -55,17 +55,20 @@ class MetricEvaluationBase(object):
 
         """
 
-        if config and not isinstance(config, ConfigParser):
+        if config_parser and not isinstance(config_parser, ConfigParser):
             raise ValueError('Evaluation requires the ConfigParser object.')
 
-        self._config = config
+        self._config_parser = config_parser
 
         # TODO: Iterator for getting embeddings from given attribute_names
         self._evaluation_name = self.__class__.__name__
 
         # preprocessing eval config in each customized evaluation
-        self._eval_metrics = self._config.get_per_eval_metrics(self.evaluation_name)
-        self._eval_attributes = self._config.get_per_eval_attributes(self.evaluation_name)
+        self._eval_metrics = self._config_parser.get_per_eval_metrics(self.evaluation_name)
+        self._eval_attributes = self._config_parser.get_per_eval_attributes(self.evaluation_name)
+
+        # Verbose
+        print (self._config_parser.get_per_eval_config(self.evaluation_name))
 
     @property
     def evaluation_name(self):

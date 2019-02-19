@@ -15,9 +15,9 @@ from core.eval_standard_fields import MetricStandardFields as metric_fields
 class ConfigParser(object):
     """
       User Scenario:
-        1. load from path
-        2. get useful values
-        3. 
+        1. load from given config path
+        2. get useful values to set containers
+        3. get hyper-parameters for evaluation functions
         
         NOTE:
           evaluation_type: classification vs. evaluation_name: ClassificationEvaluation
