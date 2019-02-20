@@ -342,7 +342,19 @@ class ResultContainer(object):
     @property
     def results(self):
         # TODO: Do not return empty dict
-        return self._results
+        dict_outcome = {}
+        for _attr_name, _metirc in self._results.items():
+            dict_outcome[_attr_name] = {}
+            for _metric_name, _threshold in _metirc.items():
+                if not _threshold:
+                    continue
+                dict_outcome[_attr_name][_metric_name] = {}
+                for _thres, _value in _threshold.items():
+                    print (_value)
+                    if not _value:
+                        continue
+                    dict_outcome[_attr_name][_metric_name][_thres] = _value
+        return dict_outcome
 
     def clear(self):
         self._results = {}
