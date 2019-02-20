@@ -1,15 +1,19 @@
 """
 author: jeff
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
-from metric_base import MetricBase
+from metrics.metric_base import MetricBase
 
 
 class ClassificationMetrics(MetricBase):
     """
     Classification Metrics, including
-    1. true postive rate (TPR): recall of positive EXAMPLES
+    1. true positive rate (TPR): recall of positive EXAMPLES
     2. false positive rate (FPR): recall error rate of negative EXAMPLES
     3. accuracy: precision of all EXAMPLES
     4. validation rate (VAL): precision of positive PREDICTIONS
@@ -54,7 +58,7 @@ class ClassificationMetrics(MetricBase):
             raise ValueError(
                 'predictions and labels must be of same shape, but get preds: "{}" '
                 'labels: "{}"'.format(preds.shape, labels.shape))
-        if not preds.dtype != np.bool or not labels.dtype != np.bool:
+        if preds.dtype != bool or labels.dtype != bool:
             raise TypeError(
                 'predictions and labels must be of np.bool dtype '
                 'but get preds: "{}" and labels "{}" instead'
