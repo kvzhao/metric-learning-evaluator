@@ -66,6 +66,7 @@ class MetricEvaluationBase(object):
         # preprocessing eval config in each customized evaluation
         self._eval_metrics = self._config_parser.get_per_eval_metrics(self.evaluation_name)
         self._eval_attributes = self._config_parser.get_per_eval_attributes(self.evaluation_name)
+        self._eval_options = self._config_parser.get_per_eval_options(self.evaluation_name)
 
         # Verbose
         print (self._config_parser.get_per_eval_config(self.evaluation_name))

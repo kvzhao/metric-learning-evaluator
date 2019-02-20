@@ -323,6 +323,8 @@ class ResultContainer(object):
         for _attr_name, _metirc in self._results.items():
             for _metric_name, _threshold in _metirc.items():
                 for _thres, _value in _threshold.items():
+                    if not _value:
+                        continue
                     result_string += '{}-{}@{}: {}\n'.format(
                         _metric_name, _attr_name, _thres, _value)
         return result_string
@@ -331,7 +333,6 @@ class ResultContainer(object):
         """Add one result
             * create dict if key does not exist
         """
-
         if not attribute in self._results:
             self._results[attribute] = {}
         if not metric in self._results[attribute]:
@@ -340,4 +341,8 @@ class ResultContainer(object):
 
     @property
     def results(self):
+        # TODO: Do not return empty dict
         return self._results
+
+    def clear(self):
+        self._results = {}

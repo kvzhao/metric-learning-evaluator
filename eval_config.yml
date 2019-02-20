@@ -19,19 +19,22 @@ evaluation:
   #    - per_eval_config should be dict rather than list.
     FacenetEvaluation:
         # path to the list of pairs
-        pair:
+        option:
             path_pairlist:
-            sample_method: uniform_class
-            sample_ratio: 1.0
-        distance_threshold:
-            - 0.25
-            - 0.5
-            - 0.75
-            - 1.0
-            - 1.25
-            - 1.5
-            - 1.75
-            - 2.0
+        metric:
+            distance_threshold: # start, end, step
+                - 0.5
+                - 0.75
+                - 1.0
+                - 1.25
+                - 1.5
+                - 2.0
+            pair_sampling:
+                ratio_of_class: 0.1
+                ratio_of_image_per_class: 0.1
+                class_sample_method: random_sample
+
+        attribute:
 
 # template of per evaluation config
 #   MockEvaluation:

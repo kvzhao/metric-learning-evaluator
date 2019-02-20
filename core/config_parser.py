@@ -75,9 +75,10 @@ class ConfigParser(object):
             per_eval_config = self._configs[config_fields.evaluation][eval_type]
             if not per_eval_config:
                 continue
-            if attr_fields.attr_key in per_eval_config:
-                attrs = per_eval_config[attr_fields.attr_key]
-                required_attributes.extend(attrs)
+            if config_fields.attribute in per_eval_config:
+                if per_eval_config[config_fields.attribute]:
+                    attrs = per_eval_config[config_fields.attribute]
+                    required_attributes.extend(attrs)
         self._required_attributes = list(set(required_attributes))
 
         # Extract all defined names in metric standard fields
@@ -142,8 +143,11 @@ class ConfigParser(object):
         per_eval = self.get_per_eval_config(eval_name)
         if not per_eval:
             return []
-        if attr_fields.attr_key in per_eval:
-            return per_eval[attr_fields.attr_key]
+        if config_fields.attribute in per_eval:
+            if not per_eval[config_fields.attribute]:
+                return [attr_fields.all_classes]
+            else:
+                return per_eval[config_fields.attribute]
         else:
             return [attr_fields.all_classes]
 
@@ -152,14 +156,33 @@ class ConfigParser(object):
           Args:
             eval_name, string: Name of the evaluation object.
           Return:
-            Dict of list of metrics and corresponding thresholds.
+            metrics_dict: Dict of metrics and corresponding parameters.
         """
         per_eval = self.get_per_eval_config(eval_name)
         if not per_eval:
             return {}
         # return the dict which key in metric standard fields
         metrics_dict = {}
-        for k, v in per_eval.items():
-            if k in self._metric_items:
-                metrics_dict[k] = v
+        if config_fields.metric in per_eval:
+            for k, v in per_eval[config_fields.metric].items():
+                if k in self._metric_items:
+                    metrics_dict[k] = v
         return metrics_dict
+
+    def get_per_eval_options(self, eval_name):
+        """
+          Args:
+            eval_name: name of evaluation object
+          Returns:
+            options: dict in the config without existing check.
+        """
+        per_eval = self.get_per_eval_config(eval_name)
+        if not per_eval:
+            return {}
+        options = {}
+
+        if config_fields.option in per_eval:
+            for k, v in per_eval[config_fields.option].items():
+                options[k] = v
+
+        return options

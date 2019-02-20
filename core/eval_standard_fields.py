@@ -46,18 +46,21 @@ class MetricStandardFields(object):
     var = 'VAR'
     validation_rate = 'validation_rate'
 
+    # top 1 accuracy
     accuracy = 'accuracy'
     # Top k accuracy
     top_k = 'top_k'
     
-
-    pair = 'pair'
-    sample_method = 'sample_method'
-    sample_ratio = 'sample_ratio'
+    pair_sampling = 'pair_sampling'
 
     distance_function = 'distance_function'
     distance_threshold = 'distance_threshold'
     path_pairlist = 'path_pairlist'
+    sample_method = 'sample_method'
+    sample_ratio = 'sample_ratio'
+    class_sample_method = 'class_sample_method'
+    ratio_of_class = 'ratio_of_class'
+    ratio_of_image_per_class = 'ratio_of_image_per_class'
 
     # === Parameters & Internal Keys ===
     true_positive = 'true_positive'
@@ -96,9 +99,9 @@ class ConfigStandardFields(object):
 
     # Keywords of Evaluation & Attributes
     evaluation = 'evaluation'
-    attr = 'Attr'
+    metric = 'metric'
     attribute = 'attribute'
-    labelmap = 'Labelmap' # remove this
+    option = 'option'
 
     # System-related configs
     container_size = 'container_size'

@@ -8,13 +8,15 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 
-from evaluator.data_container import ResultContainer
-from evaluator.evaluation_base import MetricEvaluationBase
-from metrics.scores import top_k_accuracy
 
 from core.eval_standard_fields import AttributeStandardFields as attr_fields
 from core.eval_standard_fields import EvaluationStandardFields as eval_fields
 from core.eval_standard_fields import MetricStandardFields as metric_fields
+
+from evaluator.data_container import ResultContainer
+from evaluator.evaluation_base import MetricEvaluationBase
+
+from metrics.classification_metrics import ClassificationMetrics
 
 
 
@@ -54,6 +56,8 @@ class ClassificationEvaluation(MetricEvaluationBase):
                          (np.ndarray, np.generic)):
             raise AttributeError('Logits should be provided when {} is performed'.format(self.evaluation_name))
         
+        classification_metrics = ClassificationMetrics()
+
         img_ids = embedding_container.image_ids
 
         # NOTE: Make sure that length of inputs are equal.
@@ -79,5 +83,12 @@ class ClassificationEvaluation(MetricEvaluationBase):
                         for k in thresholds:
                             top_k_acc = top_k_accuracy(logits, gt_labels, k)
                             result_container.add(metric, attr_fields.none, k, top_k_acc)
+        else:
+            # With attributes
+            pass
  
+        # Add parsed array and get results
+
+        # Push them into result container
+
         return result_container.results

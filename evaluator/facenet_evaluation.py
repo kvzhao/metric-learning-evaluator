@@ -37,13 +37,27 @@ from collections import Counter
 from pprint import pprint
 
 class FacenetEvaluationStandardFields(object):
-    # Define fields used in evaluation and executable metrics
+    """Define fields used only in Facenet evaluation
+        which may assign in `option` section in config.
+    """
+
     pairA = 'pairA'
     pairB = 'pairB'
     is_same = 'is_same'
-
+    
+    # old
     uniform_class = 'uniform_class'
     random_sample = 'random_sample'
+    sample_method = 'sample_method'
+    sample_ratio = 'sample_ratio'
+    path_pairlist = 'path_pairlist'
+
+    # new
+    sample_method = 'sample_method'
+    sample_ratio = 'sample_ratio'
+    class_sample_method = 'class_sample_method'
+    ratio_of_class = 'ratio_of_class'
+    ratio_of_image_per_class = 'ratio_of_image_per_class'
 
 
 facenet_fields = FacenetEvaluationStandardFields
@@ -76,22 +90,21 @@ class FacenetEvaluation(MetricEvaluationBase):
         # Preprocess Configurations and check legal
         self._available_metrics = [
             metric_fields.accuracy, 
-            metric_fields.pair,
-            metric_fields.sample_method,
         ]
 
         self._must_have_metrics = [
             metric_fields.distance_threshold,
-            metric_fields.sample_method,
-            metric_fields.sample_ratio
+            facenet_fields.sample_method,
+            facenet_fields.sample_ratio
         ]
 
         # TODO: How to set default value?
 
         self._default_values = {
             metric_fields.distance_threshold: [0.5, 1.0, 1.5],
-            metric_fields.sample_method: facenet_fields.uniform_class,
-            metric_fields.sample_ratio: 0.2,
+            facenet_fields.sample_method: facenet_fields.uniform_class,
+            facenet_fields.sample_ratio: 0.2,
+            facenet_fields.class_sample_method: facenet_fields.random_sample,
         }
 
         # Set default values for must-have metrics
@@ -101,6 +114,8 @@ class FacenetEvaluation(MetricEvaluationBase):
                     self._eval_metrics[_metric] = self._default_values[_metric]
                 else:
                     print ("WARNING: {} should be assigned".format(_metric))
+            else:
+                print ('Use assigned {}: {}'.format(_metric, self._eval_metrics[_metric]))
 
         ## attributes
         if len(self._eval_attributes) == 0:
@@ -115,8 +130,6 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         self.show_configs()
 
-
-
     def compute(self, embedding_container, attribute_container=None):
         """Procedure:
             - prepare the pair list for eval set
@@ -130,9 +143,12 @@ class FacenetEvaluation(MetricEvaluationBase):
         img_ids = embedding_container.image_ids
 
         # configs
-        sample_ratio = self._eval_metrics[metric_fields.sample_ratio]
-        sample_method = self._eval_metrics[metric_fields.sample_method]
-        distance_threshold = self._eval_metrics[metric_fields.distance_threshold]
+        pair_sampling_config = self._eval_metrics[metric_fields.pair_sampling]
+        distance_thresholds = self._eval_metrics[metric_fields.distance_threshold]
+
+        ratio_of_class = pair_sampling_config[facenet_fields.ratio_of_class]
+        ratio_of_image_per_class = pair_sampling_config[facenet_fields.ratio_of_image_per_class]
+        class_sample_method = pair_sampling_config[facenet_fields.class_sample_method]
 
         assert len(img_ids) == embedding_container.embeddings.shape[0]
 
@@ -142,9 +158,10 @@ class FacenetEvaluation(MetricEvaluationBase):
             # attribute == all_classes
             attribute = attribute_fields.all_classes
             # @kv: load pair list from file or generate automatically
-            pairs = self._generate_pairs(embedding_container, 
-                                         sample_ratio=sample_ratio,
-                                         sample_method=sample_method)
+            pairs = self._generate_pairs(embedding_container,
+                                         ratio_of_class,
+                                         ratio_of_image_per_class,
+                                         class_sample_method)
 
             # fetch image ids and compuate distances at once.
             pair_A_embeddings = embedding_container.get_embedding_by_image_ids(
@@ -153,8 +170,7 @@ class FacenetEvaluation(MetricEvaluationBase):
                 pairs[facenet_fields.pairB])
             groundtruth_is_same = np.asarray(pairs[facenet_fields.is_same])
 
-            # Distance filtering
-            distance_thresholds = self._eval_metrics[metric_fields.distance_threshold]
+            # TODO @kv: choose distance function
             predicted_is_same = euclidean_distance_filter(pair_A_embeddings,
                                                           pair_B_embeddings,
                                                           distance_thresholds)
@@ -172,6 +188,7 @@ class FacenetEvaluation(MetricEvaluationBase):
                     metric_fields.true_positive_rate, threshold, classification_metrics.true_positive_rate)
                 result_container.add(attribute,
                     metric_fields.false_positive_rate, threshold, classification_metrics.false_positive_rate)
+                classification_metrics.clear()
         
         else:
             # Has attributes
@@ -183,83 +200,61 @@ class FacenetEvaluation(MetricEvaluationBase):
         return result_container.results
 
 
-    def _generate_pairs(self, embedding_container, sample_ratio=0.2, sample_method='random'):
+    def _generate_pairs(self,
+                        embedding_container,
+                        ratio_of_class,
+                        ratio_of_image_per_class,
+                        class_sample_method
+                        ):
         """Image Pair & Sampling Strategy
 
           Args:
-            pairs: dict of lists
-                Pair with three keys: fields.pairA, fields.pairB, fields.is_same
-                e.g.
-                    A, B
-                    img_1, img_2
-                    img_1, img_3
-                    img_1, img_4
-                    ...
-                    img_3, img_4,
-                    img_4, img_5
-                pairs[is_same]: list of boolean 
-                    It denotes corresponding pair is same class or not
-            sample_method:
-              - random:
-              - uniform_class:
-        
+
           Return:
             pairs, dict of list:
 
+          A: {a1, a2, ..., aN} N images in class A
+          B: {b1, b2, ..., bM} M images in class B
         """
         pairs = defaultdict(list)
         image_ids = embedding_container.image_ids
         label_ids = embedding_container.get_label_by_image_ids(image_ids)
-        label_counter = Counter(label_ids)
         num_image_ids = len(image_ids)
         num_label_ids = len(label_ids)
-        num_class = len(label_counter)
+        class_histogram = Counter(label_ids)
+        classes = list(class_histogram.keys())
+        num_classes = len(classes)
 
         assert num_label_ids == num_image_ids
+
+        num_sampled_classes = int(num_classes * ratio_of_class)
 
         # Randomly sample several data
         image_ids = np.asarray(image_ids)
         label_ids = np.asarray(label_ids)
-        num_pair_samples = int(num_image_ids * sample_ratio)
 
-        if sample_method is None or sample_method == facenet_fields.random_sample:
-            sampled_image_ids = np.random.choice(image_ids, num_pair_samples)
-            for img_a, img_b in list(itertools.combinations(sampled_image_ids, 2)):            
-                label_img_a = embedding_container.get_label_by_image_ids(img_a)
-                label_img_b = embedding_container.get_label_by_image_ids(img_b)
-                is_same = label_img_a == label_img_b
-                pairs[facenet_fields.pairA].append(img_a)
-                pairs[facenet_fields.pairB].append(img_b)
-                pairs[facenet_fields.is_same].append(is_same)  
+        if class_sample_method == facenet_fields.random_sample:
+            sampled_classes = np.random.choice(classes, num_sampled_classes)
 
-        elif sample_method == facenet_fields.uniform_class:
-            num_samples_per_class = math.floor(num_pair_samples / num_class)
-            image_id_groups = embedding_container.image_id_groups
+        num_pairs = 0
+        for class_a, class_b in list(itertools.combinations_with_replacement(sampled_classes, 2)):
+            num_img_class_a = math.ceil(class_histogram[class_a] * ratio_of_image_per_class)
+            num_img_class_b = math.ceil(class_histogram[class_b] * ratio_of_image_per_class)
+            num_sampled_img_per_class = min(num_img_class_a, num_img_class_b)
 
-            # Go through all classes
-            for class_id, images_in_same_group in image_id_groups.items():
-                anchor_image_id = np.random.choice(images_in_same_group, 1, replace=False)[0]
-                image_ids_same_group = np.random.choice(images_in_same_group, num_samples_per_class)
-                image_ids_diff_group = np.random.choice(image_ids, num_samples_per_class)
+            sampled_img_id_class_a = np.random.choice(
+                embedding_container.get_image_ids_by_label(class_a), num_sampled_img_per_class)
+            sampled_img_id_class_b = np.random.choice(
+                embedding_container.get_image_ids_by_label(class_b), num_sampled_img_per_class)
+            for img_class_a, img_class_b in zip(sampled_img_id_class_a, sampled_img_id_class_b):
+                is_same = class_a == class_b
+                pairs[facenet_fields.pairA].append(img_class_a)
+                pairs[facenet_fields.pairB].append(img_class_b)
+                pairs[facenet_fields.is_same].append(is_same)
+                num_pairs += 1
 
-                # Image with same label
-                for same_img_id in image_ids_same_group:
-                    tar_class_id = embedding_container.get_label_by_image_ids(same_img_id)
-                    is_same = tar_class_id == class_id
-                    pairs[facenet_fields.pairA].append(anchor_image_id)
-                    pairs[facenet_fields.pairB].append(same_img_id)
-                    pairs[facenet_fields.is_same].append(is_same)  
-                    
-                # Image with different label
-                for diff_img_id in image_ids_diff_group:
-                    tar_class_id = embedding_container.get_label_by_image_ids(diff_img_id)
-                    is_same = tar_class_id == class_id
-                    pairs[facenet_fields.pairA].append(anchor_image_id)
-                    pairs[facenet_fields.pairB].append(diff_img_id)
-                    pairs[facenet_fields.is_same].append(is_same)  
-                
+        print ('{} pairs are generated.'.format(num_pairs))
         return pairs
-
 
     def _compute_roc(self):
         """ROC Curve

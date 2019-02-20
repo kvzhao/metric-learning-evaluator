@@ -37,25 +37,27 @@ There are 5 required items should be defined in the configuration.
 Define type of metrics and attribute in each evaluations, like:
 
 ```python
-classification:
-    Top_k:
-        - 5
-    Attr:
-        - Color
-        - Shape
+
+FacenetEvaluation:
+    distance_threshold:
+        - 0.5
+        - 1.0
 ```
 
-The format of `per_eval_config` is `dict` of `list`:
-
+The format of `per_eval_config` is the following:
 ```python
-
-evaluation_name:
-    metric_type:
-        - value_0
-        - value_1
-    Attr:
+EvaluationName:
+    metric:
+        metric_type_1:
+            - parameter_1
+            - parameter_2
+        metric_type_2: parameter
+    attribute:
         - attribute_0
         - attribute_1
+    option:
+        path: <string>
+        ratio: <float>
 ```
 
 
