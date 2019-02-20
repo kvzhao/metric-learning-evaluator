@@ -21,13 +21,7 @@ from evaluator.data_container import AttributeContainer
 from evaluator.data_container import ResultContainer
 from evaluator.evaluation_base import MetricEvaluationBase
 
-from sklearn.model_selection import KFold
-from sklearn.metrics import average_precision_score
-
-# from metrics.scores import calculate_positive_by_distance
-from metrics.distances import euclidean_distance
 from metrics.distances import euclidean_distance_filter
-
 from metrics.classification_metrics import ClassificationMetrics
 
 from collections import defaultdict
@@ -45,17 +39,13 @@ class FacenetEvaluationStandardFields(object):
     pairB = 'pairB'
     is_same = 'is_same'
     
-    # old
-    uniform_class = 'uniform_class'
-    random_sample = 'random_sample'
-    sample_method = 'sample_method'
-    sample_ratio = 'sample_ratio'
     path_pairlist = 'path_pairlist'
 
-    # new
     sample_method = 'sample_method'
     sample_ratio = 'sample_ratio'
     class_sample_method = 'class_sample_method'
+    random_sample = 'random_sample'
+    uniform_class = 'uniform_class'
     ratio_of_class = 'ratio_of_class'
     ratio_of_image_per_class = 'ratio_of_image_per_class'
 
@@ -88,17 +78,11 @@ class FacenetEvaluation(MetricEvaluationBase):
         print ('Create {}'.format(self._evaluation_name))
 
         # Preprocess Configurations and check legal
-        self._available_metrics = [
-            metric_fields.accuracy, 
-        ]
-
         self._must_have_metrics = [
             metric_fields.distance_threshold,
             facenet_fields.sample_method,
             facenet_fields.sample_ratio
         ]
-
-        # TODO: How to set default value?
 
         self._default_values = {
             metric_fields.distance_threshold: [0.5, 1.0, 1.5],
@@ -155,7 +139,7 @@ class FacenetEvaluation(MetricEvaluationBase):
         result_container = ResultContainer(self._eval_metrics, self._eval_attributes)
 
         if not self._has_attribute:
-            # attribute == all_classes
+            # NOTE: Assume attribute == `all_classes`
             attribute = attribute_fields.all_classes
             # @kv: load pair list from file or generate automatically
             pairs = self._generate_pairs(embedding_container,
