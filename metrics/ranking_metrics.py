@@ -47,7 +47,7 @@ class RankingMetrics(MetricBase):
     def add_inputs(self, hit_arrays):
         """
         Args:
-            hit_arrays: a ndarray, of shape (K, N) and dtype np.bool.
+            hit_arrays: a ndarray, of shape (K, N) and dtype bool.
                 hit_arr[i][j] is true if the label of j-th item in rank list
                 matches the label of i-th query
         """
@@ -55,9 +55,9 @@ class RankingMetrics(MetricBase):
             raise ValueError(
                 'hit array must be rank 2, but get "{}" instead'
                 .format(len(hit_arrays.shape)))
-        if hit_arrays.dtype != np.bool:
+        if hit_arrays.dtype != bool:
             raise TypeError(
-                'hit array must be of dtype np.bool, but get "{}" instead'
+                'hit array must be of dtype bool, but get "{}" instead'
                 .format(hit_arrays.dtype))
         if hit_arrays.shape[0] == 0 or hit_arrays.shape[1] == 0:
             raise ValueError(
@@ -77,10 +77,10 @@ class RankingMetrics(MetricBase):
             # 1. it can be aggregated to mAP unlike NaN/None.
             # 2. if it results in 0 mAP, we can still know something wrong with the model
             # 3. it's reasonable to assign 0 mAP to total failure since total success get 1 mAP
-            idxs = np.where(hit_arr == 1)[0]
+            indices = np.where(hit_arr == 1)[0]
             average_precision = 0.
-            if len(idxs) > 0:
-                average_precision = np.mean(idxs + 1)
+            if len(indices) > 0:
+                average_precision = np.mean(indices + 1)
             self._average_precisions[i] = average_precision
         self._is_empty = False
 
