@@ -28,6 +28,7 @@ import numpy as np
 from pprint import pprint
 
 from evaluator.evaluator_builder import EvaluatorBuilder
+from data_tools.embedding_object import EmbeddingDataObject
 
 def main(args):
 
@@ -42,13 +43,11 @@ def main(args):
     evaluator = EvaluatorBuilder(args.config)
 
     if data_type == 'folder':
-        path_embeddings = data_dir + '/embeddings.npy'
-        path_filenames = data_dir + '/filename_strings.npy'
-        path_labels = data_dir + '/labels.npy'
-
-        embeddings = np.load(path_embeddings)
-        filenames = np.load(path_filenames)
-        labels = np.load(path_labels)
+        embedding_object = EmbeddingDataObject()
+        embedding_object.load(data_dir)
+        embeddings = embedding_object.embeddings
+        filenames = embedding_object.filename_strings
+        labels = embedding_object.label_ids
 
     # Add datum through loop
 
