@@ -15,6 +15,7 @@ from abc import abstractmethod
 class EmbeddingDataStandardFields:
     embeddings = 'embeddings'
     label_ids = 'label_ids'
+    label_names = 'label_names'
     instance_ids = 'instance_ids'
     filename_strings = 'filename_strings'
     super_labels = 'super_labels'
@@ -38,6 +39,7 @@ class EmbeddingDataBase(object):
         self._array_name_map = {
             fields.embeddings: None,
             fields.label_ids: None,
+            fields.label_names: None,
             fields.instance_ids: None,
             fields.filename_strings: None,
         }
@@ -74,6 +76,17 @@ class EmbeddingDataBase(object):
     def label_ids(self, _label_ids):
         self._check_numpy_arrlike(_label_ids)
         self._array_name_map[fields.label_ids] = _label_ids
+
+    @property
+    def label_names(self):
+        if self._array_name_map[fields.label_names] is None:
+            print ('WARNING: Get the empty label_names array')
+        return self._array_name_map[fields.label_names]
+
+    @label_names.setter
+    def label_names(self, _label_names):
+        self._check_numpy_arrlike(_label_names)
+        self._array_name_map[fields.label_names] = _label_names
 
     @property
     def instance_ids(self):
@@ -120,7 +133,6 @@ class EmbeddingDataObject(EmbeddingDataBase):
             if _npy_name in self._array_name_map:
                 _npy_path = '/'.join([data_dir, _npy])
                 _npy_arr = np.load(_npy_path)
-                #self._array_name_map[_npy_name] = np.load(_npy_path)
                 self._array_name_map[_npy_name] = _npy_arr
                 print ('{} is loaded'.format(_npy_path))
 
