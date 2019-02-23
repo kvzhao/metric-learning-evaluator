@@ -1,5 +1,5 @@
 """
-  Embedding Data Reader
+  Feature Data Reader
 """
 import os
 import sys
@@ -12,7 +12,7 @@ import numpy as np
 from abc import ABCMeta
 from abc import abstractmethod
 
-class EmbeddingDataStandardFields:
+class FeatureDataStandardFields:
     embeddings = 'embeddings'
     label_ids = 'label_ids'
     label_names = 'label_names'
@@ -20,13 +20,14 @@ class EmbeddingDataStandardFields:
     filename_strings = 'filename_strings'
     super_labels = 'super_labels'
 
-fields = EmbeddingDataStandardFields
+fields = FeatureDataStandardFields
 
 def get_var_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_locals.items()
     return [k for k, v in callers_local_vars if v is var][0]
 
-class EmbeddingDataBase(object):
+# NOTE: Rename -> FeatureObjectBase
+class FeatureDataBase(object):
 
     def __init__(self):
 
@@ -119,10 +120,11 @@ class EmbeddingDataBase(object):
         self._check_numpy_arrlike(_super_labels)
         self._super_labels = _super_labels
 
-class EmbeddingDataObject(EmbeddingDataBase):
+# TODO: rename -> FeatureObject
+class FeatureDataObject(FeatureDataBase):
 
     def __init__(self):
-        super(EmbeddingDataObject, self).__init__()
+        super(FeatureDataObject, self).__init__()
 
     def load(self, data_dir):
 

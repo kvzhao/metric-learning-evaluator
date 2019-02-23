@@ -28,7 +28,7 @@ import numpy as np
 from pprint import pprint
 
 from evaluator.evaluator_builder import EvaluatorBuilder
-from data_tools.embedding_object import EmbeddingDataObject
+from data_tools.feature_object import FeatureDataObject
 
 def main(args):
 
@@ -43,14 +43,13 @@ def main(args):
     evaluator = EvaluatorBuilder(args.config)
 
     if data_type == 'folder':
-        embedding_object = EmbeddingDataObject()
-        embedding_object.load(data_dir)
-        embeddings = embedding_object.embeddings
-        filenames = embedding_object.filename_strings
-        labels = embedding_object.label_ids
+        feature_importer = FeatureDataObject()
+        feature_importer.load(data_dir)
+        embeddings = feature_importer.embeddings
+        filenames = feature_importer.filename_strings
+        labels = feature_importer.label_ids
 
     # Add datum through loop
-
     for feat, label, fn in zip(embeddings, labels, filenames):
         evaluator.add_image_id_and_embedding(fn, label, feat)
     total_results = evaluator.evaluate()
