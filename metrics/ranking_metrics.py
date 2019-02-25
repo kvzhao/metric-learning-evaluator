@@ -39,7 +39,7 @@ class RankingMetrics(MetricBase):
 
     @property
     def topk_hit_accuracy(self):
-        return np.mean(np.any(self._hit_array[:, :self._top_k], axis=1))
+        return np.mean(np.any(self._hit_arrays[:, :self._top_k], axis=1))
 
     @property
     def average_precisions(self):
