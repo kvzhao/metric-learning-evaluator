@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(
 
 import math
 import random
+from random import shuffle
 import itertools
 import numpy as np
 from core.eval_standard_fields import MetricStandardFields as metric_fields
@@ -35,19 +36,31 @@ class FacenetEvaluationStandardFields(object):
         which may assign in `option` section in config.
     """
 
+    # pair dict
     pairA = 'pairA'
     pairB = 'pairB'
     is_same = 'is_same'
-    
     path_pairlist = 'path_pairlist'
+    num_maximum_pairs = 'num_maximum_pairs'
+    num_of_pairs = 'num_of_pairs'
 
+    # used for distance threshold
+    start = 'start'
+    end = 'end'
+    step = 'step'
+
+    # sampling options
     sample_method = 'sample_method'
     sample_ratio = 'sample_ratio'
+    ratio_of_class = 'ratio_of_class'
+    ratio_of_instance_per_class = 'ratio_of_instance_per_class'
+    num_of_instance_per_class = 'num_of_instance_per_class'
+
+    # sampling methods
     class_sample_method = 'class_sample_method'
     random_sample = 'random_sample'
-    uniform_class = 'uniform_class'
-    ratio_of_class = 'ratio_of_class'
-    ratio_of_image_per_class = 'ratio_of_image_per_class'
+    amount_weighted = 'amount_weighted'
+    amount_inverse_weighted = 'amount_inverse_weighted'
 
 
 facenet_fields = FacenetEvaluationStandardFields
@@ -56,7 +69,7 @@ class FacenetEvaluation(MetricEvaluationBase):
 
     def __init__(self, config):
         """
-          FaceNet evaluates accuracy with pair images.
+          FaceNet evaluates accuracy with pair instances.
 
           metric functions:
             - Top_k accuracy of same pairs
@@ -85,8 +98,10 @@ class FacenetEvaluation(MetricEvaluationBase):
         ]
 
         self._default_values = {
-            metric_fields.distance_threshold: [0.5, 1.0, 1.5],
-            facenet_fields.sample_method: facenet_fields.uniform_class,
+            metric_fields.distance_threshold: {
+               facenet_fields.start: 0.5, 
+               facenet_fields.end: 1.5,
+               facenet_fields.step: 0.2},
             facenet_fields.sample_ratio: 0.2,
             facenet_fields.class_sample_method: facenet_fields.random_sample,
         }
@@ -124,14 +139,21 @@ class FacenetEvaluation(MetricEvaluationBase):
         """
 
         # numpy array
-        img_ids = embedding_container.image_ids
+        img_ids = embedding_container.instance_ids
 
         # configs
         pair_sampling_config = self._eval_metrics[metric_fields.pair_sampling]
-        distance_thresholds = self._eval_metrics[metric_fields.distance_threshold]
+        distance_config = self._eval_metrics[metric_fields.distance_threshold]
 
+        dist_start = distance_config[facenet_fields.start]
+        dist_end = distance_config[facenet_fields.end]
+        dist_step = distance_config[facenet_fields.step]
+        # TODO @kv: Do we need sanity check for start < end?
+        distance_thresholds = np.arange(dist_start, dist_end, dist_step)
+
+        num_of_pairs = pair_sampling_config[facenet_fields.num_of_pairs]
         ratio_of_class = pair_sampling_config[facenet_fields.ratio_of_class]
-        ratio_of_image_per_class = pair_sampling_config[facenet_fields.ratio_of_image_per_class]
+        num_of_instance_per_class = pair_sampling_config[facenet_fields.num_of_instance_per_class]
         class_sample_method = pair_sampling_config[facenet_fields.class_sample_method]
 
         assert len(img_ids) == embedding_container.embeddings.shape[0]
@@ -143,14 +165,15 @@ class FacenetEvaluation(MetricEvaluationBase):
             attribute = attribute_fields.all_classes
             # @kv: load pair list from file or generate automatically
             pairs = self._generate_pairs(embedding_container,
+                                         num_of_pairs,
                                          ratio_of_class,
-                                         ratio_of_image_per_class,
+                                         num_of_instance_per_class,
                                          class_sample_method)
 
-            # fetch image ids and compuate distances at once.
-            pair_A_embeddings = embedding_container.get_embedding_by_image_ids(
+            # fetch instance ids and compuate distances at once.
+            pair_A_embeddings = embedding_container.get_embedding_by_instance_ids(
                 pairs[facenet_fields.pairA])
-            pair_B_embeddings = embedding_container.get_embedding_by_image_ids(
+            pair_B_embeddings = embedding_container.get_embedding_by_instance_ids(
                 pairs[facenet_fields.pairB])
             groundtruth_is_same = np.asarray(pairs[facenet_fields.is_same])
 
@@ -186,8 +209,9 @@ class FacenetEvaluation(MetricEvaluationBase):
 
     def _generate_pairs(self,
                         embedding_container,
+                        num_of_pairs,
                         ratio_of_class,
-                        ratio_of_image_per_class,
+                        num_of_instance_per_class,
                         class_sample_method
                         ):
         """Image Pair & Sampling Strategy
@@ -197,47 +221,87 @@ class FacenetEvaluation(MetricEvaluationBase):
           Return:
             pairs, dict of list:
 
-          A: {a1, a2, ..., aN} N images in class A
-          B: {b1, b2, ..., bM} M images in class B
+          A: {a1, a2, ..., aN} N instances in class A
+          B: {b1, b2, ..., bM} M instances in class B
         """
         pairs = defaultdict(list)
-        image_ids = embedding_container.image_ids
-        label_ids = embedding_container.get_label_by_image_ids(image_ids)
-        num_image_ids = len(image_ids)
+        instance_ids = embedding_container.instance_ids
+        label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+        num_instance_ids = len(instance_ids)
         num_label_ids = len(label_ids)
-        class_histogram = Counter(label_ids)
-        classes = list(class_histogram.keys())
+        class_distribution = Counter(label_ids)
+        classes = list(class_distribution.keys())
         num_classes = len(classes)
 
-        assert num_label_ids == num_image_ids
+        assert num_label_ids == num_instance_ids
 
-        num_sampled_classes = int(num_classes * ratio_of_class)
 
         # Randomly sample several data
-        image_ids = np.asarray(image_ids)
+        instance_ids = np.asarray(instance_ids)
         label_ids = np.asarray(label_ids)
 
-        if class_sample_method == facenet_fields.random_sample:
-            sampled_classes = np.random.choice(classes, num_sampled_classes)
+        num_sampled_classes = math.ceil(ratio_of_class * num_classes)
+        print (num_sampled_classes)
+        if ratio_of_class == 1.0:
+            sampled_classes = classes
+        else:
+            if class_sample_method == facenet_fields.random_sample:
+                sampled_classes = np.random.choice(classes, num_sampled_classes)
+            elif class_sample_method == facenet_fields.amount_weighted:
+                pass
+            elif class_sample_method == facenet_fields.amount_inverse_weighted:
+                pass
+        num_sampled_classes = len(sampled_classes)
 
-        num_pairs = 0
-        for class_a, class_b in list(itertools.combinations_with_replacement(sampled_classes, 2)):
-            num_img_class_a = math.ceil(class_histogram[class_a] * ratio_of_image_per_class)
-            num_img_class_b = math.ceil(class_histogram[class_b] * ratio_of_image_per_class)
-            num_sampled_img_per_class = min(num_img_class_a, num_img_class_b)
+        num_of_pair_counter = 0
+        all_combinations = list(itertools.combinations_with_replacement(sampled_classes, 2))
+        shuffle(all_combinations)
+        print ('num of all comb. {}'.format(len(all_combinations)))
+        print ('num of sampled classes {}'.format(num_sampled_classes))
+
+        # TODO @kv: Stack to record  seen class, for per_instance and has instance shown
+        class_histogram = {}
+        for _class in sampled_classes:
+            class_histogram[_class] = 0
+
+        sufficient_sample = False
+        for class_a, class_b in all_combinations:
+            num_img_class_a = class_distribution[class_a]
+            num_img_class_b = class_distribution[class_b]
+            num_sampled_img_per_class = min(num_img_class_a, num_img_class_b, num_of_instance_per_class)
+
+            # statistics
+            class_histogram[class_a] += num_sampled_img_per_class
+            class_histogram[class_b] += num_sampled_img_per_class
 
             sampled_img_id_class_a = np.random.choice(
-                embedding_container.get_image_ids_by_label(class_a), num_sampled_img_per_class)
+                embedding_container.get_instance_ids_by_label(class_a), num_sampled_img_per_class)
             sampled_img_id_class_b = np.random.choice(
-                embedding_container.get_image_ids_by_label(class_b), num_sampled_img_per_class)
+                embedding_container.get_instance_ids_by_label(class_b), num_sampled_img_per_class)
+
+            # Add instances in pair
             for img_class_a, img_class_b in zip(sampled_img_id_class_a, sampled_img_id_class_b):
                 is_same = class_a == class_b
                 pairs[facenet_fields.pairA].append(img_class_a)
                 pairs[facenet_fields.pairB].append(img_class_b)
                 pairs[facenet_fields.is_same].append(is_same)
-                num_pairs += 1
+                num_of_pair_counter += 1
 
-        print ('{} pairs are generated.'.format(num_pairs))
+            # check the strategic stop criteria
+            if num_of_pair_counter > num_of_pairs:
+                sufficient_sample = True
+                """Find out which classes are less than requirements and sample them directly.
+                """
+                for _class, _counts in class_histogram.items():
+                    total_num_of_instance = len(embedding_container.get_instance_ids_by_label(_class))
+
+                    if _counts <= num_of_instance_per_class and total_num_of_instance > num_of_instance_per_class:
+                        sufficient_sample = False
+                        break
+            if sufficient_sample:
+                break
+
+        print ('{} pairs are generated.'.format(num_of_pair_counter))
         return pairs
 
     def _compute_roc(self):

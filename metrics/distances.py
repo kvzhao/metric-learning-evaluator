@@ -9,13 +9,26 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 
-from scipy.spatial import distance_matrix
-from sklearn.metrics.pairwise import euclidean_distances
 
+def indexing_array(distances, target_array, truncation=None):
+    """Sort target array according to distances
+      Args:
+        distances:
+        target_array:
+        truncation:
+            integer or None, the end of array index
+      Returns:
+        sorted_target
+    """
 
-def pairwise_euclidean_distance(vector_1, vector_2, p=2):
-    """Calculate the distance between two vectors."""
-    return euclidean_distances(vector_1, vector_2, p)
+    # Check type and size
+
+    if truncation:
+        sorted_target = target_array[distances.argsort()][:truncation]
+    else:
+        sorted_target = target_array[distances.argsort()]
+
+    return sorted_target
 
 
 def batch_euclidean_distances(vector, matrix, p=2):

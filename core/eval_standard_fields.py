@@ -52,6 +52,7 @@ class MetricStandardFields(object):
     top_k = 'top_k'
     
     pair_sampling = 'pair_sampling'
+    ranking = 'ranking'
 
     distance_function = 'distance_function'
     distance_threshold = 'distance_threshold'
