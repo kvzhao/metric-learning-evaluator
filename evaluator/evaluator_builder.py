@@ -97,12 +97,11 @@ class EvaluatorBuilder(object):
         else:
             self.query_interface = QueryInterface(self.config.database_type)
 
-        print (self.config.required_attributes)
-
     def _build(self):
         """
           Build:
             Parse the config and create evaluators.
+            TODO @kv: Add a counter to calculate number of added data
         """
 
         # Parse the Configuration
@@ -133,6 +132,7 @@ class EvaluatorBuilder(object):
         """
 
         # NOTE: If we call classification, then add logit.
+        # TODO @kv: If image_id is None, use index as default.
         self.embedding_container.add(image_id, label_id, embedding, logit)
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
