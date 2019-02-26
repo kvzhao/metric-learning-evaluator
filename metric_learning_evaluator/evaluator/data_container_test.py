@@ -1,6 +1,6 @@
 
 import numpy as np
-from data_container import EmbeddingContainer, AttributeContainer
+from metric_learning_evaluator.data_container import EmbeddingContainer, AttributeContainer
 
 import unittest
 from collections import defaultdict

@@ -4,9 +4,9 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from core.eval_standard_fields import ConfigStandardFields as config_fields
-from query.datasetbackbone_wrapper import DatasetBackboneWrapper
-from query.zeus_wrapper import ZeusWrapper
+from metric_learning_evaluator.core.eval_standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.query.datasetbackbone_wrapper import DatasetBackboneWrapper
+from metric_learning_evaluator.query.zeus_wrapper import ZeusWrapper
 
 DATABASE_DICT = {
     config_fields.datasetbackbone: DatasetBackboneWrapper,

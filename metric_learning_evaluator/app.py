@@ -27,17 +27,34 @@ import numpy as np
 
 from pprint import pprint
 
-from evaluator.evaluator_builder import EvaluatorBuilder
-from data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.evaluator.evaluator_builder import EvaluatorBuilder
+from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
 
-def main(args):
+import argparse
 
+parser = argparse.ArgumentParser('Offline Metric Learning Evaluation')
+
+parser.add_argument('--config', '-c', type=str, default=None,
+        help='Path to the evaluation configuration with yaml format.')
+# Read data from args or config.
+parser.add_argument('--data_dir', '-dd', type=str, default=None,
+        help='Path to the source dataset, tfrecord | dataset_backbone | folder')
+parser.add_argument('--data_type', '-dt', type=str, default='folder',
+        help='Type of the input dataset.')
+
+
+def main():
+    args = parser.parse_args()
     config = args.config
     data_type = args.data_type
     data_dir = args.data_dir
 
     if not data_dir:
         raise ValueError('data_dir must be assigned!')
+
+    if not config:
+        # TODO @kv: Generate the default config.
+        raise ValueError('evaluation configuration must be assigned!')
 
     # open file
     evaluator = EvaluatorBuilder(args.config)
@@ -55,20 +72,3 @@ def main(args):
     total_results = evaluator.evaluate()
 
     pprint (total_results)
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser('Offline Metric Learning Evaluation')
-
-    parser.add_argument('--config', '-c', type=str, default='eval_config.yml',
-        help='Path to the evaluation configuration with yaml format.')
-    # Read data from args or config.
-    parser.add_argument('--data_dir', '-dd', type=str, default=None,
-        help='Path to the source dataset, tfrecord | dataset_backbone | folder')
-
-    parser.add_argument('--data_type', '-dt', type=str, default='folder',
-        help='Type of the input dataset.')
-
-    args = parser.parse_args()
-    main(args)

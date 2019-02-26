@@ -28,25 +28,24 @@ sys.path.insert(0, os.path.abspath(
 import yaml
 import numpy as np
 
-from evaluator.data_container import EmbeddingContainer
-from evaluator.data_container import AttributeContainer
 
-from evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
+from metric_learning_evaluator.evaluator.data_container import AttributeContainer
+from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
 
-from core.eval_standard_fields import ConfigStandardFields as config_fields
-from core.eval_standard_fields import AttributeStandardFields as attr_fields
-from core.eval_standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.eval_standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.eval_standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.config_parser import ConfigParser
 
-from core.config_parser import ConfigParser
-
-from query.general_database import QueryInterface
+from metric_learning_evaluator.query.general_database import QueryInterface
 
 # import all evaluation objects
-from evaluator.classification_evaluation import ClassificationEvaluation
-from evaluator.mock_evaluation import MockEvaluation
+from metric_learning_evaluator.evaluator.classification_evaluation import ClassificationEvaluation
+from metric_learning_evaluator.evaluator.mock_evaluation import MockEvaluation
 
-from evaluator.ranking_evaluation import RankingEvaluation
-from evaluator.facenet_evaluation import FacenetEvaluation
+from metric_learning_evaluator.evaluator.ranking_evaluation import RankingEvaluation
+from metric_learning_evaluator.evaluator.facenet_evaluation import FacenetEvaluation
 
 # registered evaluation objects
 REGISTERED_EVALUATION_OBJECTS = {

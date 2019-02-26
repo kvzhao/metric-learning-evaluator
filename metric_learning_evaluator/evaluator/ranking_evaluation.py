@@ -13,20 +13,20 @@ import numpy as np
 from random import shuffle
 
 
-from evaluator.data_container import EmbeddingContainer
-from evaluator.data_container import AttributeContainer
-from evaluator.data_container import ResultContainer
-from evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
+from metric_learning_evaluator.evaluator.data_container import AttributeContainer
+from metric_learning_evaluator.evaluator.data_container import ResultContainer
+from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
 
-from metrics.ranking_metrics import RankingMetrics
-from metrics.distances import euclidean_distance
-from metrics.distances import indexing_array
+from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
+from metric_learning_evaluator.metrics.distances import euclidean_distance
+from metric_learning_evaluator.metrics.distances import indexing_array
 
-from evaluator.sample_strategy import SampleStrategy
+from metric_learning_evaluator.evaluator.sample_strategy import SampleStrategy
 
-from core.eval_standard_fields import MetricStandardFields as metric_fields
-from core.eval_standard_fields import AttributeStandardFields as attribute_fields
-from evaluator.sample_strategy import SampleStrategyStandardFields as sample_fields
+from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.evaluator.sample_strategy import SampleStrategyStandardFields as sample_fields
 
 class RankingEvaluationStandardFields(object):
     # used for distance threshold

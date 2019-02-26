@@ -9,14 +9,14 @@ sys.path.insert(0, os.path.abspath(
 import numpy as np
 
 
-from core.eval_standard_fields import AttributeStandardFields as attr_fields
-from core.eval_standard_fields import EvaluationStandardFields as eval_fields
-from core.eval_standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.eval_standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
 
-from evaluator.data_container import ResultContainer
-from evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluator.data_container import ResultContainer
+from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
 
-from metrics.classification_metrics import ClassificationMetrics
+from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
 
 

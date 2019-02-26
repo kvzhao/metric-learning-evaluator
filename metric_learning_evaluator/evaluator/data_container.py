@@ -23,7 +23,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from core.eval_standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.eval_standard_fields import ConfigStandardFields as config_fields
 
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Logit (instance_id, label_id, embedding vector).

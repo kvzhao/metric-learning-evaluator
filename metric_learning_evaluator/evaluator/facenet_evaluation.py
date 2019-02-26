@@ -14,16 +14,16 @@ import random
 from random import shuffle
 import itertools
 import numpy as np
-from core.eval_standard_fields import MetricStandardFields as metric_fields
-from core.eval_standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attribute_fields
 
-from evaluator.data_container import EmbeddingContainer
-from evaluator.data_container import AttributeContainer
-from evaluator.data_container import ResultContainer
-from evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
+from metric_learning_evaluator.evaluator.data_container import AttributeContainer
+from metric_learning_evaluator.evaluator.data_container import ResultContainer
+from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
 
-from metrics.distances import euclidean_distance_filter
-from metrics.classification_metrics import ClassificationMetrics
+from metric_learning_evaluator.metrics.distances import euclidean_distance_filter
+from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
 from collections import defaultdict
 from collections import namedtuple
