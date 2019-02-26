@@ -355,5 +355,17 @@ class ResultContainer(object):
                     dict_outcome[_attr_name][_metric_name][_thres] = _value
         return dict_outcome
 
+    @property
+    def result_string(self):
+        result_string = ''
+        for _attr_name, _metirc in self._results.items():
+            for _metric_name, _threshold in _metirc.items():
+                for _thres, _value in _threshold.items():
+                    if not _value:
+                        continue
+                    result_string += '{}-{}@{}: {}'.format(
+                        _metric_name, _attr_name, _thres, _value)
+        return result_string
+
     def clear(self):
         self._results = {}

@@ -36,11 +36,10 @@ evaluation:
         attribute:
     RankingEvaluation:
         option:
-            is_online:
-            gallery_database: # path to the database (of given features)
-            path_database:
-            seen_dataset:
-            unseen_dataset:
+            is_online: # not done
+            path_database: # not done
+            seen_dataset: # not done
+            unseen_dataset: # not done
         metric:
             distance_function:
             distance_threshold:
@@ -48,12 +47,13 @@ evaluation:
                 end: 1.5
                 step: 0.1
             ranking:
+                top_k_hit_accuracy: 5
                 class_sample_method: uniform
                 instance_sample_method: uniform
-                ratio_of_sampled_class: 0.1
-                num_of_sampled_class: 1000
-                num_of_sampled_instance_per_class: 1
-                maximum_of_sampled_data: 1000
+                num_of_db_instance: 10
+                num_of_query_class: 100
+                num_of_query_instance: 10
+                maximum_of_sampled_data: 10000
         attribute:
 
 # template of per evaluation config

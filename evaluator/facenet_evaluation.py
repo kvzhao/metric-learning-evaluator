@@ -204,7 +204,7 @@ class FacenetEvaluation(MetricEvaluationBase):
         # Fetch results
         print ("{} compute done.".format(self.evaluation_name))
 
-        return result_container.results
+        return result_container
 
 
     def _generate_pairs(self,

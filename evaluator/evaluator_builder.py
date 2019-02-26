@@ -56,6 +56,9 @@ REGISTERED_EVALUATION_OBJECTS = {
     eval_fields.facenet: FacenetEvaluation,
 }
 
+def parse_results_to_tensorboard(dict_results):
+    pass
+
 
 class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
@@ -165,7 +168,7 @@ class EvaluatorBuilder(object):
             print ('Execute {}'.format(_eval_name))
             per_eval_metrics = _evaluation.compute(self.embedding_container,
                                                    self.attribute_container)
-            total_metrics[_eval_name] = per_eval_metrics 
+            total_metrics[_eval_name] = per_eval_metrics.results
 
         return total_metrics
 
