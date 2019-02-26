@@ -12,16 +12,20 @@ import itertools
 import numpy as np
 from random import shuffle
 
+
 from evaluator.data_container import EmbeddingContainer
 from evaluator.data_container import AttributeContainer
+from evaluator.data_container import ResultContainer
 from evaluator.evaluation_base import MetricEvaluationBase
 
 from metrics.ranking_metrics import RankingMetrics
+from metrics.distances import euclidean_distance
+from metrics.distances import indexing_array
+
+from evaluator.sample_strategy import SampleStrategy
 
 from core.eval_standard_fields import MetricStandardFields as metric_fields
 from core.eval_standard_fields import AttributeStandardFields as attribute_fields
-
-from evaluator.sample_strategy import SampleStrategy
 from evaluator.sample_strategy import SampleStrategyStandardFields as sample_fields
 
 class RankingEvaluationStandardFields(object):
@@ -53,27 +57,68 @@ class RankingEvaluation(MetricEvaluationBase):
 
     def compute(self, embedding_container, attribute_container=None):
 
+        result_container = ResultContainer(self._eval_metrics, self._eval_attributes)
+        # Check whether attribute_container is given or not.
+        if not attribute_container or attribute_fields.all_classes in self._eval_attributes:
+            instance_ids = embedding_container.instance_ids
+            label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+            ranking_config = self._eval_metrics[metric_fields.ranking]
 
-        instance_ids = embedding_container.instance_ids
-        label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+            # sampling configs
+            class_sample_method = ranking_config[sample_fields.class_sample_method]
+            instance_sample_method = ranking_config[sample_fields.instance_sample_method]
+            num_of_db_instance = ranking_config[sample_fields.num_of_db_instance]
+            num_of_query_instance = ranking_config[sample_fields.num_of_query_instance]
+            num_of_query_class = ranking_config[sample_fields.num_of_query_class]
+            maximum_of_sampled_data = ranking_config[sample_fields.maximum_of_sampled_data]
+            # ranking configs
+            top_k = ranking_config[ranking_fields.top_k_hit_accuracy]
 
-        print (self._eval_metrics)
-        ranking_config = self._eval_metrics[metric_fields.ranking]
-        # Sampler
-        class_sample_method = ranking_config[sample_fields.class_sample_method]
-        instance_sample_method = ranking_config[sample_fields.instance_sample_method]
+            sampler = SampleStrategy(instance_ids, label_ids)
+            sampled = sampler.sample_query_and_database(
+                class_sample_method=class_sample_method,
+                instance_sample_method=instance_sample_method,
+                num_of_db_instance=num_of_db_instance,
+                num_of_query_class=num_of_query_class,
+                num_of_query_instance=num_of_query_instance,
+                maximum_of_sampled_data=maximum_of_sampled_data
+            )
 
-        ratio_of_sampled_class = ranking_config[sample_fields.ratio_of_sampled_class]
-        #ratio_of_instance_per_class = ranking_config[sample_fields.ratio_of_instance_per_class]
-        num_of_sampled_class = ranking_config[sample_fields.num_of_sampled_class]
-        num_of_sampled_instance_per_class = ranking_config[sample_fields.num_of_sampled_instance_per_class]
-        maximum_of_sampled_data = ranking_config[sample_fields.maximum_of_sampled_data]
+            query_embeddings = embedding_container.get_embedding_by_instance_ids(
+                sampled[sample_fields.query_instance_ids])
+            query_label_ids = sampled[sample_fields.query_label_ids]
 
-        sampler = SampleStrategy(instance_ids, label_ids)
+            db_embeddings = embedding_container.get_embedding_by_instance_ids(
+                sampled[sample_fields.db_instance_ids])
+            db_label_ids = sampled[sample_fields.db_label_ids]
 
-        sampler.sample_queries(class_sample_method,
-                               instance_sample_method,
-                               ratio_of_sampled_class,
-                               num_of_sampled_class,
-                               num_of_sampled_instance_per_class,
-                               maximum_of_sampled_data)
+            print(query_embeddings.shape, db_embeddings.shape)
+            print(len(query_label_ids), len(db_label_ids))
+
+            # TODO @kv: type conversion at proper moment.
+            query_label_ids = np.asarray(query_label_ids)
+            db_label_ids = np.asarray(db_label_ids)
+
+            ranking_metrics = RankingMetrics(top_k)
+            hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
+
+            for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
+
+                distances = euclidean_distance(_query_embed, db_embeddings)
+
+                indexed_query_label = indexing_array(distances, db_label_ids)
+
+                hits = indexed_query_label[:top_k] == _query_label
+
+                hit_arrays[_idx, ...] = hits
+
+            ranking_metrics.add_inputs(hit_arrays)
+            result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
+                                 top_k, ranking_metrics.topk_hit_accuracy)
+            result_container.add(attribute_fields.all_classes, 'top_1_hit_accuracy',
+                                 1, ranking_metrics.top1_hit_accuracy)
+
+            return result_container
+        else:
+            # with attribute filter
+            pass
