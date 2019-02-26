@@ -39,7 +39,7 @@ class RankingMetrics(MetricBase):
 
     @property
     def topk_hit_accuracy(self):
-        return np.mean(np.any(self._hit_array[:, :self._top_k], axis=1))
+        return np.mean(np.any(self._hit_arrays[:, :self._top_k], axis=1))
 
     @property
     def average_precisions(self):
@@ -60,9 +60,9 @@ class RankingMetrics(MetricBase):
             raise ValueError(
                 'hit array must be rank 2, but get "{}" instead'
                 .format(len(hit_arrays.shape)))
-        if hit_arrays.dtype != bool:
+        if not np.issubdtype(np.bool, hit_arrays.dtype):
             raise TypeError(
-                'hit array must be of dtype bool, but get "{}" instead'
+                'hit array must be of dtype bool/np.bool, but get "{}" instead'
                 .format(hit_arrays.dtype))
         if hit_arrays.shape[0] == 0 or hit_arrays.shape[1] == 0:
             raise ValueError(
@@ -84,8 +84,9 @@ class RankingMetrics(MetricBase):
             # 3. it's reasonable to assign 0 mAP to total failure since total success get 1 mAP
             indices = np.where(hit_arr == 1)[0]
             average_precision = 0.
-            if len(indices) > 0:
-                average_precision = np.mean(indices + 1)
+            n_pos = len(indices)
+            if n_pos > 0:
+                average_precision = np.mean((np.arange(n_pos) + 1) / (indices + 1))
             self._average_precisions[i] = average_precision
         self._is_empty = False
 
