@@ -21,8 +21,6 @@ def indexing_array(distances, target_array, truncation=None):
         sorted_target
     """
 
-    # Check type and size
-
     if truncation:
         sorted_target = target_array[distances.argsort()][:truncation]
     else:
@@ -69,11 +67,7 @@ def euclidean_distance(matrixA, matrixB):
     if not isinstance(matrixB, (np.generic, np.ndarray)):
         matrixB = np.asarray(matrixB)
 
-    if not matrixA.shape[0] == matrixB.shape[0]:
-        print ("")
-    
     distances = np.sum(np.square(np.subtract(matrixA, matrixB)), axis=1)
-
     return distances
 
 def euclidean_distance_filter(matrixA, matrixB, thresholds=[0.5, 1.0]):
