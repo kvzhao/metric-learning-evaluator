@@ -161,7 +161,7 @@ class SampleStrategy(object):
             num_of_sampled_instance = reduced_num_of_sampled_instance
         
         if class_sample_method == sample_fields.uniform:
-            sampled_classes = np.random.choice(self._classes, num_of_sampled_class)
+            sampled_classes = np.random.choice(self._classes, num_of_sampled_class, replace=False)
         elif class_sample_method == sample_fields.instance_amount_weighted:
             raise NotImplementedError
         elif class_sample_method == sample_fields.instance_amount_inverse_weighted:
