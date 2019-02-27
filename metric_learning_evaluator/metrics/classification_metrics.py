@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
-from metrics.metric_base import MetricBase
+from metric_learning_evaluator.metrics.metric_base import MetricBase
 
 
 class ClassificationMetrics(MetricBase):

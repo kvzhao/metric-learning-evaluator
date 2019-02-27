@@ -5,9 +5,9 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluator.data_container import EmbeddingContainer
-from evaluator.evaluation_base import MetricEvaluationBase
-from evaluator.classification_evaluation import ClassificationEvaluation
+from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
+from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluator.classification_evaluation import ClassificationEvaluation
 
 import unittest
 

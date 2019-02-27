@@ -25,10 +25,9 @@ from collections import namedtuple
 from collections import OrderedDict
 from collections import defaultdict
 
-from evaluator.data_container import EmbeddingContainer
-from evaluator.data_container import AttributeContainer
-
-from core.config_parser import ConfigParser
+from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
+from metric_learning_evaluator.evaluator.data_container import AttributeContainer
+from metric_learning_evaluator.core.config_parser import ConfigParser
 
 import logging
 import numpy as np
