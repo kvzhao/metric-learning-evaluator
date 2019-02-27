@@ -1,8 +1,19 @@
-****# Metric Learning Evaluator
+# Metric Learning Evaluator
 
 ## System Architecture Overview
 
 ![](figures/tf-metric-evaluator_v0.2.png)
+
+## Installation
+
+```
+python setup.py install
+```
+
+## Usage
+How to use evaluator?
+- Online mode
+- Off-line mode
 
 ### Description
 - EvaluationBuilder
@@ -10,14 +21,6 @@
 - AttributeContainer
 - QueryIterface
 - Metrics
-
-## TODOs
-
-- ~~basic class~~
-- metric functions
-- config writer
-- How to execute offline evaluation without embedder?
-- Define the standard format of evaluation results.
 
 ## Configuration
 
