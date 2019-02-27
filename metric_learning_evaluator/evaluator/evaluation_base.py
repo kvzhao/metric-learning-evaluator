@@ -27,7 +27,6 @@ from collections import defaultdict
 
 from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
 from metric_learning_evaluator.evaluator.data_container import AttributeContainer
-from metric_learning_evaluator.core.config_parser import ConfigParser
 
 import logging
 import numpy as np
@@ -54,18 +53,18 @@ class MetricEvaluationBase(object):
 
         """
 
-        if config_parser and not isinstance(config_parser, ConfigParser):
-            raise ValueError('Evaluation requires the ConfigParser object.')
+        #if config_parser and not isinstance(config_parser, ConfigParser):
+        #    raise ValueError('Evaluation requires the ConfigParser object.')
 
         self._config_parser = config_parser
 
         # TODO: Iterator for getting embeddings from given attribute_names
         self._evaluation_name = self.__class__.__name__
 
+        self._configs = self._config_parser.get_per_eval_config(self.evaluation_name)
         # preprocessing eval config in each customized evaluation
-        self._eval_metrics = self._config_parser.get_per_eval_metrics(self.evaluation_name)
-        self._eval_attributes = self._config_parser.get_per_eval_attributes(self.evaluation_name)
-        self._eval_options = self._config_parser.get_per_eval_options(self.evaluation_name)
+        self._metrics = self._config_parser.get_metrics(self.evaluation_name)
+        self._attributes = self._config_parser.get_attributes(self.evaluation_name)
 
         # Verbose
         print (self._config_parser.get_per_eval_config(self.evaluation_name))

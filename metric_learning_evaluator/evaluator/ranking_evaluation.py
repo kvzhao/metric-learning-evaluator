@@ -24,12 +24,13 @@ from metric_learning_evaluator.metrics.distances import indexing_array
 
 from metric_learning_evaluator.evaluator.sample_strategy import SampleStrategy
 
-from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
-from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.evaluator.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
 from metric_learning_evaluator.evaluator.sample_strategy import SampleStrategyStandardFields as sample_fields
 
 class RankingEvaluationStandardFields(object):
-    # used for distance threshold
+    # Some keys only used in ranking evaluation
     start = 'start'
     end = 'end'
     step = 'step'
@@ -57,22 +58,23 @@ class RankingEvaluation(MetricEvaluationBase):
 
     def compute(self, embedding_container, attribute_container=None):
 
-        result_container = ResultContainer(self._eval_metrics, self._eval_attributes)
+        result_container = ResultContainer(self._metrics, self._attributes)
         # Check whether attribute_container is given or not.
-        if not attribute_container or attribute_fields.all_classes in self._eval_attributes:
+        if not attribute_container or attribute_fields.all_classes in self._attributes:
             instance_ids = embedding_container.instance_ids
             label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
-            ranking_config = self._eval_metrics[metric_fields.ranking]
+
+            ranking_config = self._metrics
+            sample_config = self._configs[eval_fields.sampling]
 
             # sampling configs
-            class_sample_method = ranking_config[sample_fields.class_sample_method]
-            instance_sample_method = ranking_config[sample_fields.instance_sample_method]
-            num_of_db_instance = ranking_config[sample_fields.num_of_db_instance]
-            num_of_query_instance = ranking_config[sample_fields.num_of_query_instance]
-            num_of_query_class = ranking_config[sample_fields.num_of_query_class]
-            maximum_of_sampled_data = ranking_config[sample_fields.maximum_of_sampled_data]
-            # ranking configs
-            top_k = ranking_config[ranking_fields.top_k_hit_accuracy]
+            class_sample_method = sample_config[sample_fields.class_sample_method]
+            instance_sample_method = sample_config[sample_fields.instance_sample_method]
+            num_of_db_instance = sample_config[sample_fields.num_of_db_instance]
+            num_of_query_instance = sample_config[sample_fields.num_of_query_instance]
+            num_of_query_class = sample_config[sample_fields.num_of_query_class]
+            maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
+
 
             sampler = SampleStrategy(instance_ids, label_ids)
             sampled = sampler.sample_query_and_database(
@@ -96,27 +98,37 @@ class RankingEvaluation(MetricEvaluationBase):
             query_label_ids = np.asarray(query_label_ids)
             db_label_ids = np.asarray(db_label_ids)
 
-            ranking_metrics = RankingMetrics(top_k)
-            hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
+            # ranking configs
+            top_k_list = ranking_config[metric_fields.top_k_hit_accuracy]
 
-            for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
+            # TODO @kv: check the list and default logic
 
-                distances = euclidean_distance(_query_embed, db_embeddings)
+            for top_k in top_k_list:
 
-                indexed_query_label = indexing_array(distances, db_label_ids)
+                if top_k == 1:
+                    continue
 
-                hits = indexed_query_label[:top_k] == _query_label
+                ranking_metrics = RankingMetrics(top_k)
+                hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
 
-                hit_arrays[_idx, ...] = hits
+                for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
 
-            ranking_metrics.add_inputs(hit_arrays)
-            result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
-                                 top_k, ranking_metrics.topk_hit_accuracy)
+                    distances = euclidean_distance(_query_embed, db_embeddings)
+
+                    indexed_query_label = indexing_array(distances, db_label_ids)
+
+                    hits = indexed_query_label[:top_k] == _query_label
+
+                    hit_arrays[_idx, ...] = hits
+
+                ranking_metrics.add_inputs(hit_arrays)
+                result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
+                                     top_k, ranking_metrics.topk_hit_accuracy)
+
             result_container.add(attribute_fields.all_classes, 'top_1_hit_accuracy',
                                  1, ranking_metrics.top1_hit_accuracy)
 
-            # 4 layered dict
-            return result_container.results
+            return result_container
         else:
             # with attribute filter
             pass

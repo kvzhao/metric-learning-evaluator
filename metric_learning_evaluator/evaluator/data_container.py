@@ -298,10 +298,10 @@ class ResultContainer(object):
         """
           Args:
             metrics, dict:
-                Generated from ConfigParser.get_per_eval_metrics()
+                Generated from ConfigParser.get_metrics()
 
             attributes, list of str:
-                Generated from ConfigParser.get_per_eval_attributes()
+                Generated from ConfigParser.get_attributes()
 
         """
         self._results = {}
@@ -356,16 +356,16 @@ class ResultContainer(object):
         return dict_outcome
 
     @property
-    def result_string(self):
-        result_string = ''
+    def flatten(self):
+        flatten_dict = {}
         for _attr_name, _metirc in self._results.items():
             for _metric_name, _threshold in _metirc.items():
                 for _thres, _value in _threshold.items():
                     if not _value:
                         continue
-                    result_string += '{}-{}@{}: {}'.format(
-                        _metric_name, _attr_name, _thres, _value)
-        return result_string
+                    _name = '{}-{}@{}'.format(_attr_name, _metric_name, _thres)
+                    flatten_dict[_name] = _value
+        return flatten_dict
 
     def clear(self):
         self._results = {}

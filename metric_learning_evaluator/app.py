@@ -26,7 +26,6 @@ import yaml
 import numpy as np
 
 from pprint import pprint
-
 from metric_learning_evaluator.evaluator.evaluator_builder import EvaluatorBuilder
 from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
 
@@ -88,4 +87,4 @@ def main():
     total_results = evaluator.evaluate()
 
     pprint (total_results)
-    print (evaluator.metric_names)
+    print(evaluator.metric_names)
