@@ -125,7 +125,7 @@ class RankingEvaluation(MetricEvaluationBase):
                 result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
                                      top_k, ranking_metrics.topk_hit_accuracy)
 
-            result_container.add(attribute_fields.all_classes, 'top_1_hit_accuracy',
+            result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
                                  1, ranking_metrics.top1_hit_accuracy)
 
             return result_container
