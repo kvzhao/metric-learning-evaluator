@@ -161,7 +161,7 @@ class SampleStrategy(object):
             num_of_sampled_instance = reduced_num_of_sampled_instance
         
         if class_sample_method == sample_fields.uniform:
-            sampled_classes = np.random.choice(self._classes, num_of_sampled_class, replace=False)
+            sampled_classes = np.random.choice(self._classes, num_of_sampled_class)
         elif class_sample_method == sample_fields.instance_amount_weighted:
             raise NotImplementedError
         elif class_sample_method == sample_fields.instance_amount_inverse_weighted:
@@ -169,7 +169,7 @@ class SampleStrategy(object):
         else:
             print('class sample method {} is not defined, use {} as default.'.format(
                 class_sample_method, sample_fields.uniform))
-            sampled_classes = np.random.choice(self._classes, num_of_sampled_class, replace=False)
+            sampled_classes = np.random.choice(self._classes, num_of_sampled_class)
 
         if not instance_sample_method in [sample_fields.uniform]:
             instance_sample_method = sample_fields.uniform
@@ -186,8 +186,7 @@ class SampleStrategy(object):
 
             if instance_sample_method == sample_fields.uniform:
                 sampled_instances = np.random.choice(instance_ids_per_class,
-                                                     num_sampled_instance_per_class,
-                                                     replace=False)
+                                                     num_sampled_instance_per_class)
             else:
                 raise NotImplementedError
 
