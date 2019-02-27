@@ -79,8 +79,6 @@ class EvaluatorBuilder(object):
 
         # TODO @kv: Change config_path to parsed dictionary
         self.configs = ConfigParser(config_dict)
-        from pprint import pprint
-        pprint (config_dict)
 
         # allocate shared embedding containers
         container_size = self.configs.container_size
@@ -93,6 +91,8 @@ class EvaluatorBuilder(object):
         self.attribute_container = AttributeContainer()
 
         self._build()
+
+        self._instance_counter = 0
 
         # Allocate general query interface
         if not self.configs.database_type:
@@ -142,14 +142,14 @@ class EvaluatorBuilder(object):
                         _metric_names.append(_metric_name_combined)
         return _metric_names
 
-    def add_image_id_and_embedding(self, image_id, label_id, embedding, logit=None):
+    def add_instance_id_and_embedding(self, instance_id, label_id, embedding, logit=None):
         """Add embedding and label for a sample to be used for evaluation.
            If the query attribute names are given in config, this function will
            search them on database automatically.
 
         Args:
-            image_id, integer:
-                A integer identifier for the image.
+            instance_id, integer:
+                A integer identifier for the image. instance_id
             label_id, integer:
                 An index of label.
             embedding, list or numpy array:
@@ -157,22 +157,25 @@ class EvaluatorBuilder(object):
         """
 
         # NOTE: If we call classification, then add logit.
-        # TODO @kv: If image_id is None, use index as default.
-        self.embedding_container.add(image_id, label_id, embedding, logit)
+        # TODO @kv: If instance_id is None, use index as default.
+        if instance_id is None:
+            instance_id = self._instance_counter
+        self.embedding_container.add(instance_id, label_id, embedding, logit)
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
             print ('{} embeddings are added.'.format(self.embedding_container.counts))
         
-        # TODO: consider move `add_image_id_and_query_attribute` here.
+        # TODO: consider move `add_instance_id_and_query_attribute` here.
         # Collect all `attribute_name`
         # if not evaluations_need_query: no queries are needed.
 
         if self.query_interface:
             if not self.configs.required_attributes:
                 print ('WARNING: No required attributes are pre-defined.')
-            queried_attributes = self.query_interface.query(image_id, self.configs.required_attributes)
-            self.attribute_container.add(image_id, queried_attributes)
+            queried_attributes = self.query_interface.query(instance_id, self.configs.required_attributes)
+            self.attribute_container.add(instance_id, queried_attributes)
 
+        self._instance_counter += 1
     
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
