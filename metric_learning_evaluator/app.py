@@ -41,23 +41,39 @@ parser.add_argument('--data_dir', '-dd', type=str, default=None,
         help='Path to the source dataset, tfrecord | dataset_backbone | folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
         help='Type of the input dataset.')
+parser.add_argument('--out_dir', '-od', type=str, default=None,
+        help='Path to the output dir for saving report.')
+
+parser.add_argument('--embedding_size', '-es', type=int, default=2048,
+        help='Dimension of the given embeddings.')
+parser.add_argument('--logit_size', '-ls', type=int, default=0,
+        help='Size of the logit used in container.')
 
 
 def main():
     args = parser.parse_args()
-    config = args.config
+    config_path = args.config
     data_type = args.data_type
     data_dir = args.data_dir
 
     if not data_dir:
         raise ValueError('data_dir must be assigned!')
 
-    if not config:
+    if not config_path:
         # TODO @kv: Generate the default config.
         raise ValueError('evaluation configuration must be assigned!')
 
+    try:
+        with open(config_path, 'r') as fp:
+            config_dict = yaml.load(fp)
+    except:
+        raise IOError('Can not load yaml from {}.'.format(config_path))
+        # TODO: create default config instead of error.
+
     # open file
-    evaluator = EvaluatorBuilder(args.config)
+    evaluator = EvaluatorBuilder(args.embedding_size,
+                                 args.logit_size,
+                                 config_dict)
 
     if data_type == 'folder':
         feature_importer = FeatureDataObject()
@@ -72,3 +88,4 @@ def main():
     total_results = evaluator.evaluate()
 
     pprint (total_results)
+    print (evaluator.metric_names)

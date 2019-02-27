@@ -92,9 +92,6 @@ class RankingEvaluation(MetricEvaluationBase):
                 sampled[sample_fields.db_instance_ids])
             db_label_ids = sampled[sample_fields.db_label_ids]
 
-            print(query_embeddings.shape, db_embeddings.shape)
-            print(len(query_label_ids), len(db_label_ids))
-
             # TODO @kv: type conversion at proper moment.
             query_label_ids = np.asarray(query_label_ids)
             db_label_ids = np.asarray(db_label_ids)
@@ -118,7 +115,8 @@ class RankingEvaluation(MetricEvaluationBase):
             result_container.add(attribute_fields.all_classes, 'top_1_hit_accuracy',
                                  1, ranking_metrics.top1_hit_accuracy)
 
-            return result_container
+            # 4 layered dict
+            return result_container.results
         else:
             # with attribute filter
             pass

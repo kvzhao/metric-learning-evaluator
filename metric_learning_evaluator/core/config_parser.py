@@ -6,10 +6,10 @@ sys.path.insert(0, os.path.abspath(
 import yaml
 import inspect
 
-from core.eval_standard_fields import ConfigStandardFields as config_fields
-from core.eval_standard_fields import EvaluationStandardFields as eval_fields
-from core.eval_standard_fields import AttributeStandardFields as attr_fields
-from core.eval_standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.eval_standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.eval_standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
 
 
 class ConfigParser(object):
@@ -23,30 +23,24 @@ class ConfigParser(object):
           evaluation_type: classification vs. evaluation_name: ClassificationEvaluation
     """
 
-    def __init__(self, config_path):
+    def __init__(self, configs):
         """
           Args:
-            config_path, string: Path to the yaml file.
+            configs: loaded dict from eval_config.yaml
         """
 
-        try:
-            with open(config_path, 'r') as fp:
-                self._configs = yaml.load(fp)
-        except:
-            raise IOError('Can not load yaml from {}.'.format(config_path))
-            # TODO: create default config instead of error.
+        self._configs = configs
+
 
         minimum_requirements_of_config = [
             config_fields.container_size,
-            config_fields.embedding_size,
-            config_fields.logit_size,
             config_fields.evaluation,
             config_fields.database,
         ]
         for req in minimum_requirements_of_config:
             if not req in self._configs:
                 raise ValueError('''The given configuration is not legal. It should
-                    contain `evaluation`, `container_size`, `embedding_size`, `logit_size` and `database`.''')
+                    contain `evaluation`, `container_size` and `database`.''')
         if not self._configs[config_fields.evaluation]:
             raise ValueError('No any evaluation is given in eval_config.')
 
@@ -64,9 +58,9 @@ class ConfigParser(object):
         self._evaluation_names = self._configs[config_fields.evaluation]
 
         # Save evaluator system information
-        self._embedding_size = self._configs[config_fields.embedding_size]
         self._container_size = self._configs[config_fields.container_size]
-        self._logit_size = self._configs[config_fields.logit_size]
+        #self._embedding_size = self._configs[config_fields.embedding_size]
+        #self._logit_size = self._configs[config_fields.logit_size]
         self._database = self._configs[config_fields.database]
 
         # Collect attributes
@@ -91,16 +85,8 @@ class ConfigParser(object):
         return self._database
 
     @property
-    def embedding_size(self):
-        return self._embedding_size
-
-    @property
     def container_size(self):
         return self._container_size
-
-    @property
-    def logit_size(self):
-        return self._logit_size
 
     @property
     def evaluation_names(self):
