@@ -83,7 +83,7 @@ def main():
 
     # Add datum through loop
     for feat, label, fn in zip(embeddings, labels, filenames):
-        evaluator.add_image_id_and_embedding(fn, label, feat)
+        evaluator.add_instance_id_and_embedding(fn, label, feat)
     total_results = evaluator.evaluate()
 
     pprint (total_results)
