@@ -158,7 +158,7 @@ class EvaluatorBuilder(object):
 
         # NOTE: If we call classification, then add logit.
         # TODO @kv: If instance_id is None, use index as default.
-        if instance_id is None:
+        if instance_id is None or instance_id == -1:
             instance_id = self._instance_counter
         self.embedding_container.add(instance_id, label_id, embedding, logit)
         # verbose for developing stage.
@@ -185,17 +185,14 @@ class EvaluatorBuilder(object):
         """
 
         total_metrics = {}
-        from pprint import pprint
 
         #TODO: Pass containers when compute. (functional objects)
         #TODO @kv: Consider with metric_names together
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
-            print ('Execute {}'.format(_eval_name))
             res_container = _evaluation.compute(self.embedding_container,
                                                    self.attribute_container)
             # TODO: flatten results and return
-            pprint(res_container.results)
             if _eval_name in EVALUATION_DISPLAY_NAMES:
                 _display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
             else:
