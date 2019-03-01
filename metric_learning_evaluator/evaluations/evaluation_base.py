@@ -73,7 +73,6 @@ class MetricEvaluationBase(object):
     def evaluation_name(self):
         return self._evaluation_name
 
-    @property
     @abstractmethod
     def metric_names(self):
         pass
