@@ -122,6 +122,7 @@ class EvaluatorBuilder(object):
                 _display_eval_name = EVALUATION_DISPLAY_NAMES[_eval_name]
             else:
                 _display_eval_name = _eval_name
+            # TODO @kv: Provide metric names by each evaluation
             for _metric_name, _content in self.configs.get_metrics(_eval_name).items():
                 for _attr_name in self.configs.get_attributes(_eval_name):
                     if not _content:

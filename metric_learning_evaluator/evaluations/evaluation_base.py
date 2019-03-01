@@ -73,6 +73,11 @@ class MetricEvaluationBase(object):
     def evaluation_name(self):
         return self._evaluation_name
 
+    @property
+    @abstractmethod
+    def metric_names(self):
+        pass
+
     def show_configs(self):
         print ('{} - Compute {} metrics over attributes: {}'.format(
             self.evaluation_name, ', '.join(self._metrics.keys()), ', '.join(self._attributes)))
