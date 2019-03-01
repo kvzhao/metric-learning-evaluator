@@ -93,6 +93,7 @@ class EvaluatorBuilder(object):
         self._build()
 
         self._instance_counter = 0
+        self._total_metrics = {}
 
         # Allocate general query interface
         if not self.configs.database_type:
@@ -184,8 +185,6 @@ class EvaluatorBuilder(object):
             total_metrics, dict:
         """
 
-        total_metrics = {}
-
         #TODO: Pass containers when compute. (functional objects)
         #TODO @kv: Consider with metric_names together
         for _eval_name, _evaluation in self.evaluations.items():
@@ -197,7 +196,7 @@ class EvaluatorBuilder(object):
                 _display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
             else:
                 _display_name = _eval_name
-            total_metrics[_display_name] = res_container.flatten
+            self._total_metrics[_display_name] = res_container.flatten
 
         # Return example:
         # dict = {'RankingEvaluation': {'all_classes': {'top_1_hit_accuracy': {1: 0.9929824561403509},
@@ -206,7 +205,7 @@ class EvaluatorBuilder(object):
         # {'ranking-all_classes-top_k_hit_accuracy@1': 0.9 ,}
 
         flatten = {}
-        for _eval_name, _content in total_metrics.items():
+        for _eval_name, _content in self._total_metrics.items():
             for _metric, _value in _content.items():
                 _combined_name = '{}-{}'.format(
                     _eval_name, _metric)
@@ -218,3 +217,6 @@ class EvaluatorBuilder(object):
         """Clears the state to prepare for a fresh evaluation."""
         self.embedding_container.clear()
         self.attribute_container.clear()
+
+        for _, _container in self._total_metrics.items():
+            _container.clear()
