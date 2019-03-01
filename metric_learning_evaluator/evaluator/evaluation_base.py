@@ -75,7 +75,7 @@ class MetricEvaluationBase(object):
 
     def show_configs(self):
         print ('{} - Compute {} metrics over attributes: {}'.format(
-            self.evaluation_name, ', '.join(self._eval_metrics.keys()), ', '.join(self._eval_attributes)))
+            self.evaluation_name, ', '.join(self._metrics.keys()), ', '.join(self._attributes)))
 
     @abstractmethod
     def compute(self, embedding_container, attribute_container=None):
