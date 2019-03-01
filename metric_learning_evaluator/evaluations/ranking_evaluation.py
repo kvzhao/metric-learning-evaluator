@@ -55,6 +55,9 @@ class RankingEvaluation(MetricEvaluationBase):
         }
 
         print ('Create {}'.format(self._evaluation_name))
+        self.show_configs()
+
+    # metric_names
 
     def compute(self, embedding_container, attribute_container=None):
 
@@ -71,20 +74,21 @@ class RankingEvaluation(MetricEvaluationBase):
             class_sample_method = sample_config[sample_fields.class_sample_method]
             instance_sample_method = sample_config[sample_fields.instance_sample_method]
             num_of_db_instance = sample_config[sample_fields.num_of_db_instance]
-            num_of_query_instance = sample_config[sample_fields.num_of_query_instance]
+            num_of_query_instance_per_class = sample_config[sample_fields.num_of_query_instance_per_class]
             num_of_query_class = sample_config[sample_fields.num_of_query_class]
             maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
 
-
+            # Online sample mode:
             sampler = SampleStrategy(instance_ids, label_ids)
             sampled = sampler.sample_query_and_database(
                 class_sample_method=class_sample_method,
                 instance_sample_method=instance_sample_method,
                 num_of_db_instance=num_of_db_instance,
                 num_of_query_class=num_of_query_class,
-                num_of_query_instance=num_of_query_instance,
+                num_of_query_instance_per_class=num_of_query_instance_per_class,
                 maximum_of_sampled_data=maximum_of_sampled_data
             )
+            # TODO @kv: Offline sample mode: use given db features
 
             query_embeddings = embedding_container.get_embedding_by_instance_ids(
                 sampled[sample_fields.query_instance_ids])
