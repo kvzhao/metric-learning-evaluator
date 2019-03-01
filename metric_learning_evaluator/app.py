@@ -26,13 +26,12 @@ import yaml
 import numpy as np
 
 from pprint import pprint
-
-from metric_learning_evaluator.evaluator.evaluator_builder import EvaluatorBuilder
+from metric_learning_evaluator.builder import EvaluatorBuilder
 from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
 
 import argparse
 
-parser = argparse.ArgumentParser('Offline Metric Learning Evaluation')
+parser = argparse.ArgumentParser('Command-line Metric Learning Evaluation Tool')
 
 parser.add_argument('--config', '-c', type=str, default=None,
         help='Path to the evaluation configuration with yaml format.')
@@ -84,8 +83,8 @@ def main():
 
     # Add datum through loop
     for feat, label, fn in zip(embeddings, labels, filenames):
-        evaluator.add_image_id_and_embedding(fn, label, feat)
+        evaluator.add_instance_id_and_embedding(fn, label, feat)
     total_results = evaluator.evaluate()
 
     pprint (total_results)
-    print (evaluator.metric_names)
+    print(evaluator.metric_names)

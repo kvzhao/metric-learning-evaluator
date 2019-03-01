@@ -2,21 +2,19 @@ import os
 import sys
 from setuptools import setup, find_packages
 
+APP_NAME = 'ml_evaluator'
 VERSION = '0.0.1'
-cur_dir = os.path.dirname(__file__)
+
 
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as f:
         return f.read()
 
-long_discription = '''Metric Learning Evaluator used for both on-line
-and off-line application.
-'''
-
-application_name = 'ml_evaluator'
 
 install_requires = [
-    'pyyaml', 'scipy', 'sklearn'
+    'pyyaml',
+    'scipy',
+    'sklearn'
 ]
 
 setup_info = dict(
@@ -32,7 +30,7 @@ setup_info = dict(
     entry_points={
         'console_scripts': [
             '{} = metric_learning_evaluator.app:main'.format(
-                application_name)
+                APP_NAME)
         ],
     },
 )

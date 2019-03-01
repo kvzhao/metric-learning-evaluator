@@ -7,11 +7,11 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from evaluator.data_container import EmbeddingContainer
-from evaluator.data_container import AttributeContainer
-from evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 
-from core.eval_standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 
 
 class MockStandardFields(object):

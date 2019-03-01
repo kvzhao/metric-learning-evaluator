@@ -25,9 +25,8 @@ from collections import namedtuple
 from collections import OrderedDict
 from collections import defaultdict
 
-from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
-from metric_learning_evaluator.evaluator.data_container import AttributeContainer
-from metric_learning_evaluator.core.config_parser import ConfigParser
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 import logging
 import numpy as np
@@ -54,18 +53,18 @@ class MetricEvaluationBase(object):
 
         """
 
-        if config_parser and not isinstance(config_parser, ConfigParser):
-            raise ValueError('Evaluation requires the ConfigParser object.')
+        #if config_parser and not isinstance(config_parser, ConfigParser):
+        #    raise ValueError('Evaluation requires the ConfigParser object.')
 
         self._config_parser = config_parser
 
         # TODO: Iterator for getting embeddings from given attribute_names
         self._evaluation_name = self.__class__.__name__
 
+        self._configs = self._config_parser.get_per_eval_config(self.evaluation_name)
         # preprocessing eval config in each customized evaluation
-        self._eval_metrics = self._config_parser.get_per_eval_metrics(self.evaluation_name)
-        self._eval_attributes = self._config_parser.get_per_eval_attributes(self.evaluation_name)
-        self._eval_options = self._config_parser.get_per_eval_options(self.evaluation_name)
+        self._metrics = self._config_parser.get_metrics(self.evaluation_name)
+        self._attributes = self._config_parser.get_attributes(self.evaluation_name)
 
         # Verbose
         print (self._config_parser.get_per_eval_config(self.evaluation_name))
@@ -76,7 +75,7 @@ class MetricEvaluationBase(object):
 
     def show_configs(self):
         print ('{} - Compute {} metrics over attributes: {}'.format(
-            self.evaluation_name, ', '.join(self._eval_metrics.keys()), ', '.join(self._eval_attributes)))
+            self.evaluation_name, ', '.join(self._metrics.keys()), ', '.join(self._attributes)))
 
     @abstractmethod
     def compute(self, embedding_container, attribute_container=None):

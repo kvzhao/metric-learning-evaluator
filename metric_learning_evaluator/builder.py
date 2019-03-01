@@ -28,40 +28,24 @@ sys.path.insert(0, os.path.abspath(
 import yaml
 import numpy as np
 
-
-from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
-from metric_learning_evaluator.evaluator.data_container import AttributeContainer
-from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
-
-from metric_learning_evaluator.core.eval_standard_fields import ConfigStandardFields as config_fields
-from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attr_fields
-from metric_learning_evaluator.core.eval_standard_fields import EvaluationStandardFields as eval_fields
-from metric_learning_evaluator.core.config_parser import ConfigParser
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 from metric_learning_evaluator.query.general_database import QueryInterface
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 
 # import all evaluation objects
-from metric_learning_evaluator.evaluator.classification_evaluation import ClassificationEvaluation
-from metric_learning_evaluator.evaluator.mock_evaluation import MockEvaluation
+from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
+from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES
 
-from metric_learning_evaluator.evaluator.ranking_evaluation import RankingEvaluation
-from metric_learning_evaluator.evaluator.facenet_evaluation import FacenetEvaluation
+from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
+from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 
-# registered evaluation objects
-REGISTERED_EVALUATION_OBJECTS = {
-    eval_fields.mock: MockEvaluation,
-    eval_fields.classification: ClassificationEvaluation,
-    eval_fields.ranking: RankingEvaluation,
-    eval_fields.facenet: FacenetEvaluation,
-}
+from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.config_parser.parser import ConfigParser
 
-EVALUATION_DISPLAY_NAMES = {
-    eval_fields.ranking: 'rank-eval',
-    eval_fields.facenet: 'pair-eval',
-}
-
-def parse_results_to_tensorboard(dict_results):
-    pass
 
 class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
@@ -89,8 +73,6 @@ class EvaluatorBuilder(object):
 
         # TODO @kv: Change config_path to parsed dictionary
         self.configs = ConfigParser(config_dict)
-        from pprint import pprint
-        pprint (config_dict)
 
         # allocate shared embedding containers
         container_size = self.configs.container_size
@@ -103,6 +85,9 @@ class EvaluatorBuilder(object):
         self.attribute_container = AttributeContainer()
 
         self._build()
+
+        self._instance_counter = 0
+        self._total_metrics = {}
 
         # Allocate general query interface
         if not self.configs.database_type:
@@ -120,52 +105,46 @@ class EvaluatorBuilder(object):
 
         # Parse the Configuration
         self.evaluations = {}
-        for eval_name in self.configs.evaluation_names:
-            if not eval_name in REGISTERED_EVALUATION_OBJECTS:
-                print ('WARNING: {} is not registered would be skipped.'.format(eval_name))
-                continue
+        for eval_name in self.configs.chosen_evaluation_names:
             self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](self.configs)
 
     @property
     def evaluation_names(self):
         # NOTE: evaluation_types from config; evaluation_names from object instance.
-        #return [_eval_name for _eval_name, _eval in self.evaluations.items()]
-        return [_eval.evaluation_name for _, _eval in self.evaluations.items()]
+        return self.configs.chosen_evaluation_names
 
     @property
     def metric_names(self):
         # TODO @kv: merge each evaluation names, metrics and attributes.
         _metric_names = []
-        from pprint import pprint
-        for _eval_name in self.evaluations:
+        for _eval_name in self.configs.chosen_evaluation_names:
             if _eval_name in EVALUATION_DISPLAY_NAMES:
-                _eval_display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
+                _display_eval_name = EVALUATION_DISPLAY_NAMES[_eval_name]
             else:
-                _eval_display_name = _eval_name
-            _metric_config = self.configs.get_per_eval_metrics(_eval_name)
-            _attribute_list = self.configs.get_per_eval_attributes(_eval_name)
-            pprint(_metric_config)
-            pprint(_attribute_list)
-            for _metric_type, _metric in _metric_config.items():
-                if _metric is None or _attribute_list is None:
-                    continue
-                for _attr_name in _attribute_list:
-                    for _metric_name, _metric_value in _metric.items():
-                        print(_metric_name, _metric_value)
-                        if _metric_value is None:
-                            continue
-                        name_string = '{}-{}-{}@{}'.format(_metric_type, _attr_name, _metric_name, _metric_value)
-                        _metric_names.append(name_string)
+                _display_eval_name = _eval_name
+            for _metric_name, _content in self.configs.get_metrics(_eval_name).items():
+                for _attr_name in self.configs.get_attributes(_eval_name):
+                    if not _content:
+                        continue
+                    if isinstance(_content, list):
+                        for _thres in _content:
+                            _metric_name_combined = '{}-{}-{}@{}'.format(
+                                _display_eval_name, _attr_name, _metric_name, _thres)
+                            _metric_names.append(_metric_name_combined)
+                    else:
+                        _metric_name_combined = '{}-{}-{}@{}'.format(
+                                _display_eval_name, _attr_name, _metric_name, _content)
+                        _metric_names.append(_metric_name_combined)
         return _metric_names
 
-    def add_image_id_and_embedding(self, image_id, label_id, embedding, logit=None):
+    def add_instance_id_and_embedding(self, instance_id, label_id, embedding, logit=None):
         """Add embedding and label for a sample to be used for evaluation.
            If the query attribute names are given in config, this function will
            search them on database automatically.
 
         Args:
-            image_id, integer:
-                A integer identifier for the image.
+            instance_id, integer:
+                A integer identifier for the image. instance_id
             label_id, integer:
                 An index of label.
             embedding, list or numpy array:
@@ -173,22 +152,25 @@ class EvaluatorBuilder(object):
         """
 
         # NOTE: If we call classification, then add logit.
-        # TODO @kv: If image_id is None, use index as default.
-        self.embedding_container.add(image_id, label_id, embedding, logit)
+        # TODO @kv: If instance_id is None, use index as default.
+        if instance_id is None or instance_id == -1:
+            instance_id = self._instance_counter
+        self.embedding_container.add(instance_id, label_id, embedding, logit)
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
             print ('{} embeddings are added.'.format(self.embedding_container.counts))
         
-        # TODO: consider move `add_image_id_and_query_attribute` here.
+        # TODO: consider move `add_instance_id_and_query_attribute` here.
         # Collect all `attribute_name`
         # if not evaluations_need_query: no queries are needed.
 
         if self.query_interface:
             if not self.configs.required_attributes:
                 print ('WARNING: No required attributes are pre-defined.')
-            queried_attributes = self.query_interface.query(image_id, self.configs.required_attributes)
-            self.attribute_container.add(image_id, queried_attributes)
+            queried_attributes = self.query_interface.query(instance_id, self.configs.required_attributes)
+            self.attribute_container.add(instance_id, queried_attributes)
 
+        self._instance_counter += 1
     
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
@@ -197,24 +179,38 @@ class EvaluatorBuilder(object):
             total_metrics, dict:
         """
 
-        total_metrics = {}
-
         #TODO: Pass containers when compute. (functional objects)
         #TODO @kv: Consider with metric_names together
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
-            print ('Execute {}'.format(_eval_name))
-            per_eval_metrics = _evaluation.compute(self.embedding_container,
+            res_container = _evaluation.compute(self.embedding_container,
                                                    self.attribute_container)
             # TODO: flatten results and return
-            total_metrics[_eval_name] = per_eval_metrics
+            if _eval_name in EVALUATION_DISPLAY_NAMES:
+                _display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
+            else:
+                _display_name = _eval_name
+            self._total_metrics[_display_name] = res_container.flatten
 
-        # Returned example:
-        # {'RankingEvaluation': {'all_classes': {'top_1_hit_accuracy': {1: 0.9929824561403509},
+        # Return example:
+        # dict = {'RankingEvaluation': {'all_classes': {'top_1_hit_accuracy': {1: 0.9929824561403509},
         #                              'top_k_hit_accuracy': {5: 0.9976608187134502}}}}
-        return total_metrics
+        # convert to
+        # {'ranking-all_classes-top_k_hit_accuracy@1': 0.9 ,}
+
+        flatten = {}
+        for _eval_name, _content in self._total_metrics.items():
+            for _metric, _value in _content.items():
+                _combined_name = '{}-{}'.format(
+                    _eval_name, _metric)
+                flatten[_combined_name] = _value
+        
+        return flatten
         
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""
         self.embedding_container.clear()
         self.attribute_container.clear()
+
+        for _, _container in self._total_metrics.items():
+            _container.clear()

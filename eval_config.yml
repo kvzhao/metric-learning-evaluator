@@ -1,70 +1,74 @@
-# Configuration used for metric-learning evaluator.
+
+# NOTE: `embedding_size` and `logit_size` are external parameters
+
+# NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
+#       and with the key: `evaluator`.
 
 # database: Zeus | DatasetBackbone | None
 database:
-#database: DatasetBackbone
 
 # upper-bound of the evaluation instances
 container_size: 30000
 
-# tf-metric-learning config
-embedding_size: 2048
-# Close the logit option.
-logit_size: 0
+chosen_evaluations:
+    - RankingEvaluation
 
-# list of evaluations
-evaluation:
-  # per evaluation config
-  # NOTE:
-  #    - per_eval_config should be dict rather than list.
+# Configurations for evaluator:
+evaluation_options:
+    # Implemented Evaluations
     FacenetEvaluation:
-        # path to the list of pairs
-        option:
-            path_pairlist:
+        sampling:
+            num_of_pairs: 1000
+            num_of_instance_per_class: 1
+            ratio_of_class: 0.1
+            # random_sample | amount_weighted | amount_inverse_weighted
+            class_sample_method: random_sample
+
+        # these will be checked in FacenetEvaluation
         metric:
-            distance_function: # NOT DONE.
-            distance_threshold: # start, end, step
+            accuracy:            true
+            vaidation_rate:      true
+            false_accept_rate:   false
+            true_positive_rate:  true
+            false_positive_rate: false
+
+        distance_measure:
+            function:
+                - euclidean
+            threshold:
                 start: 1.0
                 end: 1.5
                 step: 0.25
-            pair_sampling:
-                num_of_pairs: 1000
-                num_of_instance_per_class: 1
-                ratio_of_class: 0.1
-                # random_sample | amount_weighted | amount_inverse_weighted
-                class_sample_method: random_sample
         attribute:
-    RankingEvaluation:
+            - A
         option:
-            is_online: # not done
+            path_pairlist:
+            # path to the list of pairs
+
+    RankingEvaluation:
+        sampling:
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_db_instance: 1
+            num_of_query_class: 10
+            num_of_query_instance: 10
+            maximum_of_sampled_data: 10000
+
+        metric:
+            # top_1_hit is defaults
+            top_k_hit_accuracy:
+                - 1
+                - 5
+
+        distance_measure:
+            function:
+            threshold:
+
+        attribute:
+
+        option:
             path_database: # not done
             seen_dataset: # not done
             unseen_dataset: # not done
-        metric:
-            distance_function:
-            distance_threshold:
-                start: 0.1
-                end: 1.5
-                step: 0.1
-            ranking:
-                top_k_hit_accuracy: 5
-                class_sample_method: uniform
-                instance_sample_method: uniform
-                num_of_db_instance: 10
-                num_of_query_class: 100
-                num_of_query_instance: 10
-                maximum_of_sampled_data: 10000
-        attribute:
 
-# template of per evaluation config
-#   MockEvaluation:
-#       system:
-#           path:
-#       metric:
-#           metric_type:
-#               -
-#               - list
-#           metric_type: int
-#       attribute:
-#            - attribute_type_1
-#            - attribute_type_2
+# OPTIONS OF EACH ITEMS

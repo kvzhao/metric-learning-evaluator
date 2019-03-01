@@ -13,8 +13,8 @@ from metric_learning_evaluator.core.eval_standard_fields import AttributeStandar
 from metric_learning_evaluator.core.eval_standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
 
-from metric_learning_evaluator.evaluator.data_container import ResultContainer
-from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.data_tools.result_container import ResultContainer
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 
 from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
@@ -61,8 +61,8 @@ class ClassificationEvaluation(MetricEvaluationBase):
         img_ids = embedding_container.image_ids
 
         # NOTE: Make sure that length of inputs are equal.
-        per_eval_attributes = self._config.get_per_eval_attributes(self.evaluation_name)
-        per_eval_metrics = self._config.get_per_eval_metrics(self.evaluation_name)
+        per_eval_attributes = self._configs.get_attributes(self.evaluation_name)
+        per_eval_metrics = self._configs.get_metrics(self.evaluation_name)
 
         result_container = ResultContainer(per_eval_metrics, per_eval_attributes)
 
@@ -73,16 +73,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
         # Evaluate overall if attribute not given
         if not has_attributes:
-            logits = embedding_container.logits
-            gt_labels = embedding_container.get_label_by_image_ids(img_ids)
-            gt_labels = np.asarray(gt_labels)
-
-            for metric, thresholds in per_eval_metrics.items():
-                if metric in self._available_metrics:
-                    if metric == metric_fields.top_k:
-                        for k in thresholds:
-                            top_k_acc = top_k_accuracy(logits, gt_labels, k)
-                            result_container.add(metric, attr_fields.none, k, top_k_acc)
+            pass
         else:
             # With attributes
             pass
