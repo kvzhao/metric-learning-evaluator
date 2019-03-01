@@ -14,15 +14,15 @@ import random
 from random import shuffle
 import itertools
 import numpy as np
-from metric_learning_evaluator.core.eval_standard_fields import MetricStandardFields as metric_fields
-from metric_learning_evaluator.core.eval_standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
 
-from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
-from metric_learning_evaluator.evaluator.data_container import AttributeContainer
-from metric_learning_evaluator.evaluator.data_container import ResultContainer
-from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
+from metric_learning_evaluator.data_tools.result_container import ResultContainer
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 
-from metric_learning_evaluator.metrics.distances import euclidean_distance_filter
+from metric_learning_evaluator.utils.distances import euclidean_distance_filter
 from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
 from collections import defaultdict
@@ -142,8 +142,8 @@ class FacenetEvaluation(MetricEvaluationBase):
         img_ids = embedding_container.instance_ids
 
         # configs
-        pair_sampling_config = self._eval_metrics[metric_fields.pair_sampling]
-        distance_config = self._eval_metrics[metric_fields.distance_threshold]
+        pair_sampling_config = self._metrics[metric_fields.pair_sampling]
+        distance_config = self._metrics[metric_fields.distance_threshold]
 
         dist_start = distance_config[facenet_fields.start]
         dist_end = distance_config[facenet_fields.end]
@@ -158,7 +158,7 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         assert len(img_ids) == embedding_container.embeddings.shape[0]
 
-        result_container = ResultContainer(self._eval_metrics, self._eval_attributes)
+        result_container = ResultContainer(self._metrics, self._attributes)
 
         if not self._has_attribute:
             # NOTE: Assume attribute == `all_classes`

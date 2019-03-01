@@ -13,21 +13,21 @@ import numpy as np
 from random import shuffle
 
 
-from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
-from metric_learning_evaluator.evaluator.data_container import AttributeContainer
-from metric_learning_evaluator.evaluator.data_container import ResultContainer
-from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.data_tools.result_container import ResultContainer
+from metric_learning_evaluator.data_tools.attribute_container  import AttributeContainer
 
-from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
-from metric_learning_evaluator.metrics.distances import euclidean_distance
-from metric_learning_evaluator.metrics.distances import indexing_array
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 
-from metric_learning_evaluator.evaluator.sample_strategy import SampleStrategy
-
-from metric_learning_evaluator.evaluator.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
+
+from metric_learning_evaluator.utils.distances import euclidean_distance
+from metric_learning_evaluator.utils.distances import indexing_array
+from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
+from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
-from metric_learning_evaluator.evaluator.sample_strategy import SampleStrategyStandardFields as sample_fields
 
 class RankingEvaluationStandardFields(object):
     # Some keys only used in ranking evaluation

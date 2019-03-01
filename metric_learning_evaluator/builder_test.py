@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 import unittest
-from core.eval_standard_fields import EvalConfigStandardFields as fields
-from evaluator.evaluator_builder import EvaluatorBuilder
+from metric_learning_evaluator.evaluations.standard_fields import EvalConfigStandardFields as fields
+from metric_learning_evaluator.builder import EvaluatorBuilder
 
 class TestEvaluatorBuilder(unittest.TestCase):
 
@@ -31,7 +31,7 @@ class TestEvaluatorBuilder(unittest.TestCase):
         list_of_evaluations = [
             'MockEvaluation', 'ClassificationEvaluation', 'RankingEvaluation'
         ]
-        eval_object = EvaluatorBuilder(sample_eval_config)
+        eval_object = EvaluatorBuilder(2048, 1400, sample_eval_config)
 
         # Test evaluations are created
         self.assertEqual(eval_object.evaluation_names,
@@ -66,7 +66,7 @@ class TestEvaluatorBuilder(unittest.TestCase):
         list_of_evaluations = [
             fields.mock,
         ]
-        eval_object = EvaluatorBuilder(sample_eval_config)
+        eval_object = EvaluatorBuilder(2048, 0, sample_eval_config)
 
         # Check the logit is not exist.
 

@@ -8,7 +8,7 @@ import inspect
 
 # refactor
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
-from metric_learning_evaluator.evaluator.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 #from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS

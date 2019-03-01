@@ -28,30 +28,24 @@ sys.path.insert(0, os.path.abspath(
 import yaml
 import numpy as np
 
-from metric_learning_evaluator.evaluator.data_container import EmbeddingContainer
-from metric_learning_evaluator.evaluator.data_container import AttributeContainer
-from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
-
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 from metric_learning_evaluator.query.general_database import QueryInterface
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 
 # import all evaluation objects
-#from metric_learning_evaluator.evaluator.classification_evaluation import ClassificationEvaluation
-#from metric_learning_evaluator.evaluator.mock_evaluation import MockEvaluation
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
 from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES
 
-from metric_learning_evaluator.evaluator.ranking_evaluation import RankingEvaluation
-from metric_learning_evaluator.evaluator.facenet_evaluation import FacenetEvaluation
+from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
+from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
-from metric_learning_evaluator.evaluator.standard_fields import EvaluationStandardFields as eval_fields
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
-
 from metric_learning_evaluator.config_parser.parser import ConfigParser
 
-def parse_results_to_tensorboard(dict_results):
-    pass
 
 class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
