@@ -131,4 +131,4 @@ class RankingEvaluation(MetricEvaluationBase):
             return result_container
         else:
             # with attribute filter
-            pass
+            raise NotImplementedError
