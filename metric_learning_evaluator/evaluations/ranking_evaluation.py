@@ -70,6 +70,7 @@ class RankingEvaluation(MetricEvaluationBase):
     # metric_names
     @property
     def metric_names(self):
+        # TODO @kv: make these easier
         _metric_names = []
         for _metric_name, _content in self._metrics.items():
             for _attr_name in self._attributes:
@@ -81,8 +82,10 @@ class RankingEvaluation(MetricEvaluationBase):
                 if _metric_name in self._metric_with_threshold:
                     # special condition
                     if _metric_name == metric_fields.top_k_hit_accuracy:
-                        pass
-
+                        top_k_list = self._metrics[metric_fields.top_k_hit_accuracy]
+                        for top_k in top_k_list:
+                            _name = '{}-{}-@k={}'.format(_attr_name, _metric_name, top_k)
+                            _metric_names.append(_name)
         return _metric_names
 
     def compute(self, embedding_container, attribute_container=None):
