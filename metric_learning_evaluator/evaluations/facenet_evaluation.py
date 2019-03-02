@@ -129,6 +129,10 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         self.show_configs()
 
+    @property
+    def metric_names(self):
+        pass
+
     def compute(self, embedding_container, attribute_container=None):
         """Procedure:
             - prepare the pair list for eval set

@@ -35,6 +35,7 @@ class RankingEvaluationStandardFields(object):
     end = 'end'
     step = 'step'
     top_k_hit_accuracy = 'top_k_hit_accuracy'
+    mAP = 'mAP'
     sampling = 'sampling'
 
 ranking_fields = RankingEvaluationStandardFields
@@ -54,14 +55,38 @@ class RankingEvaluation(MetricEvaluationBase):
                ranking_fields.step: 0.2},
         }
 
+        # metrics with condition
+        self._metric_with_threshold = [
+            metric_fields.top_k_hit_accuracy,
+        ]
+        # metrics without condition
+        self._metric_without_threshold = [
+            metric_fields.mAP,
+        ]
+
         print ('Create {}'.format(self._evaluation_name))
         self.show_configs()
 
     # metric_names
+    @property
+    def metric_names(self):
+        _metric_names = []
+        for _metric_name, _content in self._metrics.items():
+            for _attr_name in self._attributes:
+                if _content is None:
+                    continue
+                if _metric_name in self._metric_without_threshold:
+                    _name = '{}-{}'.format(_attr_name, _metric_name)
+                    _metric_names.append(_name)
+                if _metric_name in self._metric_with_threshold:
+                    # special condition
+                    if _metric_name == metric_fields.top_k_hit_accuracy:
+                        pass
+
+        return _metric_names
 
     def compute(self, embedding_container, attribute_container=None):
-
-        result_container = ResultContainer(self._metrics, self._attributes)
+        result_container = ResultContainer()
         # Check whether attribute_container is given or not.
         if not attribute_container or attribute_fields.all_classes in self._attributes:
             instance_ids = embedding_container.instance_ids
@@ -127,10 +152,12 @@ class RankingEvaluation(MetricEvaluationBase):
 
                 ranking_metrics.add_inputs(hit_arrays)
                 result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
-                                     top_k, ranking_metrics.topk_hit_accuracy)
+                                     ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
 
             result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
-                                 1, ranking_metrics.top1_hit_accuracy)
+                                 ranking_metrics.topk_hit_accuracy, condition={'k': 1})
+            result_container.add(attribute_fields.all_classes, ranking_fields.mAP,
+                                 ranking_metrics.mean_average_precision)
 
             return result_container
         else:
