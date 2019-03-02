@@ -115,27 +115,16 @@ class EvaluatorBuilder(object):
 
     @property
     def metric_names(self):
-        # TODO @kv: merge each evaluation names, metrics and attributes.
         _metric_names = []
         for _eval_name in self.configs.chosen_evaluation_names:
             if _eval_name in EVALUATION_DISPLAY_NAMES:
                 _display_eval_name = EVALUATION_DISPLAY_NAMES[_eval_name]
             else:
                 _display_eval_name = _eval_name
-            # TODO @kv: Provide metric names by each evaluation
-            for _metric_name, _content in self.configs.get_metrics(_eval_name).items():
-                for _attr_name in self.configs.get_attributes(_eval_name):
-                    if not _content:
-                        continue
-                    if isinstance(_content, list):
-                        for _thres in _content:
-                            _metric_name_combined = '{}-{}-{}@{}'.format(
-                                _display_eval_name, _attr_name, _metric_name, _thres)
-                            _metric_names.append(_metric_name_combined)
-                    else:
-                        _metric_name_combined = '{}-{}-{}@{}'.format(
-                                _display_eval_name, _attr_name, _metric_name, _content)
-                        _metric_names.append(_metric_name_combined)
+            _metric_name_per_evaluation = self.evaluations[_eval_name].metric_names
+            for _metric_name in _metric_name_per_evaluation:
+                _metric_name = '{}-{}'.format(_display_eval_name, _metric_name)
+                _metric_names.append(_metric_name)
         return _metric_names
 
     def add_instance_id_and_embedding(self, instance_id, label_id, embedding, logit=None):
