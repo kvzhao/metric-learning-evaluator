@@ -13,94 +13,50 @@ python setup.py install
 ## Usage
 How to use evaluator?
 - Online mode
+
+On-line evaluation is embedded in `tf-metric-learning` repo, for more detailed please refer to `tf-metric-learning/builders/evaluator_builder.py`.
+
+Estimator will execute evaluations and provide info like
+```
+INFO:tensorflow:Saving dict for global step 1500: global_step = 1500, loss = 7.452976, rank-all_classes-mAP = 0.495, rank-all_classes-top_k_hit_accuracy-@k=1 = 0.49666667, rank-all_classes-top_k_hit_accuracy-@k=5 = 0.49666667
+```
+
 - Off-line mode
 
-### Description
-- EvaluationBuilder
-- EmbeddingContainer
-- AttributeContainer
-- QueryIterface
-- Metrics
-
-## Configuration
-
-Usage:
-     The configuration is used to change hyper-parameters but not change metric items.
-
-There are 5 required items should be defined in the configuration.
-- database
-- evaluation
-- container_size
-- embedding_size
-- logit_size
-
-
-### `evaluation`
-
-Define type of metrics and attribute in each evaluations, like:
-
-```python
-
-FacenetEvaluation:
-    distance_threshold:
-        - 0.5
-        - 1.0
-```
-
-The format of `per_eval_config` is the following:
-```python
-EvaluationName:
-    metric:
-        metric_type_1:
-            - parameter_1
-            - parameter_2
-        metric_type_2: parameter
-    attribute:
-        - attribute_0
-        - attribute_1
-    option:
-        path: <string>
-        ratio: <float>
-```
-
-
-## Evaluated Results
-
-```python
-
-eval_results = {
-    # e.g. classification
-    'evaluation_name':
-    {
-        # level of attributes
-        'attribute_type':
-        {
-            # e.g. top_k accuracy
-            # NOTE: maybe this layer would be cancelled .
-            'metric_type':
-            {
-                # e.g. IoU, top k
-                'threshold': value # or list of values?
-            },
-        }
-    }
-}
+One can use command-line tool called `ml_evaluate` to execute evaluations.
 
 ```
+usage: Command-line Metric Learning Evaluation Tool [-h] [--config CONFIG]
+                                                    [--data_dir DATA_DIR]
+                                                    [--data_type DATA_TYPE]
+                                                    [--out_dir OUT_DIR]
+                                                    [--embedding_size EMBEDDING_SIZE]
+                                                    [--logit_size LOGIT_SIZE]
 
-### Example
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG, -c CONFIG
+                        Path to the evaluation configuration with yaml format.
+  --data_dir DATA_DIR, -dd DATA_DIR
+                        Path to the source dataset, tfrecord |
+                        dataset_backbone | folder
+  --data_type DATA_TYPE, -dt DATA_TYPE
+                        Type of the input dataset.
+  --out_dir OUT_DIR, -od OUT_DIR
+                        Path to the output dir for saving report.
+  --embedding_size EMBEDDING_SIZE, -es EMBEDDING_SIZE
+                        Dimension of the given embeddings.
+  --logit_size LOGIT_SIZE, -ls LOGIT_SIZE
+                        Size of the logit used in container.
+```
 
-### Report Writer
+for example
 
-## Customized Evaluation
+```
+ml_evaluator -c eval_config.yml -dd extracted_embeddings_facenet-centerloss-batch512
+```
 
-Steps:
-
-- Standard Fields
-  - Evaluation Standard Fields
-  - Metric Standard Fiedls
-  - Attribute Standard Fields
-- Registration
+NOTE: Off-line mode not fully supported now.
 
 
 ## Cooperative Repo
