@@ -12,6 +12,8 @@ from collections import defaultdict
 
 import numpy as np
 
+class ResultContainerStandardFields:
+    pass
 
 
 class ResultContainer(object):
@@ -21,9 +23,14 @@ class ResultContainer(object):
 
       NOTE:
         Structure of the result_container:
+          - evaluation_name (outer structure)
+            - attribute_name: string
+              - metric_name: string
+                  - value: float
+                    - condition: dict (e.g @distance=0.5)
     """
 
-    def __init__(self, metrics, attributes):
+    def __init__(self): 
         """
           Args:
             metrics, dict:
@@ -34,39 +41,28 @@ class ResultContainer(object):
 
         """
         self._results = {}
-        # allocate the dictionary
-        if not isinstance(attributes, list):
-            attributes = [attributes]
 
-        for attr in attributes:
-            self._results[attr] = {}
-            for metric, _ in metrics.items():
-                self._results[attr][metric] = {}
-
-    def __repr__(self):
-        """
-            Print the Result in structure.
-                maybe markdown.
-        """
-        result_string = ''
-        for _attr_name, _metirc in self._results.items():
-            for _metric_name, _threshold in _metirc.items():
-                for _thres, _value in _threshold.items():
-                    if not _value:
-                        continue
-                    result_string += '{}-{}@{}: {}\n'.format(
-                        _metric_name, _attr_name, _thres, _value)
-        return result_string
-
-    def add(self, attribute, metric, threshold, value):
+    def add(self, attribute, metric, value, condition=None):
         """Add one result
             * create dict if key does not exist
+
+            NOTE: threshold can be None
         """
         if not attribute in self._results:
             self._results[attribute] = {}
         if not metric in self._results[attribute]:
             self._results[attribute][metric] = {}
-        self._results[attribute][metric][threshold] = value
+
+        if condition is None:
+            self._results[attribute][metric][''] = value
+        elif isinstance(condition, dict):
+            _cond_key = ''
+            for _cond_name, _thres in condition.items():
+                _cond_key += '@{}={}'.format(_cond_name, _thres)
+            self._results[attribute][metric][_cond_key] = value
+        elif isinstance(condition, str):
+            _cond_key = condition
+            self._results[attribute][metric][_cond_key] = value
 
     @property
     def results(self):
@@ -74,26 +70,26 @@ class ResultContainer(object):
         dict_outcome = {}
         for _attr_name, _metirc in self._results.items():
             dict_outcome[_attr_name] = {}
-            for _metric_name, _threshold in _metirc.items():
-                if not _threshold:
+            for _metric_name, _content in _metirc.items():
+                if not _content:
                     continue
-                dict_outcome[_attr_name][_metric_name] = {}
-                for _thres, _value in _threshold.items():
-                    if not _value:
-                        continue
-                    dict_outcome[_attr_name][_metric_name][_thres] = _value
+                dict_outcome[_attr_name][_metric_name] = _content
         return dict_outcome
 
     @property
     def flatten(self):
         dict_flatten = {}
         for _attr_name, _metirc in self._results.items():
-            for _metric_name, _threshold in _metirc.items():
-                for _thres, _value in _threshold.items():
-                    if not _value:
-                        continue
-                    _name = '{}-{}@{}'.format(_attr_name, _metric_name, _thres)
+            for _metric_name, _content in _metirc.items():
+                if not _content:
+                    continue
+                for _cond_key, _value in _content.items():
+                    if _cond_key == '':
+                        _name = '{}-{}'.format(_attr_name, _metric_name)
+                    else:
+                        _name = '{}-{}-{}'.format(_attr_name, _metric_name, _cond_key)
                     dict_flatten[_name] = _value
+
         return dict_flatten
 
     def clear(self):

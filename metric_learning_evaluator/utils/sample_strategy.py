@@ -21,8 +21,8 @@ class SampleStrategyStandardFields:
 
     # mothods
     uniform = 'uniform'
-    instance_amount_weighted = 'instance_amount_weighted'
-    instance_amount_inverse_weighted = 'instance_amount_inverse_weighted'
+    instance_number_weighted = 'instance_number_weighted'
+    instance_number_inverse_weighted = 'instance_number_inverse_weighted'
 
     # sampling options
     sample_ratio = 'sample_ratio'
@@ -36,7 +36,7 @@ class SampleStrategyStandardFields:
 
     num_of_db_instance = 'num_of_db_instance'
     num_of_query_class = 'num_of_query_class'
-    num_of_query_instance = 'num_of_query_instance'
+    num_of_query_instance_per_class = 'num_of_query_instance_per_class'
     maximum_of_sampled_data = 'maximum_of_sampled_data'
 
     # pair
@@ -56,7 +56,7 @@ sample_fields = SampleStrategyStandardFields
 
 class SampleStrategy(object):
     """Class Sampling Strategy
-        The object manages sampling strategy between class and amount of instances.
+        The object manages sampling strategy between class and number of instances.
 
       instance_ids (intra-class)
         ^
@@ -72,8 +72,8 @@ class SampleStrategy(object):
       Sample methods:
         - class-wise sampling
             - uniform
-            - instance amount weighted
-            - inverse instance amount weighted
+            - instance number weighted
+            - inverse instance number weighted
         - instance-wise sampling
             - uniform
             - (TODO @kv) instance-wise attribute (intra-variation) 
@@ -114,11 +114,11 @@ class SampleStrategy(object):
             for _class, _count in self._class_distribution.items():
                 self._class_histogram[_class] = 0
 
-            per_class_amounts = list(self._class_distribution.values())
-            self._num_of_instance_per_class_mean = np.mean(per_class_amounts)
-            self._num_of_instance_per_class_std = np.std(per_class_amounts)
-            self._num_of_instance_per_class_max = np.max(per_class_amounts)
-            self._num_of_instance_per_class_min = np.min(per_class_amounts)
+            per_class_numbers = list(self._class_distribution.values())
+            self._num_of_instance_per_class_mean = np.mean(per_class_numbers)
+            self._num_of_instance_per_class_std = np.std(per_class_numbers)
+            self._num_of_instance_per_class_max = np.max(per_class_numbers)
+            self._num_of_instance_per_class_min = np.min(per_class_numbers)
 
 
     def verbose(self):
@@ -162,9 +162,9 @@ class SampleStrategy(object):
         
         if class_sample_method == sample_fields.uniform:
             sampled_classes = np.random.choice(self._classes, num_of_sampled_class, replace=False)
-        elif class_sample_method == sample_fields.instance_amount_weighted:
+        elif class_sample_method == sample_fields.instance_number_weighted:
             raise NotImplementedError
-        elif class_sample_method == sample_fields.instance_amount_inverse_weighted:
+        elif class_sample_method == sample_fields.instance_number_inverse_weighted:
             raise NotImplementedError
         else:
             print('class sample method {} is not defined, use {} as default.'.format(
@@ -199,7 +199,10 @@ class SampleStrategy(object):
         return {sample_fields.sampled_instance_ids: instances,
                 sample_fields.sampled_label_ids: labels}
 
-    def sample_pairs(self):
+    def sample_pairs(self,
+                     class_sample_method,
+                     instance_sample_method,
+                     maximum_of_sampled_data):
         """
           Returns:
             A dict of pairs and label
@@ -211,7 +214,7 @@ class SampleStrategy(object):
                                   instance_sample_method,
                                   num_of_db_instance,
                                   num_of_query_class,
-                                  num_of_query_instance,
+                                  num_of_query_instance_per_class,
                                   maximum_of_sampled_data,
                                  ):
         """
@@ -220,7 +223,7 @@ class SampleStrategy(object):
             instance_sample_method:
             num_of_db_instance:
             num_of_query_class:
-            num_of_query_instance:
+            num_of_query_instance_per_class:
             maximum_of_sampled_data:
           Returns:
             Dict of db instances, labels and query instances, labels.
@@ -235,7 +238,7 @@ class SampleStrategy(object):
         sampled_query = self._sample(class_sample_method,
                                      instance_sample_method,
                                      num_of_sampled_class=num_of_query_class,
-                                     num_of_sampled_instance=num_of_query_instance,
+                                     num_of_sampled_instance=num_of_query_instance_per_class,
                                      maximum_of_sampled_data=maximum_of_sampled_data)
 
         return {

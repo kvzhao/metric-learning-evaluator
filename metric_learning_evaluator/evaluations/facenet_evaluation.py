@@ -108,26 +108,30 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         # Set default values for must-have metrics
         for _metric in self._must_have_metrics:
-            if not _metric in self._eval_metrics:
+            if not _metric in self._metrics:
                 if _metric in self._default_values:
-                    self._eval_metrics[_metric] = self._default_values[_metric]
+                    self._metrics[_metric] = self._default_values[_metric]
                 else:
                     print ("WARNING: {} should be assigned".format(_metric))
             else:
-                print ('Use assigned {}: {}'.format(_metric, self._eval_metrics[_metric]))
+                print ('Use assigned {}: {}'.format(_metric, self._metrics[_metric]))
 
         ## attributes
-        if len(self._eval_attributes) == 0:
+        if len(self._attributes) == 0:
             self._has_attribute = False
-        elif len(self._eval_attributes) == 1:
-            if attribute_fields.all_classes in self._eval_attributes:
+        elif len(self._attributes) == 1:
+            if attribute_fields.all_classes in self._attributes:
                 self._has_attribute = False
-            elif attribute_fields.all_attributes in self._eval_attributes:
+            elif attribute_fields.all_attributes in self._attributes:
                 self._has_attribute = True
         else:
             self._has_attribute = True
 
         self.show_configs()
+
+    @property
+    def metric_names(self):
+        pass
 
     def compute(self, embedding_container, attribute_container=None):
         """Procedure:

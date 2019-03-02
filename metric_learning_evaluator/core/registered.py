@@ -9,11 +9,11 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))  # noqa
 
 
-from metric_learning_evaluator.evaluator.evaluation_base import MetricEvaluationBase
-from metric_learning_evaluator.evaluator.ranking_evaluation import RankingEvaluation
-from metric_learning_evaluator.evaluator.facenet_evaluation import FacenetEvaluation
+from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
+from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
+from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 
-from metric_learning_evaluator.evaluator.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 
 # NOTICE: Make sure each function passed correctness test. 
 REGISTERED_EVALUATION_OBJECTS = {
