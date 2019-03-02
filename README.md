@@ -2,7 +2,7 @@
 
 ## System Architecture Overview
 
-![](figures/tf-metric-evaluator_v0.2.png)
+![](figures/tf-metric-evaluator_v0.3.png)
 
 ## Installation
 
