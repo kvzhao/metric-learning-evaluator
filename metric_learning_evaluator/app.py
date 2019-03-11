@@ -7,7 +7,7 @@
         folder
         ├── embeddings.npy
         ├── filename_strings.npy
-        └── labels.npy
+        └── label_ids.npy
 
     TODO @kv:
       This program would handle source data from folder (with numpy arrays)
