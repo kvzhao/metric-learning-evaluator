@@ -235,18 +235,6 @@ class SampleStrategy(object):
             Dict of db instances, labels and query instances, labels.
         """
 
-        # TODO @kv: sampled_db and query should not be the same.
-        # sampled_db = self._sample(class_sample_method,
-        #                           instance_sample_method,
-        #                           num_of_sampled_class=self._num_of_class,
-        #                           num_of_sampled_instance=num_of_db_instance,
-        #                           maximum_of_sampled_data=None)
-        # sampled_query = self._sample(class_sample_method,
-        #                              instance_sample_method,
-        #                              num_of_sampled_class=num_of_query_class,
-        #                              num_of_sampled_instance=num_of_query_instance_per_class,
-        #                              maximum_of_sampled_data=maximum_of_sampled_data)
-
         # NOTE @dennis.liu: Split _sample method into specific sample function
         if class_sample_method == sample_fields.uniform:
             sampled_db, sampled_query = self.class_uniform_sampler(num_of_query_class,
@@ -307,7 +295,7 @@ class SampleStrategy(object):
             instance_ids_per_class = self._instance_group[_class]
             num_instance_per_class = len(instance_ids_per_class)
             if num_instance_per_class==1:
-                print('Warning: class id :{} num_instance_per_class==1 ,Skipping...'.format(_class))
+                print('Warning: class_id: {} num_instance_per_class==1, Skipped...'.format(_class))
                 continue
 
             # Constraint number of samples(db and query) per class
@@ -319,7 +307,7 @@ class SampleStrategy(object):
                                    num_of_db_instance_per_class)
             
             if num_db_instances < 0:
-                print('Warning: num_query_instances > num_instance_per_class ,'\
+                print('Warning: num_query_instances > num_instance_per_class, '\
                       'Reduce number of query instances(num_query_instances) into 1.')
                 num_query_instances = 1
                 num_db_instances = num_instance_per_class - num_query_instances
