@@ -19,16 +19,16 @@ evaluation_options:
     # Implemented Evaluations
     FacenetEvaluation:
         sampling:
+            # random_sample | amount_weighted | amount_inverse_weighted
+            class_sample_method: random_sample
             num_of_pairs: 1000
             num_of_instance_per_class: 1
             ratio_of_class: 0.1
-            # random_sample | amount_weighted | amount_inverse_weighted
-            class_sample_method: random_sample
 
         # these will be checked in FacenetEvaluation
         metric:
             accuracy:            true
-            vaidation_rate:      true
+            validation_rate:     true
             false_accept_rate:   false
             true_positive_rate:  true
             false_positive_rate: false
