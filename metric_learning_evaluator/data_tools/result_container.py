@@ -2,15 +2,10 @@
 """
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from abc import ABCMeta
-from abc import abstractmethod
-import collections
-from collections import defaultdict
-
-import numpy as np
 
 class ResultContainerStandardFields:
     pass
@@ -30,7 +25,7 @@ class ResultContainer(object):
                     - condition: dict (e.g @distance=0.5)
     """
 
-    def __init__(self): 
+    def __init__(self):
         """
           Args:
             metrics, dict:
@@ -48,17 +43,17 @@ class ResultContainer(object):
 
             NOTE: threshold can be None
         """
-        if not attribute in self._results:
+        if attribute not in self._results:
             self._results[attribute] = {}
-        if not metric in self._results[attribute]:
+        if metric not in self._results[attribute]:
             self._results[attribute][metric] = {}
 
         if condition is None:
             self._results[attribute][metric][''] = value
         elif isinstance(condition, dict):
             _cond_key = ''
-            for _cond_name, _thres in condition.items():
-                _cond_key += '@{}={}'.format(_cond_name, _thres)
+            for _cond_name, _threshold in condition.items():
+                _cond_key += '@{}={}'.format(_cond_name, _threshold)
             self._results[attribute][metric][_cond_key] = value
         elif isinstance(condition, str):
             _cond_key = condition
@@ -68,9 +63,9 @@ class ResultContainer(object):
     def results(self):
         # TODO: Do not return empty dict
         dict_outcome = {}
-        for _attr_name, _metirc in self._results.items():
+        for _attr_name, _metric in self._results.items():
             dict_outcome[_attr_name] = {}
-            for _metric_name, _content in _metirc.items():
+            for _metric_name, _content in _metric.items():
                 if not _content:
                     continue
                 dict_outcome[_attr_name][_metric_name] = _content
@@ -79,8 +74,8 @@ class ResultContainer(object):
     @property
     def flatten(self):
         dict_flatten = {}
-        for _attr_name, _metirc in self._results.items():
-            for _metric_name, _content in _metirc.items():
+        for _attr_name, _metric in self._results.items():
+            for _metric_name, _content in _metric.items():
                 if not _content:
                     continue
                 for _cond_key, _value in _content.items():
@@ -94,4 +89,4 @@ class ResultContainer(object):
 
     def clear(self):
         self._results = {}
-        print ('Clear result container.')
+        print('Clear result container.')
