@@ -121,10 +121,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
             with open(dataset_info_path, 'r') as fp:
                 dataset_info = json.load(fp)
             unseen_dataset_info = dataset_info['unseen']
-            unseen_label_ids = [unseen_data['label'] for unseen_data in unseen_dataset_info]
-            unseen_instance_ids = embedding_container.get_instance_ids_by_label_ids(unseen_label_ids)
+            unseen_label_ids = list(set([unseen_data['label'] for unseen_data in unseen_dataset_info]))
+            seen_label_ids = list(set([label for label in label_ids if not label in unseen_label_ids]))
 
-            seen_label_ids = [label for label in label_ids if not label in unseen_label_ids]
+            unseen_instance_ids = embedding_container.get_instance_ids_by_label_ids(unseen_label_ids)
             seen_instance_ids = embedding_container.get_instance_ids_by_label_ids(seen_label_ids)
 
             """
@@ -132,8 +132,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
             """
             for _attr in ['seen', 'unseen']:
                 if _attr == 'seen':
+                    print('Sample from seen set.')
                     sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
                 elif _attr == 'unseen':
+                    print('Sample from unseen set.')
                     sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
 
                 sampled = sampler.sample_query_and_database(
@@ -151,6 +153,8 @@ class CheckoutEvaluation(MetricEvaluationBase):
                 db_embeddings = embedding_container.get_embedding_by_instance_ids(
                     sampled[sample_fields.db_instance_ids])
                 db_label_ids = sampled[sample_fields.db_label_ids]
+
+                print('# of sampled query: {}, db: {}'.format(len(query_label_ids), len(db_label_ids)))
 
                 # TODO @kv: type conversion at proper moment.
                 query_label_ids = np.asarray(query_label_ids)
