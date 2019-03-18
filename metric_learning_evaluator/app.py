@@ -81,7 +81,7 @@ def main():
         filenames = feature_importer.filename_strings
         labels = feature_importer.label_ids
 
-    print(evaluator.metric_names)
+    print('evaluator metric names: {}'.format(evaluator.metric_names))
     # Add datum through loop
     for feat, label, fn in zip(embeddings, labels, filenames):
         evaluator.add_instance_id_and_embedding(fn, label, feat)
