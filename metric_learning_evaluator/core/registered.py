@@ -13,15 +13,19 @@ from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluati
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 
+from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
+
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 
 # NOTICE: Make sure each function passed correctness test. 
 REGISTERED_EVALUATION_OBJECTS = {
     eval_fields.ranking: RankingEvaluation,
     eval_fields.facenet: FacenetEvaluation,
+    eval_fields.checkout: CheckoutEvaluation,
 }
 
 EVALUATION_DISPLAY_NAMES = {
     eval_fields.ranking: 'rank',
     eval_fields.facenet: 'pair',
+    eval_fields.checkout: 'checkout',
 }

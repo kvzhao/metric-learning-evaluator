@@ -14,6 +14,8 @@ class EvaluationStandardFields(object):
     # Retrival
     ranking = 'RankingEvaluation'
 
+    checkout = 'CheckoutEvaluation'
+
     mock = 'MockEvaluation'
 
     # FaceNet: Pair-wise evaluation

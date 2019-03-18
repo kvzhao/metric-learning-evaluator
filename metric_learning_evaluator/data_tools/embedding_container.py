@@ -114,6 +114,16 @@ class EmbeddingContainer(object):
         indices = [self._index_by_instance_id[img_id] for img_id in instance_ids]
         return self._embeddings[indices, ...]
 
+    def get_embedding_by_label_ids(self, label_ids):
+        """Fetch batch of embedding vectors by given label ids."""
+        if not (type(label_ids) is int or type(label_ids) is list):
+            raise ValueError('instance_ids should be int or list.')
+        if isinstance(label_ids, int):
+            label_ids = [label_ids]
+        indices = [self._index_by_instance_id[self.get_instance_ids_by_label(label_id)] 
+            for label_id in label_ids]
+        return self._embeddings[indices, ...]
+
     def get_label_by_instance_ids(self, instance_ids):
         """Fetch the labels from given instance_ids."""
         if isinstance(instance_ids, list):
@@ -127,6 +137,14 @@ class EmbeddingContainer(object):
         if not np.issubdtype(type(label_id), np.integer):
             raise ValueError('Query label id should be integer.')
         return self._instance_id_by_label[label_id]
+
+    def get_instance_ids_by_label_ids(self, label_ids):
+        """Fetch the instance_ids from given label_id."""
+        if not (type(label_ids) is int or type(label_ids) is list):
+            raise ValueError('instance_ids should be int or list.')
+        if isinstance(label_ids, int):
+            label_ids = [label_ids]
+        return [self._instance_id_by_label[label_id] for label_id in label_ids]
 
     @property
     def embeddings(self):
