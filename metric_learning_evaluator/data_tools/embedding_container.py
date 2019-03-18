@@ -144,7 +144,10 @@ class EmbeddingContainer(object):
             raise ValueError('instance_ids should be int or list.')
         if isinstance(label_ids, int):
             label_ids = [label_ids]
-        return [self._instance_id_by_label[label_id] for label_id in label_ids]
+        _instance_ids = []
+        for label_id in label_ids:
+            _instance_ids.extend(self._instance_id_by_label[label_id])
+        return _instance_ids
 
     @property
     def embeddings(self):
