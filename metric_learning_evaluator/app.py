@@ -87,5 +87,6 @@ def main():
         evaluator.add_instance_id_and_embedding(fn, label, feat)
     total_results = evaluator.evaluate()
 
-    pprint (total_results)
-    print(evaluator.metric_names)
+    #pprint (total_results)
+    for metric_name in evaluator.metric_names:
+        print('{}: {}'.format(metric_name, total_results[metric_name]))
