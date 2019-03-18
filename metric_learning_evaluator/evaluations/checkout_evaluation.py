@@ -121,11 +121,18 @@ class CheckoutEvaluation(MetricEvaluationBase):
             with open(dataset_info_path, 'r') as fp:
                 dataset_info = json.load(fp)
             unseen_dataset_info = dataset_info['unseen']
-            unseen_label_ids = list(set([unseen_data['label'] for unseen_data in unseen_dataset_info]))
-            seen_label_ids = list(set([label for label in label_ids if not label in unseen_label_ids]))
 
-            unseen_instance_ids = embedding_container.get_instance_ids_by_label_ids(unseen_label_ids)
-            seen_instance_ids = embedding_container.get_instance_ids_by_label_ids(seen_label_ids)
+            all_unseen_label_ids = list(set([unseen_data['label'] for unseen_data in unseen_dataset_info]))
+
+            seen_label_ids, unseen_label_ids = [], []
+            seen_instance_ids, unseen_instance_ids = [], []
+            for inst_id, label_id in zip(instance_ids, label_ids):
+                if label_id in all_unseen_label_ids:
+                    unseen_label_ids.append(label_id)
+                    unseen_instance_ids.append(inst_id)
+                else:
+                    seen_label_ids.append(label_id)
+                    seen_instance_ids.append(inst_id)
 
             """
               The Following Section should be a module.
