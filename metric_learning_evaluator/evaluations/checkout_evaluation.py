@@ -126,6 +126,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
 
             seen_label_ids = [label for label in label_ids if not label in unseen_label_ids]
             seen_instance_ids = embedding_container.get_instance_ids_by_label_ids(seen_label_ids)
+
             """
               The Following Section should be a module.
             """
@@ -172,13 +173,13 @@ class CheckoutEvaluation(MetricEvaluationBase):
                         distances = euclidean_distance(_query_embed, db_embeddings)
                         sorted_distances = indexing_array(distances, distances)
                         indexed_db_labels = indexing_array(distances, db_label_ids)
-                        print('Query label: {}'.format(_query_label))
-                        print('Retrieved labels: {}'.format(indexed_db_labels[:10]))
-                        print(sorted_distances[:20])
+                        #print('Query label: {}'.format(_query_label))
+                        #print('Retrieved labels: {}'.format(indexed_db_labels[:10]))
+                        #print(sorted_distances[:20])
                         hits = indexed_db_labels[:top_k] == _query_label
                         hit_arrays[_idx, ...] = hits
-                        if not hits[0]:
-                            print('Retrieved labels: {} - GT label: {} Top1 Hit: {}'.format(indexed_db_labels, _query_label, hits[0]))
+                        #if not hits[0]:
+                        #    print('Retrieved labels: {} - GT label: {} Top1 Hit: {}'.format(indexed_db_labels, _query_label, hits[0]))
 
                     ranking_metrics.add_inputs(hit_arrays)
                     result_container.add(_attr, checkout_fields.top_k_hit_accuracy,
