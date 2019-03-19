@@ -1,6 +1,6 @@
 """
   Customized Application for Checkout Evaluation
-
+  WARNING: The evaluation support only offline now.
 
   NOTE @kv:
     This version is not mature and hard-coded.
@@ -16,6 +16,7 @@ import random
 import itertools
 import numpy as np
 from random import shuffle
+from tqdm import tqdm
 
 import json
 from pprint import pprint
@@ -36,7 +37,7 @@ from metric_learning_evaluator.utils.distances import euclidean_distance
 from metric_learning_evaluator.utils.distances import indexing_array
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 
 class CheckoutEvaluationStandardFields(object):
     # Some keys only used in ranking evaluation
@@ -47,10 +48,40 @@ class CheckoutEvaluationStandardFields(object):
     mAP = 'mAP'
     sampling = 'sampling'
 
-    search_database = 'search_database'
-    unseen_label_map= 'unseen_label_map'
+    seen_unique_ids = 'seen_unique_ids'
+    unseen_unique_ids = 'unseen_unique_ids'
+    label_map = 'label_map'
+
+    num_of_seen_query_class = 'num_of_seen_query_class'
+    num_of_seen_db_instance = 'num_of_seen_db_instance'
+    num_of_seen_query_instance_per_class = 'num_of_seen_query_instance_per_class'
+    num_of_unseen_query_class = 'num_of_unseen_query_class'
+    num_of_unseen_db_instance = 'num_of_unseen_db_instance'
+    num_of_unseen_query_instance_per_class = 'num_of_unseen_query_instance_per_class'
+    num_of_total_db_instance = 'num_of_total_db_instance'
 
 checkout_fields = CheckoutEvaluationStandardFields
+
+
+def load_json(json_path):
+    try:
+        with open(json_path, 'r') as fp:
+            _dict = json.load(fp)
+    except:
+        raise IOError('Labelmap: {} can not be loaded.')
+
+    return _dict
+
+class InstanceResult(object):
+
+    def __init__(self):
+        pass
+
+    def push(self):
+        pass
+
+    def result(self):
+        pass
 
 class CheckoutEvaluation(MetricEvaluationBase):
 
@@ -79,7 +110,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
         # TODO @kv: make these easier
         _metric_names = []
         for _metric_name, _content in self._metrics.items():
-            for _attr_name in ['seen', 'unseen']:
+            for _attr_name in self._attributes:
                 if _content is None:
                     continue
                 if _metric_name in self._metric_without_threshold:
@@ -97,60 +128,73 @@ class CheckoutEvaluation(MetricEvaluationBase):
     def compute(self, embedding_container, attribute_container=None):
         result_container = ResultContainer()
         # Check whether attribute_container is given or not.
-        if not attribute_container or attribute_fields.all_classes in self._attributes:
 
-            ranking_config = self._metrics
-            sample_config = self._configs[eval_fields.sampling]
-            option_config = self._configs[eval_fields.option]
+        ranking_config = self._metrics
+        sample_config = self._configs[eval_fields.sampling]
+        option_config = self._configs[eval_fields.option]
 
-            # sampling configs
-            class_sample_method = sample_config[sample_fields.class_sample_method]
-            instance_sample_method = sample_config[sample_fields.instance_sample_method]
-            num_of_db_instance = sample_config[sample_fields.num_of_db_instance]
-            num_of_query_instance_per_class = sample_config[sample_fields.num_of_query_instance_per_class]
-            num_of_query_class = sample_config[sample_fields.num_of_query_class]
-            maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
+        # sampling configs
+        class_sample_method = sample_config[sample_fields.class_sample_method]
+        instance_sample_method = sample_config[sample_fields.instance_sample_method]
+        num_of_db_instance = sample_config[sample_fields.num_of_db_instance]
+        num_of_query_instance_per_class = sample_config[sample_fields.num_of_query_instance_per_class]
+        num_of_query_class = sample_config[sample_fields.num_of_query_class]
+        maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
 
-            # ids
-            instance_ids = embedding_container.instance_ids
-            label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+        num_of_seen_query_class = option_config[checkout_fields.num_of_seen_query_class]
+        num_of_seen_db_instance = option_config[checkout_fields.num_of_seen_db_instance]
+        num_of_seen_query_instance_per_class = option_config[checkout_fields.num_of_seen_query_instance_per_class]
+        num_of_unseen_query_class = option_config[checkout_fields.num_of_unseen_query_class]
+        num_of_unseen_db_instance = option_config[checkout_fields.num_of_unseen_db_instance]
+        num_of_unseen_query_instance_per_class = option_config[checkout_fields.num_of_unseen_query_instance_per_class]
+        num_of_total_db_instance = option_config[checkout_fields.num_of_total_db_instance]
 
+        # instance and label ids
+        all_instance_ids = embedding_container.instance_ids
+        all_label_ids = embedding_container.get_label_by_instance_ids(all_instance_ids)
+
+
+        # path to label maps
+        seen_id_path = option_config[checkout_fields.seen_unique_ids]
+        unseen_id_path = option_config[checkout_fields.unseen_unique_ids]
+        labelmap_path = option_config[checkout_fields.label_map]
+        # load label maps
+
+        seen_unique_id_map = load_json(seen_id_path)
+        unseen_unique_id_map = load_json(unseen_id_path)
+        standard_label_map = load_json(labelmap_path)
+
+        seen_unique_ids = [int(k) for k in seen_unique_id_map.keys()]
+        unseen_unique_ids = [int(k) for k in unseen_unique_id_map.keys()]
+
+        seen_instance_ids, seen_label_ids = [], []
+        unseen_instance_ids, unseen_label_ids = [], []
+        for label_id, inst_id in zip(all_label_ids, all_instance_ids):
+            if label_id in seen_unique_ids:
+                seen_label_ids.append(label_id)
+                seen_instance_ids.append(inst_id)
+            elif label_id in unseen_unique_ids:
+                unseen_label_ids.append(label_id)
+                unseen_instance_ids.append(inst_id)
+        print('Container has {} classes with {} instances, {} are seen ({}) and {} are unseen ({}).'.format(
+            len(set(all_label_ids)), len(all_instance_ids), len(seen_instance_ids), len(set(seen_label_ids)), 
+            len(unseen_instance_ids), len(set(unseen_label_ids))))
+
+        for _attr_name in self._attributes:
             #option configs
-            # TODO @kv: Load unseen label ids from given path.
-            dataset_info_path = option_config[checkout_fields.unseen_label_map]
-            with open(dataset_info_path, 'r') as fp:
-                dataset_info = json.load(fp)
-            unseen_dataset_info = dataset_info['unseen']
+            print('Execute {} ranking evaluation:'.format(_attr_name))
 
-            all_unseen_label_ids = list(set([unseen_data['label'] for unseen_data in unseen_dataset_info]))
-
-            seen_label_ids, unseen_label_ids = [], []
-            seen_instance_ids, unseen_instance_ids = [], []
-            for inst_id, label_id in zip(instance_ids, label_ids):
-                if label_id in all_unseen_label_ids:
-                    unseen_label_ids.append(label_id)
-                    unseen_instance_ids.append(inst_id)
-                else:
-                    seen_label_ids.append(label_id)
-                    seen_instance_ids.append(inst_id)
-
-            """
-              The Following Section should be a module.
-            """
-            for _attr in ['seen', 'unseen']:
-                if _attr == 'seen':
-                    print('Sample from seen set.')
-                    sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
-                elif _attr == 'unseen':
-                    print('Sample from unseen set.')
-                    sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
-
+            # Prepare instance ids, label ids and embeddings for different scenarios
+            if _attr_name == attr_fields.seen_to_seen:
+                """Seen To Seen"""
+                print('#of instances: {}, # of class: {}'.format(len(seen_instance_ids), len(set(seen_label_ids))))
+                sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
                 sampled = sampler.sample_query_and_database(
                     class_sample_method=class_sample_method,
                     instance_sample_method=instance_sample_method,
-                    num_of_db_instance=num_of_db_instance,
-                    num_of_query_class=num_of_query_class,
-                    num_of_query_instance_per_class=num_of_query_instance_per_class,
+                    num_of_db_instance=num_of_seen_db_instance,
+                    num_of_query_class=num_of_seen_query_class,
+                    num_of_query_instance_per_class=num_of_seen_query_instance_per_class,
                     maximum_of_sampled_data=maximum_of_sampled_data)
 
                 query_embeddings = embedding_container.get_embedding_by_instance_ids(
@@ -160,48 +204,123 @@ class CheckoutEvaluation(MetricEvaluationBase):
                 db_embeddings = embedding_container.get_embedding_by_instance_ids(
                     sampled[sample_fields.db_instance_ids])
                 db_label_ids = sampled[sample_fields.db_label_ids]
-
                 print('# of sampled query: {}, db: {}'.format(len(query_label_ids), len(db_label_ids)))
+                # TODO @kv: type conversion at proper moment.
+                query_label_ids = np.asarray(query_label_ids)
+                db_label_ids = np.asarray(db_label_ids)
+            elif _attr_name == attr_fields.unseen_to_unseen:
+                """Unseen To Unseen"""
+                print('{}: #of instances: {}, # of class: {}'.format(_attr_name, len(unseen_instance_ids), len(set(unseen_label_ids))))
+                sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
+                sampled = sampler.sample_query_and_database(
+                    class_sample_method=class_sample_method,
+                    instance_sample_method=instance_sample_method,
+                    num_of_db_instance=num_of_unseen_db_instance,
+                    num_of_query_class=num_of_unseen_query_class,
+                    num_of_query_instance_per_class=num_of_unseen_query_instance_per_class,
+                    maximum_of_sampled_data=maximum_of_sampled_data)
 
+                query_embeddings = embedding_container.get_embedding_by_instance_ids(
+                    sampled[sample_fields.query_instance_ids])
+                query_label_ids = sampled[sample_fields.query_label_ids]
+
+                db_embeddings = embedding_container.get_embedding_by_instance_ids(
+                    sampled[sample_fields.db_instance_ids])
+                db_label_ids = sampled[sample_fields.db_label_ids]
+                print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
                 # TODO @kv: type conversion at proper moment.
                 query_label_ids = np.asarray(query_label_ids)
                 db_label_ids = np.asarray(db_label_ids)
 
-                # ranking configs
-                top_k_list = ranking_config[metric_fields.top_k_hit_accuracy]
+            else:
+                sampler = SampleStrategy(all_instance_ids, all_label_ids)
+                all_sampled = sampler._sample(
+                        class_sample_method=class_sample_method,
+                        instance_sample_method=instance_sample_method,
+                        num_of_sampled_class=len(set(all_label_ids)),
+                        num_of_sampled_instance=num_of_total_db_instance,
+                    )
 
-                # TODO @kv: Add more evaluation and reranking methods
-                for top_k in top_k_list:
+                total_db_embeddings = embedding_container.get_embedding_by_instance_ids(
+                            all_sampled[sample_fields.sampled_instance_ids])
+                total_db_label_ids = all_sampled[sample_fields.sampled_label_ids]
 
-                    if top_k == 1:
-                        continue
+                if _attr_name == attr_fields.unseen_to_total:
+                    sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
+                    sampled = sampler._sample(
+                        class_sample_method=class_sample_method,
+                        instance_sample_method=instance_sample_method,
+                        num_of_sampled_class=num_of_unseen_query_class,
+                        num_of_sampled_instance=num_of_unseen_query_instance_per_class,
+                    )
+                    query_embeddings = embedding_container.get_embedding_by_instance_ids(
+                        sampled[sample_fields.sampled_instance_ids])
+                    query_label_ids = sampled[sample_fields.sampled_label_ids]
+                    query_label_ids = np.asarray(query_label_ids)
+                    db_embeddings = total_db_embeddings
+                    db_label_ids = np.asarray(total_db_label_ids)
+                    print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
 
-                    ranking_metrics = RankingMetrics(top_k)
-                    hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
+                elif _attr_name == attr_fields.seen_to_total:
+                    sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
+                    sampled = sampler._sample(
+                        class_sample_method=class_sample_method,
+                        instance_sample_method=instance_sample_method,
+                        num_of_sampled_class=num_of_seen_query_class,
+                        num_of_sampled_instance=num_of_seen_query_instance_per_class,
+                    )
+                    query_embeddings = embedding_container.get_embedding_by_instance_ids(
+                        sampled[sample_fields.sampled_instance_ids])
+                    query_label_ids = sampled[sample_fields.sampled_label_ids]
+                    query_label_ids = np.asarray(query_label_ids)
+                    db_embeddings = total_db_embeddings
+                    db_label_ids = np.asarray(total_db_label_ids)
+                    print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
 
-                    for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
-                        # naive search
-                        distances = euclidean_distance(_query_embed, db_embeddings)
-                        sorted_distances = indexing_array(distances, distances)
-                        indexed_db_labels = indexing_array(distances, db_label_ids)
-                        #print('Query label: {}'.format(_query_label))
-                        #print('Retrieved labels: {}'.format(indexed_db_labels[:10]))
-                        #print(sorted_distances[:20])
-                        hits = indexed_db_labels[:top_k] == _query_label
-                        hit_arrays[_idx, ...] = hits
-                        #if not hits[0]:
-                        #    print('Retrieved labels: {} - GT label: {} Top1 Hit: {}'.format(indexed_db_labels, _query_label, hits[0]))
+            """
+            The Following Section should be a module.
+            """
+            metric_results = self._run_ranking(
+                query_embeddings,
+                query_label_ids,
+                db_embeddings,
+                db_label_ids)
 
-                    ranking_metrics.add_inputs(hit_arrays)
-                    result_container.add(_attr, checkout_fields.top_k_hit_accuracy,
-                                        ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
+            result_container.add(_attr_name, checkout_fields.top_k_hit_accuracy,
+                                metric_results[1], condition={'k': 1})
+            result_container.add(_attr_name, checkout_fields.top_k_hit_accuracy,
+                                metric_results[5], condition={'k': 5})
+            result_container.add(_attr_name, checkout_fields.mAP,
+                                 metric_results[checkout_fields.mAP])
 
-                result_container.add(_attr, checkout_fields.top_k_hit_accuracy,
-                                    ranking_metrics.topk_hit_accuracy, condition={'k': 1})
-                result_container.add(_attr, checkout_fields.mAP,
-                                    ranking_metrics.mean_average_precision)
+        return result_container
 
-            return result_container
-        else:
-            # with attribute filter
-            raise NotImplementedError
+    def _run_ranking(self,
+                     query_embeddings,
+                     query_label_ids,
+                     db_embeddings,
+                     db_label_ids,
+                     ):
+
+        # TODO @kv: Add more evaluation and reranking methods
+        # NOTE: query labels are groundtruths
+        rank_result = {}
+        top_1, top_k = 1, 5
+        ranking_metrics = RankingMetrics(top_k)
+        hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
+
+        for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
+            # naive search
+            distances = euclidean_distance(_query_embed, db_embeddings)
+            sorted_distances = indexing_array(distances, distances)
+            indexed_db_labels = indexing_array(distances, db_label_ids)
+            hits = indexed_db_labels[:top_k] == _query_label
+            hit_arrays[_idx, ...] = hits
+            # NOTE: RAW Results Exporter.
+
+        ranking_metrics.add_inputs(hit_arrays)
+        rank_result[top_1] = ranking_metrics.top1_hit_accuracy
+        rank_result[top_k] = ranking_metrics.topk_hit_accuracy
+        rank_result[checkout_fields.mAP] = ranking_metrics.mean_average_precision
+
+        return rank_result

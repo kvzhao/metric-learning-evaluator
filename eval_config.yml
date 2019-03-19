@@ -8,7 +8,7 @@
 database:
 
 # upper-bound of the evaluation instances
-container_size: 35000
+container_size: 50000
 
 chosen_evaluations:
     - CheckoutEvaluation
@@ -73,12 +73,13 @@ evaluation_options:
             seen_dataset: # not done
             unseen_dataset: # not done
 
+    # The evaluation supports only offline
     CheckoutEvaluation:
         sampling:
             class_sample_method: uniform
             instance_sample_method: uniform
             num_of_db_instance: 10
-            num_of_query_class: 200
+            num_of_query_class: 50
             num_of_query_instance_per_class: 1
             maximum_of_sampled_data: 10000
 
@@ -90,8 +91,21 @@ evaluation_options:
             mAP: true
 
         attribute:
+            - seen_to_seen
+            - unseen_to_unseen
+            - seen_to_total
+            - unseen_to_total
 
         option:
-            unseen_label_map: # TODO
+            num_of_seen_query_class: 100
+            num_of_seen_db_instance: 10
+            num_of_seen_query_instance_per_class: 1
+            num_of_unseen_query_class: 100
+            num_of_unseen_db_instance: 10
+            num_of_unseen_query_instance_per_class: 1
+            num_of_total_db_instance: 200
+            seen_unique_ids: data/seen_unique_ids_gp1444.json
+            unseen_unique_ids: data/unseen_unique_ids_gp1444.json
+            label_map: data/labelmap_1933.json
 
 # OPTIONS OF EACH ITEMS
