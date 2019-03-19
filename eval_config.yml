@@ -76,8 +76,8 @@ evaluation_options:
     # The evaluation supports only offline
     CheckoutEvaluation:
         sampling:
-            class_sample_method: uniform
-            instance_sample_method: uniform
+            class_sample_method: all_class
+            instance_sample_method: all_instance
             num_of_db_instance: 10
             num_of_query_class: 50
             num_of_query_instance_per_class: 1
@@ -101,7 +101,7 @@ evaluation_options:
             num_of_seen_db_instance: 10
             num_of_seen_query_instance_per_class: 1
             num_of_unseen_query_class: 100
-            num_of_unseen_db_instance: 10
+            num_of_unseen_db_instance: 1
             num_of_unseen_query_instance_per_class: 1
             num_of_total_db_instance: 200
             seen_unique_ids: data/seen_unique_ids_gp1444.json
