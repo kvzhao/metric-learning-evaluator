@@ -188,6 +188,9 @@ class CheckoutEvaluation(MetricEvaluationBase):
             if _attr_name == attr_fields.seen_to_seen:
                 """Seen To Seen"""
                 print('#of instances: {}, # of class: {}'.format(len(seen_instance_ids), len(set(seen_label_ids))))
+                if len(seen_instance_ids) == 0 or len(set(seen_label_ids)) == 0:
+                    print('Instances not enough, skip.')
+                    continue
                 sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
                 sampled = sampler.sample_query_and_database(
                     class_sample_method=class_sample_method,
@@ -205,12 +208,18 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     sampled[sample_fields.db_instance_ids])
                 db_label_ids = sampled[sample_fields.db_label_ids]
                 print('# of sampled query: {}, db: {}'.format(len(query_label_ids), len(db_label_ids)))
+                if len(query_label_ids) == 0 or len(db_label_ids) == 0:
+                    print('Data not enough, skip.')
+                    continue
                 # TODO @kv: type conversion at proper moment.
                 query_label_ids = np.asarray(query_label_ids)
                 db_label_ids = np.asarray(db_label_ids)
             elif _attr_name == attr_fields.unseen_to_unseen:
                 """Unseen To Unseen"""
                 print('{}: #of instances: {}, # of class: {}'.format(_attr_name, len(unseen_instance_ids), len(set(unseen_label_ids))))
+                if len(unseen_instance_ids) == 0 or len(set(unseen_label_ids)) == 0:
+                    print('Instances not enough, skip.')
+                    continue
                 sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
                 sampled = sampler.sample_query_and_database(
                     class_sample_method=class_sample_method,
@@ -228,7 +237,9 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     sampled[sample_fields.db_instance_ids])
                 db_label_ids = sampled[sample_fields.db_label_ids]
                 print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
-                # TODO @kv: type conversion at proper moment.
+                if len(query_label_ids) == 0 or len(db_label_ids) == 0:
+                    print('Data not enough, skip.')
+                    continue
                 query_label_ids = np.asarray(query_label_ids)
                 db_label_ids = np.asarray(db_label_ids)
 
@@ -260,6 +271,9 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     db_embeddings = total_db_embeddings
                     db_label_ids = np.asarray(total_db_label_ids)
                     print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
+                    if len(query_label_ids) == 0 or len(db_label_ids) == 0:
+                        print('Data not enough, skip.')
+                        continue
 
                 elif _attr_name == attr_fields.seen_to_total:
                     sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
@@ -276,6 +290,9 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     db_embeddings = total_db_embeddings
                     db_label_ids = np.asarray(total_db_label_ids)
                     print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
+                    if len(query_label_ids) == 0 or len(db_label_ids) == 0:
+                        print('Data not enough, skip.')
+                        continue
 
             """
             The Following Section should be a module.
