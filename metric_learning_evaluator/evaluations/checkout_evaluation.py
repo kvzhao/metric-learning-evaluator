@@ -280,6 +280,8 @@ class CheckoutEvaluation(MetricEvaluationBase):
             """
             The Following Section should be a module.
             """
+            print('{}: {} query instances with {} classes search on db {} instances with {} classes.'.format(
+                _attr_name, len(query_embeddings), len(set(query_label_ids)), len(db_embeddings), len(set(db_label_ids))))
             metric_results = self._run_ranking(
                 query_embeddings,
                 query_label_ids,
