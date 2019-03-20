@@ -287,11 +287,13 @@ class SampleStrategy(object):
             instance_ids_per_class = self._instance_group[_class]
             num_instance_per_class = len(instance_ids_per_class)
             if num_instance_per_class==1:
-                print('Warning: class_id: {} num_instance_per_class==1, Skipped...'.format(_class))
+                print('Notice: class_id: {} num_instance_per_class==1, Skipped.'.format(_class))
                 continue
             
             if num_of_db_instance_per_class >= num_instance_per_class:
                 num_of_db_instance_per_class = math.floor(num_instance_per_class * 0.5)
+                print('Notice: class_id: {} has only {} instances, reduce db instances to {}'.format(
+                    _class, num_instance_per_class, num_of_db_instance_per_class))
 
             # Sample per class
             shuffle(instance_ids_per_class)
