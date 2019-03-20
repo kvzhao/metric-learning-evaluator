@@ -200,21 +200,48 @@ class CheckoutEvaluation(MetricEvaluationBase):
                             maximum_of_sampled_data=maximum_of_sampled_data)
 
         # Prepare total set
+        # DB
         sampled_seen_db_instance_ids = sampled_seen[sample_fields.db_instance_ids]
         sampled_unseen_db_instance_ids = sampled_unseen[sample_fields.db_instance_ids]
-
         sampled_seen_db_label_ids = sampled_seen[sample_fields.db_label_ids]
         sampled_unseen_db_label_ids = sampled_unseen[sample_fields.db_label_ids]
+
+        # Query
+        sampled_seen_query_instance_ids = sampled_seen[sample_fields.query_instance_ids]
+        sampled_unseen_query_instance_ids = sampled_unseen[sample_fields.query_instance_ids]
+        sampled_seen_query_label_ids = sampled_seen[sample_fields.query_label_ids]
+        sampled_unseen_query_label_ids = sampled_unseen[sample_fields.query_label_ids]
+
+        # Embeddings
+        sampled_seen_query_embeddings = embedding_container.get_embedding_by_instance_ids(
+            sampled_seen_query_instance_ids)
+        sampled_seen_db_embeddings = embedding_container.get_embedding_by_instance_ids(
+            sampled_seen_db_instance_ids)
+        sampled_unseen_query_embeddings = embedding_container.get_embedding_by_instance_ids(
+            sampled_unseen_query_instance_ids)
+        sampled_unseen_db_embeddings = embedding_container.get_embedding_by_instance_ids(
+            sampled_unseen_db_instance_ids)
+
 
         total_db_instance_ids = sampled_seen_db_instance_ids + sampled_unseen_db_instance_ids
         total_db_label_ids = sampled_seen_db_label_ids + sampled_unseen_db_label_ids
         total_db_embeddings = embedding_container.get_embedding_by_instance_ids(total_db_instance_ids)
         print('shape of total db embeddings: {}'.format(total_db_embeddings.shape))
-        print('[S] #of db instances: {}({}), [U] #of instances: {}({}), [T] # instances: {}({})'.format(
+
+        print('[S] #of db instances: {}({}), #of query instances: {}({})'.format(
             len(sampled_seen_db_label_ids), len(set(sampled_seen_db_label_ids)),
+            len(sampled_seen_query_label_ids), len(set(sampled_seen_query_label_ids))))
+        print('[U] #of db instances: {}({}), #of query instances: {}({})'.format(
             len(sampled_unseen_db_label_ids), len(set(sampled_unseen_db_label_ids)),
-            len(total_db_label_ids), len(set(total_db_label_ids))
-            ))
+            len(sampled_unseen_query_label_ids), len(set(sampled_unseen_query_label_ids))))
+        print('[T] #of instances: {}({})'. format(
+            len(total_db_label_ids), len(set(total_db_label_ids))))
+
+        sampled_seen_query_label_ids = np.asarray(sampled_seen_query_label_ids)
+        sampled_seen_db_label_ids = np.asarray(sampled_seen_db_label_ids)
+        sampled_unseen_query_label_ids = np.asarray(sampled_unseen_query_label_ids)
+        sampled_unseen_db_label_ids = np.asarray(sampled_unseen_db_label_ids)
+        total_db_label_ids = np.asarray(total_db_label_ids)
 
         for _attr_name in self._attributes:
             #option configs
@@ -229,21 +256,17 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     print('Instances not enough, skip.')
                     continue
 
-                query_embeddings = embedding_container.get_embedding_by_instance_ids(
-                    sampled_seen[sample_fields.query_instance_ids])
-                query_label_ids = sampled_seen[sample_fields.query_label_ids]
+                query_embeddings = sampled_seen_query_embeddings
+                query_label_ids = sampled_seen_query_label_ids
+                db_embeddings = sampled_seen_db_embeddings
+                db_label_ids = sampled_seen_db_label_ids
 
-                db_embeddings = embedding_container.get_embedding_by_instance_ids(
-                    sampled_seen[sample_fields.db_instance_ids])
-                db_label_ids = sampled_seen[sample_fields.db_label_ids]
                 print('# of sampled query: {}, db: {}'.format(
                     len(query_label_ids), len(db_label_ids)))
                 if len(query_label_ids) == 0 or len(db_label_ids) == 0:
                     print('Data not enough, skip.')
                     continue
-                # TODO @kv: type conversion at proper moment.
-                query_label_ids = np.asarray(query_label_ids)
-                db_label_ids = np.asarray(db_label_ids)
+
             elif _attr_name == attr_fields.unseen_to_unseen:
                 """Unseen To Unseen"""
                 print('{}: #of instances: {}, # of class: {}'.format(
@@ -252,31 +275,25 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     print('Instances not enough, skip.')
                     continue
 
-                query_embeddings = embedding_container.get_embedding_by_instance_ids(
-                    sampled_unseen[sample_fields.query_instance_ids])
-                query_label_ids = sampled_unseen[sample_fields.query_label_ids]
+                query_embeddings = sampled_unseen_query_embeddings
+                query_label_ids = sampled_unseen_query_label_ids
+                db_embeddings = sampled_unseen_db_embeddings
+                db_label_ids = sampled_unseen_db_label_ids
 
-                db_embeddings = embedding_container.get_embedding_by_instance_ids(
-                    sampled_unseen[sample_fields.db_instance_ids])
-                db_label_ids = sampled_unseen[sample_fields.db_label_ids]
                 print('{}: # of sampled query: {}, db: {}'.format(
                     _attr_name, len(query_label_ids), len(db_label_ids)))
                 if len(query_label_ids) == 0 or len(db_label_ids) == 0:
                     print('Data not enough, skip.')
                     continue
-                query_label_ids = np.asarray(query_label_ids)
-                db_label_ids = np.asarray(db_label_ids)
 
             else:
                 if _attr_name == attr_fields.unseen_to_total:
                     """Unseen To Total"""
-                    query_embeddings = embedding_container.get_embedding_by_instance_ids(
-                        sampled_unseen[sample_fields.query_instance_ids])
-                    query_label_ids = sampled_unseen[sample_fields.query_label_ids]
-
-                    query_label_ids = np.asarray(query_label_ids)
+                    query_embeddings = sampled_unseen_query_embeddings
+                    query_label_ids = sampled_unseen_query_label_ids
                     db_embeddings = total_db_embeddings
-                    db_label_ids = np.asarray(total_db_label_ids)
+                    db_label_ids = total_db_label_ids
+
                     print('{}: # of sampled query: {}, db: {}'.format(
                         _attr_name, len(query_label_ids), len(db_label_ids)))
                     if len(query_label_ids) == 0 or len(db_label_ids) == 0:
@@ -285,13 +302,13 @@ class CheckoutEvaluation(MetricEvaluationBase):
 
                 elif _attr_name == attr_fields.seen_to_total:
                     """Seen To Total"""
-                    query_embeddings = embedding_container.get_embedding_by_instance_ids(
-                        sampled_seen[sample_fields.query_instance_ids])
-                    query_label_ids = sampled_seen[sample_fields.query_label_ids]
+                    query_embeddings = sampled_seen_query_embeddings
+                    query_label_ids = sampled_seen_query_label_ids
                     db_embeddings = total_db_embeddings
-                    query_label_ids = np.asarray(query_label_ids)
-                    db_label_ids = np.asarray(total_db_label_ids)
-                    print('{}: # of sampled query: {}, db: {}'.format(_attr_name, len(query_label_ids), len(db_label_ids)))
+                    db_label_ids = total_db_label_ids
+
+                    print('{}: # of sampled query: {}, db: {}'.format(
+                        _attr_name, len(query_label_ids), len(db_label_ids)))
                     if len(query_label_ids) == 0 or len(db_label_ids) == 0:
                         print('Data not enough, skip.')
                         continue
