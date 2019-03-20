@@ -58,7 +58,6 @@ class CheckoutEvaluationStandardFields(object):
     num_of_unseen_query_class = 'num_of_unseen_query_class'
     num_of_unseen_db_instance = 'num_of_unseen_db_instance'
     num_of_unseen_query_instance_per_class = 'num_of_unseen_query_instance_per_class'
-    num_of_total_db_instance = 'num_of_total_db_instance'
 
 checkout_fields = CheckoutEvaluationStandardFields
 
@@ -141,27 +140,27 @@ class CheckoutEvaluation(MetricEvaluationBase):
         num_of_query_class = sample_config[sample_fields.num_of_query_class]
         maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
 
+        # option configs used in checkout evaluation
         num_of_seen_query_class = option_config[checkout_fields.num_of_seen_query_class]
         num_of_seen_db_instance = option_config[checkout_fields.num_of_seen_db_instance]
         num_of_seen_query_instance_per_class = option_config[checkout_fields.num_of_seen_query_instance_per_class]
         num_of_unseen_query_class = option_config[checkout_fields.num_of_unseen_query_class]
         num_of_unseen_db_instance = option_config[checkout_fields.num_of_unseen_db_instance]
         num_of_unseen_query_instance_per_class = option_config[checkout_fields.num_of_unseen_query_instance_per_class]
-        num_of_total_db_instance = option_config[checkout_fields.num_of_total_db_instance]
 
         # instance and label ids
         all_instance_ids = embedding_container.instance_ids
         all_label_ids = embedding_container.get_label_by_instance_ids(all_instance_ids)
 
-
         # path to label maps
         seen_id_path = option_config[checkout_fields.seen_unique_ids]
         unseen_id_path = option_config[checkout_fields.unseen_unique_ids]
         labelmap_path = option_config[checkout_fields.label_map]
-        # load label maps
 
+        # load label maps
         seen_unique_id_map = load_json(seen_id_path)
         unseen_unique_id_map = load_json(unseen_id_path)
+        # Used for per instance results
         standard_label_map = load_json(labelmap_path)
 
         seen_unique_ids = [int(k) for k in seen_unique_id_map.keys()]
@@ -180,6 +179,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
             len(set(all_label_ids)), len(all_instance_ids), len(seen_instance_ids), len(set(seen_label_ids)), 
             len(unseen_instance_ids), len(set(unseen_label_ids))))
 
+        print('Create Seen Data Sampler')
         seen_sampler = SampleStrategy(seen_instance_ids, seen_label_ids)
         sampled_seen = seen_sampler.sample_query_and_database(
                             class_sample_method=class_sample_method,
@@ -189,6 +189,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
                             num_of_query_instance_per_class=num_of_seen_query_instance_per_class,
                             maximum_of_sampled_data=maximum_of_sampled_data)
 
+        print('Create Unseen Data Sampler')
         unseen_sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
         sampled_unseen = unseen_sampler.sample_query_and_database(
                             class_sample_method=class_sample_method,
@@ -197,6 +198,23 @@ class CheckoutEvaluation(MetricEvaluationBase):
                             num_of_query_class=num_of_unseen_query_class,
                             num_of_query_instance_per_class=num_of_unseen_query_instance_per_class,
                             maximum_of_sampled_data=maximum_of_sampled_data)
+
+        # Prepare total set
+        sampled_seen_db_instance_ids = sampled_seen[sample_fields.db_instance_ids]
+        sampled_unseen_db_instance_ids = sampled_unseen[sample_fields.db_instance_ids]
+
+        sampled_seen_db_label_ids = sampled_seen[sample_fields.db_label_ids]
+        sampled_unseen_db_label_ids = sampled_unseen[sample_fields.db_label_ids]
+
+        total_db_instance_ids = sampled_seen_db_instance_ids + sampled_unseen_db_instance_ids
+        total_db_label_ids = sampled_seen_db_label_ids + sampled_unseen_db_label_ids
+        total_db_embeddings = embedding_container.get_embedding_by_instance_ids(total_db_instance_ids)
+        print('shape of total db embeddings: {}'.format(total_db_embeddings.shape))
+        print('[S] #of db instances: {}({}), [U] #of instances: {}({}), [T] # instances: {}({})'.format(
+            len(sampled_seen_db_label_ids), len(set(sampled_seen_db_label_ids)),
+            len(sampled_unseen_db_label_ids), len(set(sampled_unseen_db_label_ids)),
+            len(total_db_label_ids), len(set(total_db_label_ids))
+            ))
 
         for _attr_name in self._attributes:
             #option configs
@@ -250,18 +268,6 @@ class CheckoutEvaluation(MetricEvaluationBase):
                 db_label_ids = np.asarray(db_label_ids)
 
             else:
-
-                sampled_seen_db_instance_ids = sampled_seen[sample_fields.db_instance_ids]
-                sampled_unseen_db_instance_ids = sampled_unseen[sample_fields.db_instance_ids]
-
-                sampled_seen_db_label_ids = sampled_seen[sample_fields.db_label_ids]
-                sampled_unseen_db_label_ids = sampled_unseen[sample_fields.db_label_ids]
-
-                total_db_instance_ids = sampled_seen_db_instance_ids + sampled_unseen_db_instance_ids
-                total_db_label_ids = sampled_seen_db_label_ids + sampled_unseen_db_label_ids
-                total_db_embeddings = embedding_container.get_embedding_by_instance_ids(total_db_instance_ids)
-                print('shape of total db embeddings: {}'.format(total_db_embeddings.shape))
-
                 if _attr_name == attr_fields.unseen_to_total:
                     """Unseen To Total"""
                     query_embeddings = embedding_container.get_embedding_by_instance_ids(
