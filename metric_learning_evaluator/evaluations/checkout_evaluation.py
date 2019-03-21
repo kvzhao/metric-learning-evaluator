@@ -392,6 +392,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
         # TODO @kv: Add more evaluation and reranking methods
         # NOTE: query labels are groundtruths
         rank_result = {}
+        rank_result['instance_result'] = list()
         top_1, top_k = 1, 5
         ranking_metrics = RankingMetrics(top_k)
         hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
@@ -406,13 +407,13 @@ class CheckoutEvaluation(MetricEvaluationBase):
             if save_report is not None:
                 indexed_db_instances = indexing_array(distances, db_instance_ids)
                 # NOTE: RAW Results Exporter.
-                rank_result['instance_result'] = {
+                rank_result['instance_result'].append({
                     'query_label_id': str(_query_label),
                     'query_instance_id': str(_query_inst),
                     'top_k_retrieval_label_ids': indexed_db_labels[:top_k].tolist(),
                     'top_k_retrieval_instance_ids': indexed_db_instances[:top_k].tolist(),
                     'is_hit': bool(hits[0]),
-                }
+                })
 
         ranking_metrics.add_inputs(hit_arrays)
         rank_result[top_1] = ranking_metrics.top1_hit_accuracy
