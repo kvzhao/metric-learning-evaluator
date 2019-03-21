@@ -1,6 +1,15 @@
 """
   Customized Application for Checkout Evaluation
-  WARNING: The evaluation support only offline now.
+
+  Evaluation Metrics:
+    - Seen to Seen
+    - Unseen to Unseen
+    - Seen to Total
+    - Unseen to Total
+
+  Evaluation Report:
+    - S-S, S-T, U-U, U-T
+    - misclassified
 
   NOTE @kv:
     This version is not mature and hard-coded.
@@ -20,6 +29,7 @@ from tqdm import tqdm
 
 import json
 from pprint import pprint
+import pytablewriter
 from collections import defaultdict
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
@@ -59,6 +69,8 @@ class CheckoutEvaluationStandardFields(object):
     num_of_unseen_db_instance = 'num_of_unseen_db_instance'
     num_of_unseen_query_instance_per_class = 'num_of_unseen_query_instance_per_class'
 
+    save_report = 'save_report'
+
 checkout_fields = CheckoutEvaluationStandardFields
 
 
@@ -71,16 +83,21 @@ def load_json(json_path):
 
     return _dict
 
-class InstanceResult(object):
+class Reporter(object):
+    def __init__(self, table, label_map=None):
+        self.table = table
+        self.label_map = label_map
 
-    def __init__(self):
+    def _parse(self):
         pass
 
-    def push(self):
-        pass
+    def save_report(self, save_path):
 
-    def result(self):
-        pass
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        with open(save_path + '/table_raw.json', 'w') as fp:
+            json.dump(self.table, fp)
 
 class CheckoutEvaluation(MetricEvaluationBase):
 
@@ -147,6 +164,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
         num_of_unseen_query_class = option_config[checkout_fields.num_of_unseen_query_class]
         num_of_unseen_db_instance = option_config[checkout_fields.num_of_unseen_db_instance]
         num_of_unseen_query_instance_per_class = option_config[checkout_fields.num_of_unseen_query_instance_per_class]
+        save_report = option_config[checkout_fields.save_report]
+
+        if save_report is not None:
+            report_table = {}
 
         # instance and label ids
         all_instance_ids = embedding_container.instance_ids
@@ -228,13 +249,13 @@ class CheckoutEvaluation(MetricEvaluationBase):
         total_db_embeddings = embedding_container.get_embedding_by_instance_ids(total_db_instance_ids)
         print('shape of total db embeddings: {}'.format(total_db_embeddings.shape))
 
-        print('[S] #of db instances: {}({}), #of query instances: {}({})'.format(
+        print('[S] #of db instances: {} ({} classes), #of query instances: {} ({} classes)'.format(
             len(sampled_seen_db_label_ids), len(set(sampled_seen_db_label_ids)),
             len(sampled_seen_query_label_ids), len(set(sampled_seen_query_label_ids))))
-        print('[U] #of db instances: {}({}), #of query instances: {}({})'.format(
+        print('[U] #of db instances: {} ({} classes), #of query instances: {} ({} classes)'.format(
             len(sampled_unseen_db_label_ids), len(set(sampled_unseen_db_label_ids)),
             len(sampled_unseen_query_label_ids), len(set(sampled_unseen_query_label_ids))))
-        print('[T] #of instances: {}({})'. format(
+        print('[T] #of instances: {} ({} classes)'. format(
             len(total_db_label_ids), len(set(total_db_label_ids))))
 
         sampled_seen_query_label_ids = np.asarray(sampled_seen_query_label_ids)
@@ -242,6 +263,12 @@ class CheckoutEvaluation(MetricEvaluationBase):
         sampled_unseen_query_label_ids = np.asarray(sampled_unseen_query_label_ids)
         sampled_unseen_db_label_ids = np.asarray(sampled_unseen_db_label_ids)
         total_db_label_ids = np.asarray(total_db_label_ids)
+
+        sampled_seen_query_instance_ids = np.asarray(sampled_seen_query_instance_ids)
+        sampled_seen_db_instance_ids = np.asarray(sampled_seen_db_instance_ids)
+        sampled_unseen_query_instance_ids = np.asarray(sampled_unseen_query_instance_ids)
+        sampled_unseen_db_instance_ids = np.asarray(sampled_unseen_db_instance_ids)
+        total_db_instance_ids = np.asarray(total_db_instance_ids)
 
         for _attr_name in self._attributes:
             #option configs
@@ -258,8 +285,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
 
                 query_embeddings = sampled_seen_query_embeddings
                 query_label_ids = sampled_seen_query_label_ids
+                query_instance_ids = sampled_seen_query_instance_ids
                 db_embeddings = sampled_seen_db_embeddings
                 db_label_ids = sampled_seen_db_label_ids
+                db_instance_ids = sampled_seen_db_instance_ids
 
                 print('# of sampled query: {}, db: {}'.format(
                     len(query_label_ids), len(db_label_ids)))
@@ -277,8 +306,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
 
                 query_embeddings = sampled_unseen_query_embeddings
                 query_label_ids = sampled_unseen_query_label_ids
+                query_instance_ids = sampled_unseen_query_instance_ids
                 db_embeddings = sampled_unseen_db_embeddings
                 db_label_ids = sampled_unseen_db_label_ids
+                db_instance_ids = sampled_unseen_db_instance_ids
 
                 print('{}: # of sampled query: {}, db: {}'.format(
                     _attr_name, len(query_label_ids), len(db_label_ids)))
@@ -291,8 +322,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     """Unseen To Total"""
                     query_embeddings = sampled_unseen_query_embeddings
                     query_label_ids = sampled_unseen_query_label_ids
+                    query_instance_ids = sampled_unseen_query_instance_ids
                     db_embeddings = total_db_embeddings
                     db_label_ids = total_db_label_ids
+                    db_instance_ids = total_db_instance_ids
 
                     print('{}: # of sampled query: {}, db: {}'.format(
                         _attr_name, len(query_label_ids), len(db_label_ids)))
@@ -304,8 +337,10 @@ class CheckoutEvaluation(MetricEvaluationBase):
                     """Seen To Total"""
                     query_embeddings = sampled_seen_query_embeddings
                     query_label_ids = sampled_seen_query_label_ids
+                    query_instance_ids = sampled_seen_query_instance_ids
                     db_embeddings = total_db_embeddings
                     db_label_ids = total_db_label_ids
+                    db_instance_ids = total_db_instance_ids
 
                     print('{}: # of sampled query: {}, db: {}'.format(
                         _attr_name, len(query_label_ids), len(db_label_ids)))
@@ -321,8 +356,11 @@ class CheckoutEvaluation(MetricEvaluationBase):
             metric_results = self._run_ranking(
                 query_embeddings,
                 query_label_ids,
+                query_instance_ids,
                 db_embeddings,
-                db_label_ids)
+                db_label_ids,
+                db_instance_ids,
+                save_report)
 
             result_container.add(_attr_name, checkout_fields.top_k_hit_accuracy,
                                 metric_results[1], condition={'k': 1})
@@ -331,13 +369,24 @@ class CheckoutEvaluation(MetricEvaluationBase):
             result_container.add(_attr_name, checkout_fields.mAP,
                                  metric_results[checkout_fields.mAP])
 
+            if save_report is not None:
+                report_table[_attr_name] = metric_results['instance_result']
+
+        # Save table out.
+        if save_report is not None:
+            reporter = Reporter(report_table)
+            reporter.save_report(save_report)
+
         return result_container
 
     def _run_ranking(self,
                      query_embeddings,
                      query_label_ids,
+                     query_instance_ids,
                      db_embeddings,
                      db_label_ids,
+                     db_instance_ids,
+                     save_report=None,
                      ):
 
         # TODO @kv: Add more evaluation and reranking methods
@@ -347,14 +396,23 @@ class CheckoutEvaluation(MetricEvaluationBase):
         ranking_metrics = RankingMetrics(top_k)
         hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
 
-        for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
+        for _idx, (_query_embed, _query_label, _query_inst) in enumerate(
+            zip(query_embeddings, query_label_ids, query_instance_ids)):
             # naive search
             distances = euclidean_distance(_query_embed, db_embeddings)
-            sorted_distances = indexing_array(distances, distances)
             indexed_db_labels = indexing_array(distances, db_label_ids)
             hits = indexed_db_labels[:top_k] == _query_label
             hit_arrays[_idx, ...] = hits
-            # NOTE: RAW Results Exporter.
+            if save_report is not None:
+                indexed_db_instances = indexing_array(distances, db_instance_ids)
+                # NOTE: RAW Results Exporter.
+                rank_result['instance_result'] = {
+                    'query_label_id': str(_query_label),
+                    'query_instance_id': str(_query_inst),
+                    'top_k_retrieval_label_ids': indexed_db_labels[:top_k].tolist(),
+                    'top_k_retrieval_instance_ids': indexed_db_instances[:top_k].tolist(),
+                    'is_hit': bool(hits[0]),
+                }
 
         ranking_metrics.add_inputs(hit_arrays)
         rank_result[top_1] = ranking_metrics.top1_hit_accuracy
