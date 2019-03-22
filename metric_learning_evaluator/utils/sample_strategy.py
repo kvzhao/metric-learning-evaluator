@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
@@ -14,7 +15,6 @@ from pprint import pprint
 
 
 class SampleStrategyStandardFields:
-
     # sampling
     sample_method = 'sample_method'
     class_sample_method = 'class_sample_method'
@@ -180,7 +180,7 @@ class SampleStrategy(object):
         if not instance_sample_method in [sample_fields.uniform]:
             instance_sample_method = sample_fields.uniform
             print('instance sample method {} is not defined, use {} as default.'.format(
-                  instance_sample_method, sample_fields.uniform))
+                instance_sample_method, sample_fields.uniform))
 
         instances = []
         labels = []
@@ -252,7 +252,7 @@ class SampleStrategy(object):
                                                                    num_of_db_instance,
                                                                    num_of_query_instance_per_class,
                                                                    maximum_of_sampled_data=maximum_of_sampled_data)
-        
+
         return {
             sample_fields.db_instance_ids: sampled_db[sample_fields.sampled_instance_ids],
             sample_fields.db_label_ids: sampled_db[sample_fields.sampled_label_ids],
@@ -266,56 +266,66 @@ class SampleStrategy(object):
                               num_of_query_instance_per_class,
                               maximum_of_sampled_data=None):
         num_of_sampled_instance = num_of_db_instance_per_class + \
-            num_of_query_instance_per_class
-        probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance
-        if maximum_of_sampled_data:
-            upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance,
-                                              maximum_of_sampled_data)
-        else:
-            upper_bound_of_sampled_data = probable_num_of_sampled_data
-
-        
-        if probable_num_of_sampled_data > upper_bound_of_sampled_data:
-            reduced_num_of_sampled_instance = math.floor(
-                upper_bound_of_sampled_data / num_of_sampled_class)
-            print(
-                'Notice: Reduce number of sampled instances per class from {} to {} due to limitation.'.format(
-                    num_of_sampled_instance, reduced_num_of_sampled_instance))
-            num_of_sampled_instance = reduced_num_of_sampled_instance
+                                  num_of_query_instance_per_class
+        # probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance
+        # if maximum_of_sampled_data:
+        #     upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance,
+        #                                       maximum_of_sampled_data)
+        # else:
+        #     upper_bound_of_sampled_data = probable_num_of_sampled_data
+        #
+        # if probable_num_of_sampled_data > upper_bound_of_sampled_data:
+        #     reduced_num_of_sampled_instance = math.floor(
+        #         upper_bound_of_sampled_data / num_of_sampled_class)
+        #     print(
+        #         'Notice: Reduce number of sampled instances per class from {} to {} due to limitation.'.format(
+        #             num_of_sampled_instance, reduced_num_of_sampled_instance))
+        #     num_of_sampled_instance = reduced_num_of_sampled_instance
         db_instances = []
         db_labels = []
         query_instances = []
         query_labels = []
 
         # Sample id of class(label)
+        if len(self._classes) < num_of_sampled_class:
+            print('Warning: num_of_sampled_class > num_class({})" \
+                    "set num_of_sampled_class = {}'.format(
+                num_of_sampled_class, len(self._classes), len(self._classes)))
+            num_of_sampled_class = len(self._classes)
+
         sampled_classes = np.random.choice(
             self._classes, num_of_sampled_class, replace=False)
 
         for _class in sampled_classes:
             instance_ids_per_class = self._instance_group[_class]
             num_instance_per_class = len(instance_ids_per_class)
-            if num_instance_per_class==1:
+            if num_instance_per_class <= 1:
                 print('Warning: class_id: {} num_instance_per_class==1, Skipped...'.format(_class))
                 continue
 
             # Constraint number of samples(db and query) per class
             num_sampled_instance_per_class = min(num_instance_per_class,
                                                  num_of_sampled_instance)
-            
-            num_query_instances = num_of_query_instance_per_class
-            num_db_instances = min(num_instance_per_class - num_query_instances,
-                                   num_of_db_instance_per_class)
-            
-            if num_db_instances < 0:
-                print('Warning: num_query_instances > num_instance_per_class, '\
-                      'Reduce number of query instances(num_query_instances) into 1.')
-                num_query_instances = 1
-                num_db_instances = num_instance_per_class - num_query_instances
-                
+
+
+
             # Sample per class
             sampled_instances = np.random.choice(instance_ids_per_class,
                                                  num_sampled_instance_per_class,
                                                  replace=False)
+            if len(sampled_instances) <= 1:
+                print('Warning: class_id: {} sampled_instances <= 1, Skipped...'.format(_class))
+                continue
+
+            num_query_instances = num_of_query_instance_per_class
+            num_db_instances = min(len(sampled_instances) - num_query_instances,
+                                   num_of_db_instance_per_class)
+
+            if num_db_instances <= 0:
+                print('Warning: num_query_instances > num_sampled_instances, ' \
+                      'Reduce number of query instances(num_query_instances) into 1.')
+                num_query_instances = 1
+                num_db_instances = len(sampled_instances) - num_query_instances
 
             db_instances_per_class = sampled_instances[:num_db_instances]
             query_instances_per_class = sampled_instances[num_db_instances:
