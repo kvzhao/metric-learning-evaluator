@@ -43,7 +43,7 @@ def main(args):
 
     result_container = ResultContainer()
 
-    for top_k in [1, 5, 10]:
+    for top_k in [1, 5]:
         print('Compute top {} results'.format(top_k))
 
         if top_k == 1:
