@@ -97,7 +97,7 @@ class ConfigParser(object):
         return self._evaluations
 
     @property
-    def database_type(self):
+    def database(self):
         return self._database
 
     @property
