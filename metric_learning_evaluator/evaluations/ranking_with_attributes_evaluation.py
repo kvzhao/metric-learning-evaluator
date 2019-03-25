@@ -169,7 +169,8 @@ class RankingWithAttributesEvaluation(MetricEvaluationBase):
             query_embeddings = embedding_container.get_embedding_by_instance_ids(query_instance_ids)
             db_embeddings = embedding_container.get_embedding_by_instance_ids(db_instance_ids)
 
-            if len(set(query_label_ids) - set(db_label_ids)) == 0:
+            if len(set(query_label_ids) - set(db_label_ids)) == 0 and len(query_label_ids) > 0 and len(
+                    db_label_ids) > 0:
                 query_label_ids = np.asarray(query_label_ids)
                 db_label_ids = np.asarray(db_label_ids)
 
@@ -177,7 +178,6 @@ class RankingWithAttributesEvaluation(MetricEvaluationBase):
                 print("query : {},db:{}".format(len(query_label_ids), len(db_label_ids)))
                 # event_comment = event_comment + "(query-{} db-{})".format(len(query_label_ids), len(db_label_ids))
                 for top_k in top_k_list:
-
                     ranking_metrics = RankingMetrics(top_k)
                     hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
                     for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
@@ -198,7 +198,10 @@ class RankingWithAttributesEvaluation(MetricEvaluationBase):
                 result_container.add(event_comment, ranking_fields.mAP,
                                      ranking_metrics.mean_average_precision)
             else:
-                print("Warning classes of db is not included all query classes , skipping...")
+                if len(query_label_ids) <= 0 or len(db_label_ids) <= 0:
+                    print("Warning len(query_label_ids)<=0 or len(db_label_ids)<=0 , skipping...")
+                else:
+                    print("Warning classes of db is not included all query classes , skipping...")
                 for top_k in top_k_list:
                     result_container.add(event_comment, ranking_fields.top_k_hit_accuracy,
                                          -1, condition={'k': top_k})
