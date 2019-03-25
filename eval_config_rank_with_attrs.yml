@@ -1,0 +1,85 @@
+
+# NOTE: `embedding_size` and `logit_size` are external parameters
+
+# NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
+#       and with the key: `evaluator`.
+
+# database: Zeus | DatasetBackbone | None
+database:
+    database_type: Json
+    database_config:
+        # path to attributes_table.json
+        path: /vol/08822301/dennis.liu/tracking_scenarios_6/re-id/cam_2_65_2019-01-20_123135/attributes_table.json
+
+# upper-bound of the evaluation instances
+container_size: 30000
+
+chosen_evaluations:
+#    - RankingEvaluation
+    - RankingWithAttributesEvaluation
+
+# Configurations for evaluator:
+evaluation_options:
+    # Implemented Evaluations
+    FacenetEvaluation:
+        sampling:
+            # random_sample | amount_weighted | amount_inverse_weighted
+            class_sample_method: random_sample
+            num_of_pairs: 1000
+            num_of_instance_per_class: 1
+            ratio_of_class: 0.1
+
+        # these will be checked in FacenetEvaluation
+        metric:
+            accuracy:            true
+            validation_rate:     true
+            false_accept_rate:   false
+            true_positive_rate:  true
+            false_positive_rate: false
+
+        distance_measure:
+            function:
+                - euclidean
+            threshold:
+                start: 1.0
+                end: 1.5
+                step: 0.25
+        attribute: # not support
+
+        option:
+            path_pairlist: # not done
+
+    RankingWithAttributesEvaluation:
+
+        sampling:
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_db_instance: 10
+            num_of_query_class: 100
+            num_of_query_instance_per_class: 2
+            maximum_of_sampled_data: 10000
+
+        metric:
+            # top_1_hit is defaults
+            top_k_hit_accuracy:
+                - 1
+                - 5
+            mAP: true
+
+        distance_measure:
+            function:
+            threshold:
+
+        attribute: # not support
+            # path to grouping_rules.json
+            grouping_rules: /vol/08822301/dennis.liu/tracking_scenarios_6/re-id/cam_2_65_2019-01-20_123135/grouping_rules.json
+
+        option:
+            path_database: # not done
+            seen_dataset: # not done
+            unseen_dataset: # not done
+
+
+
+
+# OPTIONS OF EACH ITEMS
