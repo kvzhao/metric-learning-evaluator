@@ -15,6 +15,9 @@ class EvaluationStandardFields(object):
     # Retrival
     ranking = 'RankingEvaluation'
 
+    # Ranking with Attributes Evaluation
+    ranking_with_attrs = 'RankingWithAttributesEvaluation'
+
     mock = 'MockEvaluation'
 
     # FaceNet: Pair-wise evaluation
@@ -22,6 +25,7 @@ class EvaluationStandardFields(object):
 
     # Avaliable evaluation implementations
     classification = 'ClassificationEvaluation'
+
 
     # ===== Inner items =====
     sampling = 'sampling'
