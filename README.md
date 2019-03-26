@@ -23,7 +23,7 @@ INFO:tensorflow:Saving dict for global step 1500: global_step = 1500, loss = 7.4
 
 - Off-line mode
 
-One can use command-line tool called `ml_evaluate` to execute evaluations.
+One can use command-line tool called `ml_evaluator` to execute evaluations.
 
 ```
 usage: Command-line Metric Learning Evaluation Tool [-h] [--config CONFIG]
