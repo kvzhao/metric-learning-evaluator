@@ -38,6 +38,8 @@ parser.add_argument('--config', '-c', type=str, default=None,
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
         help='Path to the source dataset, tfrecord | dataset_backbone | folder')
+parser.add_argument('--database', '-db', type=str, default=None,
+        help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
         help='Type of the input dataset.')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
@@ -87,6 +89,5 @@ def main():
         evaluator.add_instance_id_and_embedding(fn, label, feat)
     total_results = evaluator.evaluate()
 
-    #pprint (total_results)
     for metric_name in evaluator.metric_names:
         print('{}: {}'.format(metric_name, total_results[metric_name]))
