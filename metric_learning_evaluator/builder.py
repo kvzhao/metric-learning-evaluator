@@ -52,14 +52,17 @@ class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
     """
 
-    def __init__(self, embedding_size, logit_size, config_dict):
+    def __init__(self, embedding_size, logit_size, config_dict, mode='online'):
         """Evaluator Builder.
 
           The object builds evaluation functions according to the given configuration 
           and manage shared data (embeddings, labels and attributes) in container objects.
 
           Args:
-            embedding_size, 
+            embedding_size: Integer describes 1d embedding size.
+            logit_size:
+            config_dict: Dict, loaded yaml foramt dict.
+            mode: String, `online` or `offline`.
 
           Building procedure: (TODO @kv: update these steps)
             * parse the config
@@ -70,8 +73,6 @@ class EvaluatorBuilder(object):
             * (optional) get update_ops
         """
 
-
-
         # TODO @kv: Change config_path to parsed dictionary
         self.configs = ConfigParser(config_dict)
 
@@ -81,9 +82,11 @@ class EvaluatorBuilder(object):
         self.logit_size = logit_size
 
         self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
-
-        # TODO @kv: If no attributes are given, do not allocate it?
         self.attribute_container = AttributeContainer()
+
+        self.mode = mode
+        if self.mode not in ['online', 'offline']:
+            raise ValueError('Evaluator mode: {} is not defined.'.format(self.mode))
 
         self._build()
 
@@ -101,7 +104,6 @@ class EvaluatorBuilder(object):
         """
           Build:
             Parse the config and create evaluators.
-            TODO @kv: Add a counter to calculate number of added data
         """
 
         # Parse the Configuration
