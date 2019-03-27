@@ -91,11 +91,12 @@ class EvaluatorBuilder(object):
         self._total_metrics = {}
 
         # Allocate general query interface
-        if not self.configs.database_type:
+        if not self.configs.database:
             # TODO @kv: consistent check with query condition
             self.query_interface = None
         else:
-            self.query_interface = QueryInterface(self.configs.database_type)
+            print(self.configs.database)
+            self.query_interface = QueryInterface(self.configs.database)
 
     def _build(self):
         """
@@ -156,9 +157,10 @@ class EvaluatorBuilder(object):
         # if not evaluations_need_query: no queries are needed.
 
         if self.query_interface:
-            if not self.configs.required_attributes:
-                print ('WARNING: No required attributes are pre-defined.')
-            queried_attributes = self.query_interface.query(instance_id, self.configs.required_attributes)
+            # TODO @dennis.liu : use grouping rules instead required_attributes
+            # if not self.configs.required_attributes:
+            #     print ('WARNING: No required attributes are pre-defined.')
+            queried_attributes = self.query_interface.query(instance_id)
             self.attribute_container.add(instance_id, queried_attributes)
 
         self._instance_counter += 1
