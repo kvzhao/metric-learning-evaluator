@@ -9,6 +9,7 @@ import numpy as np
 import itertools
 from collections import Counter
 from collections import defaultdict
+from random import shuffle
 
 from pprint import pprint
 
@@ -22,6 +23,8 @@ class SampleStrategyStandardFields:
 
     # mothods
     uniform = 'uniform'
+    all_class = 'all_class'
+    all_instance = 'all_instance'
     instance_number_weighted = 'instance_number_weighted'
     instance_number_inverse_weighted = 'instance_number_inverse_weighted'
 
@@ -167,6 +170,8 @@ class SampleStrategy(object):
         if class_sample_method == sample_fields.uniform:
             sampled_classes = np.random.choice(
                 self._classes, num_of_sampled_class, replace=False)
+        elif class_sample_method == sample_fields.all_class:
+            sampled_classes = self._classes
         elif class_sample_method == sample_fields.instance_number_weighted:
             raise NotImplementedError
         elif class_sample_method == sample_fields.instance_number_inverse_weighted:
@@ -177,7 +182,7 @@ class SampleStrategy(object):
             sampled_classes = np.random.choice(
                 self._classes, num_of_sampled_class, replace=False)
 
-        if not instance_sample_method in [sample_fields.uniform]:
+        if not instance_sample_method in [sample_fields.uniform, sample_fields.all_instance]:
             instance_sample_method = sample_fields.uniform
             print('instance sample method {} is not defined, use {} as default.'.format(
                   instance_sample_method, sample_fields.uniform))
@@ -194,6 +199,8 @@ class SampleStrategy(object):
                 sampled_instances = np.random.choice(instance_ids_per_class,
                                                      num_sampled_instance_per_class,
                                                      replace=False)
+            elif instance_sample_method == sample_fields.all_instance:
+                sampled_instances = instance_ids_per_class
             else:
                 raise NotImplementedError
 
@@ -241,6 +248,8 @@ class SampleStrategy(object):
                                                                    num_of_db_instance,
                                                                    num_of_query_instance_per_class,
                                                                    maximum_of_sampled_data=maximum_of_sampled_data)
+        if class_sample_method == sample_fields.all_class:
+            sampled_db, sampled_query = self.class_take_all(num_of_db_instance)
         elif class_sample_method == sample_fields.instance_number_weighted:
             raise NotImplementedError
         elif class_sample_method == sample_fields.instance_number_inverse_weighted:
@@ -259,6 +268,57 @@ class SampleStrategy(object):
             sample_fields.query_instance_ids: sampled_query[sample_fields.sampled_instance_ids],
             sample_fields.query_label_ids: sampled_query[sample_fields.sampled_label_ids]
         }
+
+    def class_take_all(self, num_of_db_instance_per_class):
+        """
+          Args:
+            num_of_db_instance_per_class:
+                Integer which indicates number of given database features.
+        """
+
+        db_instances = []
+        db_labels = []
+        query_instances = []
+        query_labels = []
+
+        sampled_classes = self._classes
+
+        for _class in sampled_classes:
+            instance_ids_per_class = self._instance_group[_class]
+            num_instance_per_class = len(instance_ids_per_class)
+            if num_instance_per_class==1:
+                print('Notice: class_id: {} num_instance_per_class==1, Skipped.'.format(_class))
+                continue
+            
+            if num_of_db_instance_per_class >= num_instance_per_class:
+                num_of_db_instance_per_class = math.floor(num_instance_per_class * 0.5)
+                print('Notice: class_id: {} has only {} instances, reduce db instances to {}'.format(
+                    _class, num_instance_per_class, num_of_db_instance_per_class))
+
+            # Sample per class
+            shuffle(instance_ids_per_class)
+
+            db_instances_per_class = instance_ids_per_class[:num_of_db_instance_per_class]
+            query_instances_per_class = instance_ids_per_class[num_of_db_instance_per_class:]
+            num_query_instances = num_instance_per_class - num_of_db_instance_per_class
+
+            for instance in db_instances_per_class:
+                db_instances.append(instance)
+            db_labels.extend([_class] * num_of_db_instance_per_class)
+            for instance in query_instances_per_class:
+                query_instances.append(instance)
+            query_labels.extend([_class] * num_query_instances)
+
+            self._class_histogram[_class] += num_instance_per_class
+        sampled_db = {
+            sample_fields.sampled_instance_ids: db_instances,
+            sample_fields.sampled_label_ids: db_labels
+        }
+        sampled_query = {
+            sample_fields.sampled_instance_ids: query_instances,
+            sample_fields.sampled_label_ids: query_labels
+        }
+        return sampled_db, sampled_query
 
     def class_uniform_sampler(self,
                               num_of_sampled_class,
@@ -287,7 +347,6 @@ class SampleStrategy(object):
         query_instances = []
         query_labels = []
 
-        # Sample id of class(label)
         sampled_classes = np.random.choice(
             self._classes, num_of_sampled_class, replace=False)
 

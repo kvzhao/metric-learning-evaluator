@@ -8,10 +8,11 @@
 database:
 
 # upper-bound of the evaluation instances
-container_size: 30000
+container_size: 50000
 
 chosen_evaluations:
-    - RankingEvaluation
+    - CheckoutEvaluation
+#    - RankingEvaluation
 #    - FacenetEvaluation
 
 # Configurations for evaluator:
@@ -51,7 +52,7 @@ evaluation_options:
             instance_sample_method: uniform
             num_of_db_instance: 10
             num_of_query_class: 100
-            num_of_query_instance_per_class: 2
+            num_of_query_instance_per_class: 1
             maximum_of_sampled_data: 10000
 
         metric:
@@ -71,5 +72,40 @@ evaluation_options:
             path_database: # not done
             seen_dataset: # not done
             unseen_dataset: # not done
+
+    # The evaluation supports only offline
+    CheckoutEvaluation:
+        sampling:
+            class_sample_method: all_class
+            instance_sample_method: all_instance
+            num_of_db_instance: 10
+            num_of_query_class: 50
+            num_of_query_instance_per_class: 1
+            maximum_of_sampled_data: 10000
+
+        metric:
+            # top_1_hit is defaults
+            top_k_hit_accuracy:
+                - 1
+                - 5
+            mAP: true
+
+        attribute:
+            - seen_to_seen
+            - unseen_to_unseen
+            - seen_to_total
+            - unseen_to_total
+
+        option:
+            num_of_seen_query_class: 100
+            num_of_seen_db_instance: 10
+            num_of_seen_query_instance_per_class: 1
+            num_of_unseen_query_class: 100
+            num_of_unseen_db_instance: 1
+            num_of_unseen_query_instance_per_class: 1
+            num_of_total_db_instance: 200
+            seen_unique_ids: data/seen_unique_ids_gp1444.json
+            unseen_unique_ids: data/unseen_unique_ids_gp1444.json
+            label_map: data/labelmap_1933.json
 
 # OPTIONS OF EACH ITEMS
