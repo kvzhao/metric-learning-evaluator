@@ -1,30 +1,39 @@
-
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.query.datasetbackbone_wrapper import DatasetBackboneWrapper
 from metric_learning_evaluator.query.zeus_wrapper import ZeusWrapper
+from metric_learning_evaluator.query.json_wrapper import JsonWrapper
 
 DATABASE_DICT = {
     config_fields.datasetbackbone: DatasetBackboneWrapper,
     config_fields.zeus: ZeusWrapper,
+    config_fields.json: JsonWrapper,
 }
 
+
 class QueryInterface(object):
-    
-    def __init__(self, database_type):
+
+    def __init__(self, database_setting):
         """
+        database_setting:
+            reference config.database
         """
+        database_type = database_setting.get(config_fields.database_type, None)
+        database_config = database_setting.get(config_fields.database_config, None)
         if not database_type in DATABASE_DICT:
             raise ValueError('Given database type is not support.')
         self.database_type = database_type
 
-        self.backend_db = DATABASE_DICT[database_type]
+        # create wrapper
+        db_object = DATABASE_DICT[database_type]
+        self.db = db_object(database_config)
 
-    def query(self, image_id, required_attribute_names):
+    def query(self, image_id, required_attribute_names=None):
         """Query function:
 
             Args:
@@ -60,4 +69,9 @@ class QueryInterface(object):
                 return: attribute_values: "Color.Red" (list of str)
         """
 
-        return ["MOCK_QUERIED_RESULTS", "MOCK_FETCHED_ATTRIBUTES"]
+        all_attr_names = self.db.query_attributes_by_instance_id(image_id)
+
+        if required_attribute_names is None:
+            return all_attr_names
+        else:
+            return list(set(all_attr_names) & set(required_attribute_names))

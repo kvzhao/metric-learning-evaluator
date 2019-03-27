@@ -15,7 +15,8 @@ class EvaluationStandardFields(object):
     # Retrival
     ranking = 'RankingEvaluation'
 
-    checkout = 'CheckoutEvaluation'
+    # Ranking with Attributes Evaluation
+    ranking_with_attrs = 'RankingWithAttributesEvaluation'
 
     mock = 'MockEvaluation'
 
@@ -24,6 +25,7 @@ class EvaluationStandardFields(object):
 
     # Avaliable evaluation implementations
     classification = 'ClassificationEvaluation'
+
 
     # ===== Inner items =====
     sampling = 'sampling'
