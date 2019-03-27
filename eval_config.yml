@@ -6,12 +6,17 @@
 
 # database: Zeus | DatasetBackbone | None
 database:
+    database_type: Json
+    database_config:
+        # path to attributes_table.json
+        path: misc/attributes_table.json
 
 # upper-bound of the evaluation instances
 container_size: 50000
 
 chosen_evaluations:
-    - CheckoutEvaluation
+    - RankingWithAttributesEvaluation
+#    - CheckoutEvaluation
 #    - RankingEvaluation
 #    - FacenetEvaluation
 
@@ -104,8 +109,39 @@ evaluation_options:
             num_of_unseen_db_instance: 1
             num_of_unseen_query_instance_per_class: 1
             num_of_total_db_instance: 200
-            seen_unique_ids: data/seen_unique_ids_gp1444.json
-            unseen_unique_ids: data/unseen_unique_ids_gp1444.json
-            label_map: data/labelmap_1933.json
+            seen_unique_ids: misc/seen_unique_ids_gp1444.json
+            unseen_unique_ids: misc/unseen_unique_ids_gp1444.json
+            label_map: misc/labelmap_1933.json
+            save_report:
+
+    RankingWithAttributesEvaluation:
+
+        sampling:
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_db_instance: 10
+            num_of_query_class: 100
+            num_of_query_instance_per_class: 2
+            maximum_of_sampled_data: 10000
+
+        metric:
+            # top_1_hit is defaults
+            top_k_hit_accuracy:
+                - 1
+                - 5
+            mAP: true
+
+        distance_measure:
+            function:
+            threshold:
+
+        attribute: # not support
+            # path to grouping_rules.json
+            grouping_rules: misc/grouping_rules.json
+
+        option:
+            path_database: # not done
+            seen_dataset: # not done
+            unseen_dataset: # not done
 
 # OPTIONS OF EACH ITEMS

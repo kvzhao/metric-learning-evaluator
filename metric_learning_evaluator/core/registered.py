@@ -22,6 +22,7 @@ from metric_learning_evaluator.evaluations.standard_fields import EvaluationStan
 REGISTERED_EVALUATION_OBJECTS = {
     eval_fields.ranking: RankingEvaluation,
     eval_fields.facenet: FacenetEvaluation,
+    eval_fields.checkout: CheckoutEvaluation,
     eval_fields.ranking_with_attrs: RankingWithAttributesEvaluation,
 
 }
@@ -29,5 +30,6 @@ REGISTERED_EVALUATION_OBJECTS = {
 EVALUATION_DISPLAY_NAMES = {
     eval_fields.ranking: 'rank',
     eval_fields.facenet: 'pair',
+    eval_fields.checkout: 'checkout',
     eval_fields.ranking_with_attrs: 'rank_attrs',
 }

@@ -23,6 +23,8 @@ class EvaluationStandardFields(object):
     # FaceNet: Pair-wise evaluation
     facenet = 'FacenetEvaluation'
 
+    checkout = 'CheckoutEvaluation'
+
     # Avaliable evaluation implementations
     classification = 'ClassificationEvaluation'
 

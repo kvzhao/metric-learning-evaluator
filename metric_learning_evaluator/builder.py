@@ -95,7 +95,6 @@ class EvaluatorBuilder(object):
             # TODO @kv: consistent check with query condition
             self.query_interface = None
         else:
-            print(self.configs.database)
             self.query_interface = QueryInterface(self.configs.database)
 
     def _build(self):

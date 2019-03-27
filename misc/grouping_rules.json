@@ -1,0 +1,129 @@
+{
+        "group_definitions": {
+            "pano:small-size": {
+                "comment": "size <=2 and view.pano",
+                "filter_attrs":"view.fish",
+                "union_attrs": "size.0,size.1"
+            },
+            "pano:medium-size": {
+                "comment": "size 2~3 and view.pano",
+                "filter_attrs":"view.fish",
+                "union_attrs": "size.2,size.3"
+            },
+            "pano:large-size": {
+                "comment": "size >=4 and view.pano",
+                "filter_attrs":"view.fish,size.0,size.1,size.2,size.3",
+                "union_attrs": "all"
+            },
+            "pano:with-offset-large-size": {
+                "comment": "pano:without offset medium and large size(size >=2 , offset.0)",
+                "filter_attrs":"view.fish,size.0,size.1,offset.1",
+                "union_attrs": "all"
+            },
+            "pano:without-offset-large-size": {
+                "comment": "pano:with offset medium and large size(size >=2 , offset.1)",
+                "filter_attrs":"view.fish,size.0,size.1,offset.0",
+                "union_attrs": "all"
+            },
+            "pano:center_dist.0": {
+                "comment": "view.pano and center_dist.0",
+                "filter_attrs":"view.fish",
+                "union_attrs": "center_dist.0"
+            },
+            "pano:center_dist.1": {
+                "comment": "view.pano and center_dist.1",
+                "filter_attrs":"view.fish",
+                "union_attrs": "center_dist.1"
+            },
+            "pano:center_dist.2": {
+                "comment": "view.pano and center_dist.2",
+                "filter_attrs":"view.fish",
+                "union_attrs": "center_dist.2"
+            },
+            "pano:center_dist.3": {
+                "comment": "view.pano and center_dist.3",
+                "filter_attrs":"view.fish",
+                "union_attrs": "center_dist.3"
+            },
+            "pano:center_dist.4": {
+                "comment": "view.pano and center_dist.4",
+                "filter_attrs":"view.fish",
+                "union_attrs": "center_dist.4"
+            },
+            "pano:center_dist.medium-large-size": {
+                "comment": "view.pano and center_dist 2~3 and size >=3",
+                "filter_attrs":"view.fish,size.0,size.1,size.2,size.3",
+                "union_attrs": "center_dist.2,center_dist.3"
+            },
+            "fish:center_dist.medium-large-size": {
+                "comment": "view.fish and center_dist 2~3 and size >=3",
+                "filter_attrs":"view.pano,size.0,size.1,size.2,size.3",
+                "union_attrs": "center_dist.2,center_dist.3"
+            }
+
+        },
+        "rank_events": [
+            {
+                "comment": "pano:small-size",
+                "query_group": "pano:small-size",
+                "db_group": "pano:small-size"
+            },
+            {
+                "comment": "pano:medium-size",
+                "query_group": "pano:medium-size",
+                "db_group": "pano:medium-size"
+            },
+            {
+                "comment": "pano:large-size",
+                "query_group": "pano:large-size",
+                "db_group": "pano:large-size"
+            },
+            {
+                "comment": "pano:with-offset-large-size",
+                "query_group": "pano:with-offset-large-size",
+                "db_group": "pano:with-offset-large-size"
+            },
+            {
+                "comment": "pano:without-offset-large-size",
+                "query_group": "pano:without-offset-large-size",
+                "db_group": "pano:without-offset-large-size"
+            },
+            {
+                "comment": "pano:center_dist.0",
+                "query_group": "pano:center_dist.0",
+                "db_group": "pano:center_dist.0"
+            },
+            {
+                "comment": "pano:center_dist.1",
+                "query_group": "pano:center_dist.1",
+                "db_group": "pano:center_dist.1"
+            },
+            {
+                "comment": "pano:center_dist.2",
+                "query_group": "pano:center_dist.2",
+                "db_group": "pano:center_dist.3"
+            },
+            {
+                "comment": "pano:center_dist.3",
+                "query_group": "pano:center_dist.3",
+                "db_group": "pano:center_dist.3"
+            },
+            {
+                "comment": "pano:center_dist.4",
+                "query_group": "pano:center_dist.4",
+                "db_group": "pano:center_dist.4"
+            },
+            {
+                "comment": "pano:center_dist.medium-large-size",
+                "query_group": "pano:center_dist.medium-large-size",
+                "db_group": "pano:center_dist.medium-large-size"
+            },
+            {
+                "comment": "fish:center_dist.medium-large-size",
+                "query_group": "fish:center_dist.medium-large-size",
+                "db_group": "fish:center_dist.medium-large-size"
+            }
+        ]
+
+    }
+
