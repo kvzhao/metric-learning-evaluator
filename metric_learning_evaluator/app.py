@@ -42,6 +42,8 @@ parser.add_argument('--config', '-c', type=str, default=None,
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
         help='Path to the source dataset, tfrecord | dataset_backbone | folder')
+parser.add_argument('--database', '-db', type=str, default=None,
+        help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
         help='Type of the input dataset.')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
@@ -85,18 +87,12 @@ def main():
         filenames = feature_importer.filename_strings
         labels = feature_importer.label_ids
 
+    print('evaluator metric names: {}'.format(evaluator.metric_names))
     # Add datum through loop
     for feat, label, fn in zip(embeddings, labels, filenames):
         instance_id = int(fn.replace('.jpg',''))
         evaluator.add_instance_id_and_embedding(instance_id, label, feat)
     total_results = evaluator.evaluate()
 
-    print(total_results)
-    print(evaluator.metric_names)
     for metric_name in evaluator.metric_names:
-
         print('{}: {}'.format(metric_name, total_results[metric_name]))
-
-
-if __name__ == main():
-    main()

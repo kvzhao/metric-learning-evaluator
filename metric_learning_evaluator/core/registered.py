@@ -14,6 +14,8 @@ from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEval
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 from metric_learning_evaluator.evaluations.ranking_with_attributes_evaluation import RankingWithAttributesEvaluation
 
+from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
+
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 
 # NOTICE: Make sure each function passed correctness test. 

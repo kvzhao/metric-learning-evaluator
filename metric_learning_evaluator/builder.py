@@ -42,6 +42,7 @@ from metric_learning_evaluator.evaluations.standard_fields import EvaluationStan
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
+from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
