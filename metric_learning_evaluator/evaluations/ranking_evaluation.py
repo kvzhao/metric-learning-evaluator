@@ -158,7 +158,7 @@ class RankingEvaluation(MetricEvaluationBase):
                                      ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
 
             result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
-                                 ranking_metrics.topk_hit_accuracy, condition={'k': 1})
+                                 ranking_metrics.top1_hit_accuracy, condition={'k': 1})
             result_container.add(attribute_fields.all_classes, ranking_fields.mAP,
                                  ranking_metrics.mean_average_precision)
 
