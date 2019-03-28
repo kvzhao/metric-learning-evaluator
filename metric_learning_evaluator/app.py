@@ -78,7 +78,8 @@ def main():
     # open file
     evaluator = EvaluatorBuilder(args.embedding_size,
                                  args.logit_size,
-                                 config_dict)
+                                 config_dict,
+                                 mode='offline')
 
     if data_type == 'folder':
         feature_importer = FeatureDataObject()
