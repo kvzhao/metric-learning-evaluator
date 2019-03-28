@@ -126,7 +126,7 @@ class EvaluatorBuilder(object):
                 _display_eval_name = _eval_name
             _metric_name_per_evaluation = self.evaluations[_eval_name].metric_names
             for _metric_name in _metric_name_per_evaluation:
-                _metric_name = '{}-{}'.format(_display_eval_name, _metric_name)
+                _metric_name = '{}/{}'.format(_display_eval_name, _metric_name)
                 _metric_names.append(_metric_name)
         return _metric_names
 
@@ -195,7 +195,7 @@ class EvaluatorBuilder(object):
         flatten = {}
         for _eval_name, _content in self._total_metrics.items():
             for _metric, _value in _content.items():
-                _combined_name = '{}-{}'.format(
+                _combined_name = '{}/{}'.format(
                     _eval_name, _metric)
                 flatten[_combined_name] = _value
         

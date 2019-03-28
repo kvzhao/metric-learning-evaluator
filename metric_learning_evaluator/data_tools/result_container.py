@@ -80,9 +80,9 @@ class ResultContainer(object):
                     continue
                 for _cond_key, _value in _content.items():
                     if _cond_key == '':
-                        _name = '{}-{}'.format(_attr_name, _metric_name)
+                        _name = '{}/{}'.format(_attr_name, _metric_name)
                     else:
-                        _name = '{}-{}-{}'.format(_attr_name, _metric_name, _cond_key)
+                        _name = '{}/{}{}'.format(_attr_name, _metric_name, _cond_key)
                     dict_flatten[_name] = _value
 
         return dict_flatten

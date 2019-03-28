@@ -92,14 +92,14 @@ class RankingWithAttributesEvaluation(MetricEvaluationBase):
                 if _content is None:
                     continue
                 if _metric_name in self._metric_without_threshold:
-                    _name = '{}-{}'.format(comment, _metric_name)
+                    _name = '{}/{}'.format(comment, _metric_name)
                     _metric_names.append(_name)
                 if _metric_name in self._metric_with_threshold:
                     # special condition
                     if _metric_name == metric_fields.top_k_hit_accuracy:
                         top_k_list = self._metrics[metric_fields.top_k_hit_accuracy]
                         for top_k in top_k_list:
-                            _name = '{}-{}-@k={}'.format(comment, _metric_name, top_k)
+                            _name = '{}/{}@k={}'.format(comment, _metric_name, top_k)
                             _metric_names.append(_name)
         return _metric_names
 

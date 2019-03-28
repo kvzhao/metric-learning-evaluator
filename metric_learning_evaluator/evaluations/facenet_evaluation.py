@@ -155,7 +155,7 @@ class FacenetEvaluation(MetricEvaluationBase):
                 continue
             for _attr_name in self._attributes:
                 for threshold in self._distance_thresholds:
-                    _name = '{}-{}-@thres={}'.format(
+                    _name = '{}/{}@thres={}'.format(
                         _attr_name, _metric_name, threshold)
                     _metric_names.append(_name)
         return _metric_names
