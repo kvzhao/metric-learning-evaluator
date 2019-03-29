@@ -129,27 +129,36 @@ class RankingWithAttributesEvaluation(MetricEvaluationBase):
             query_group_name = event[divider_fields.query_group]
             db_group_name = event[divider_fields.db_group]
 
+            query_instance_ids = []
+            query_label_ids = []
+            db_instance_ids = []
+            db_label_ids = []
+
             if query_group_name == db_group_name:
                 # if query and db are same group
                 group_name = query_group_name
                 instance_ids = eval_groups[group_name]
                 label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+                if len(instance_ids) > 1:
+                    # Online sample mode:
+                    sampler = SampleStrategy(instance_ids, label_ids)
+                    sampled = sampler.sample_query_and_database(
+                        class_sample_method=class_sample_method,
+                        instance_sample_method=instance_sample_method,
+                        num_of_db_instance=num_of_db_instance,
+                        num_of_query_class=num_of_query_class,
+                        num_of_query_instance_per_class=num_of_query_instance_per_class,
+                        maximum_of_sampled_data=maximum_of_sampled_data
+                    )
 
-                # Online sample mode:
-                sampler = SampleStrategy(instance_ids, label_ids)
-                sampled = sampler.sample_query_and_database(
-                    class_sample_method=class_sample_method,
-                    instance_sample_method=instance_sample_method,
-                    num_of_db_instance=num_of_db_instance,
-                    num_of_query_class=num_of_query_class,
-                    num_of_query_instance_per_class=num_of_query_instance_per_class,
-                    maximum_of_sampled_data=maximum_of_sampled_data
-                )
+                    query_instance_ids = sampled[sample_fields.query_instance_ids]
+                    query_label_ids = sampled[sample_fields.query_label_ids]
+                    db_instance_ids = sampled[sample_fields.db_instance_ids]
+                    db_label_ids = sampled[sample_fields.db_label_ids]
 
-                query_instance_ids = sampled[sample_fields.query_instance_ids]
-                query_label_ids = sampled[sample_fields.query_label_ids]
-                db_instance_ids = sampled[sample_fields.db_instance_ids]
-                db_label_ids = sampled[sample_fields.db_label_ids]
+                else:
+                    print("number of group instance is zero , skipping...")
+
             else:
                 # if query and db are not same group
                 query_instance_ids = eval_groups[query_group_name]
