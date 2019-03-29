@@ -160,7 +160,7 @@ class EvaluatorBuilder(object):
             # if not self.configs.required_attributes:
             #     print ('WARNING: No required attributes are pre-defined.')
             queried_attributes = self.query_interface.query(instance_id)
-            self.attribute_container.add(instance_id, queried_attributes)
+            self.attribute_container.add(int(instance_id), queried_attributes)
 
         self._instance_counter += 1
     
