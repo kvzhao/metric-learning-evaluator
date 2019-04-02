@@ -14,7 +14,8 @@ def read(fname):
 install_requires = [
     'pyyaml',
     'scipy',
-    'sklearn'
+    'sklearn',
+    'pytablewriter'
 ]
 
 setup_info = dict(
