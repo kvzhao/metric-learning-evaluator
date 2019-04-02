@@ -58,6 +58,16 @@ ml_evaluator -c eval_config.yml -dd extracted_embeddings_facenet-centerloss-batc
 
 NOTE: Off-line mode not fully supported now.
 
+## ISSUES
+- Pushed embeddings are more than container size.
+- Configuration and metric names are not standard
+- attribute container should be the only way that external information is added
+  - we should parse grouping_rules.json in parser
+- number of sampled instances
+
+## TODO
+- Save out data reside in container.
+
 
 ## Cooperative Repo
 - tf-metric-learning
