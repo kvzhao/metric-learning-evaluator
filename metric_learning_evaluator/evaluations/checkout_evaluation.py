@@ -152,10 +152,6 @@ class CheckoutEvaluation(MetricEvaluationBase):
         # sampling configs
         class_sample_method = sample_config[sample_fields.class_sample_method]
         instance_sample_method = sample_config[sample_fields.instance_sample_method]
-        num_of_db_instance = sample_config[sample_fields.num_of_db_instance]
-        num_of_query_instance_per_class = sample_config[sample_fields.num_of_query_instance_per_class]
-        num_of_query_class = sample_config[sample_fields.num_of_query_class]
-        maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
 
         # option configs used in checkout evaluation
         num_of_seen_query_class = option_config[checkout_fields.num_of_seen_query_class]
@@ -208,7 +204,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
                             num_of_db_instance=num_of_seen_db_instance,
                             num_of_query_class=num_of_seen_query_class,
                             num_of_query_instance_per_class=num_of_seen_query_instance_per_class,
-                            maximum_of_sampled_data=maximum_of_sampled_data)
+                            maximum_of_sampled_data=1000000)
 
         print('Create Unseen Data Sampler')
         unseen_sampler = SampleStrategy(unseen_instance_ids, unseen_label_ids)
@@ -218,7 +214,7 @@ class CheckoutEvaluation(MetricEvaluationBase):
                             num_of_db_instance=num_of_unseen_db_instance,
                             num_of_query_class=num_of_unseen_query_class,
                             num_of_query_instance_per_class=num_of_unseen_query_instance_per_class,
-                            maximum_of_sampled_data=maximum_of_sampled_data)
+                            maximum_of_sampled_data=1000000)
 
         # Prepare total set
         # DB
