@@ -22,6 +22,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 import collections
 from collections import defaultdict
+from data_tools.feature_object import FeatureDataObject
 
 
 class EmbeddingContainer(object):
@@ -186,8 +187,8 @@ class EmbeddingContainer(object):
         self._current = 0
         print ('Clear embedding container.')
 
-    def save(self):
+    def save(self, path):
         pass
 
-    def load(self):
+    def load(self, path):
         pass
