@@ -138,8 +138,7 @@ class EvaluatorBuilder(object):
         Args:
             instance_id, integer:
                 A integer identifier for the image. instance_id
-            label_id, integer:
-                An index of label.
+            label_id: An interger to describe class
             embedding, list or numpy array:
                 Embedding, feature vector
         """

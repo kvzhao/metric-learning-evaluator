@@ -103,3 +103,7 @@ class MetricEvaluationBase(object):
             raise ValueError('Attribute Container is Needed.')
 
         ## Do the customized computation.
+
+    @abstractmethod
+    def save(self, path):
+        pass
