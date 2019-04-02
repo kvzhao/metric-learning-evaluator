@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-APP_NAME = 'ml_evaluator'
+APP_NAME = 'ml-eval'
 VERSION = '0.0.1'
 
 
