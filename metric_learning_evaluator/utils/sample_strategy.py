@@ -249,7 +249,9 @@ class SampleStrategy(object):
                                                                    num_of_query_instance_per_class,
                                                                    maximum_of_sampled_data=maximum_of_sampled_data)
         if class_sample_method == sample_fields.all_class:
-            sampled_db, sampled_query = self.class_take_all(num_of_db_instance)
+            sampled_db, sampled_query = self.class_take_all(num_of_db_instance,
+                                                            num_of_query_instance_per_class,
+                                                            instance_sample_method)
         elif class_sample_method == sample_fields.instance_number_weighted:
             raise NotImplementedError
         elif class_sample_method == sample_fields.instance_number_inverse_weighted:
@@ -269,7 +271,10 @@ class SampleStrategy(object):
             sample_fields.query_label_ids: sampled_query[sample_fields.sampled_label_ids]
         }
 
-    def class_take_all(self, num_of_db_instance_per_class):
+    def class_take_all(self,
+                       num_of_db_instance_per_class,
+                       num_of_query_instance_per_class,
+                       instance_sample_method):
         """
           Args:
             num_of_db_instance_per_class:
@@ -301,13 +306,27 @@ class SampleStrategy(object):
             db_instances_per_class = instance_ids_per_class[:num_of_db_instance_per_class]
             query_instances_per_class = instance_ids_per_class[num_of_db_instance_per_class:]
             num_query_instances = num_instance_per_class - num_of_db_instance_per_class
+            # NOTE: Sampling here.
+            if instance_sample_method == sample_fields.all_instance:
+                sampled_query_instances_per_class = query_instances_per_class
+                num_sampled_query_instances = num_query_instances
+            elif instance_sample_method == sample_fields.uniform:
+                num_sampled_query_instances = min(num_query_instances, num_of_query_instance_per_class)
+                sampled_query_instances_per_class = np.random.choice(query_instances_per_class,
+                                                                     num_sampled_query_instances,
+                                                                     replace=False)
+            else:
+                print('instance sample method {} is not defined, use {} as default.'.format(
+                instance_sample_method, sample_fields.all_instance))
+                sampled_query_instances_per_class = query_instances_per_class
+                num_sampled_query_instances = num_query_instances
 
             for instance in db_instances_per_class:
                 db_instances.append(instance)
             db_labels.extend([_class] * num_of_db_instance_per_class)
-            for instance in query_instances_per_class:
+            for instance in sampled_query_instances_per_class:
                 query_instances.append(instance)
-            query_labels.extend([_class] * num_query_instances)
+            query_labels.extend([_class] * num_sampled_query_instances)
 
             self._class_histogram[_class] += num_instance_per_class
         sampled_db = {
