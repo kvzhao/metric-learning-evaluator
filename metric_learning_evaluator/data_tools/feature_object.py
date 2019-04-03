@@ -60,11 +60,19 @@ class FeatureDataBase(object):
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
             print ('WARNING: Get the empty embeddings array')
+        if len(self._array_name_map[fields.embeddings].shape) >= 3:
+            print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
+                self._array_name_map[fields.embeddings].shape))
+            self._array_name_map[fields.embeddings]= np.squeeze(self._array_name_map[fields.embeddings])
         return self._array_name_map[fields.embeddings]
 
     @embeddings.setter
     def embeddings(self, _embeddings):
         self._check_numpy_arrlike(_embeddings)
+        if len(_embeddings.shape) >= 3:
+            print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
+                _embeddings.shape))
+            _embeddings = np.squeeze(_embeddings)
         self._array_name_map[fields.embeddings] = _embeddings
 
     @property
