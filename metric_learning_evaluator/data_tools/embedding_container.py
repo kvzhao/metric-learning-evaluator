@@ -66,6 +66,7 @@ class EmbeddingContainer(object):
         self._instance_id_by_label = defaultdict(list)
         # orderness is maintained in _instance_ids
         self._instance_ids = []
+        self._label_ids = []
 
         self._current = 0
     
@@ -103,6 +104,7 @@ class EmbeddingContainer(object):
         self._label_by_instance_id[instance_id] = label_id
         self._instance_id_by_label[label_id].append(instance_id)
         self._instance_ids.append(instance_id)
+        self._label_ids.append(label_id)
 
         self._current += 1
 
@@ -164,6 +166,9 @@ class EmbeddingContainer(object):
     def instance_ids(self):
         # get all instance_ids in container
         return self._instance_ids
+    @property
+    def label_ids(self):
+        return self._label_ids
 
     @property
     def instance_id_groups(self):
