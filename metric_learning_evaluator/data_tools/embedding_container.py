@@ -22,7 +22,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 import collections
 from collections import defaultdict
-from data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
 
 
 class EmbeddingContainer(object):
@@ -184,6 +184,10 @@ class EmbeddingContainer(object):
     @property
     def index_by_instance_ids(self):
         return self._index_by_instance_id
+
+    @property
+    def embedding_size(self):
+        return self._embedding_size
 
     @property
     def counts(self):
