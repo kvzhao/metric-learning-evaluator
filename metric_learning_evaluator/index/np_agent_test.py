@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 import unittest
+import time
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
@@ -31,9 +32,9 @@ class TestNumpyAgent(unittest.TestCase):
 
     def test(self):
 
-        num_elements = 100
-        num_query = 10
-        dim = 128
+        num_elements = 100000
+        num_query = 1000
+        dim = 2048
 
         embedding_container = fill_embedding_container(num_elements, dim)
 
@@ -41,9 +42,10 @@ class TestNumpyAgent(unittest.TestCase):
 
         qeury_features = np.random.random((num_query, dim))
 
-        dist, indices = agent.search(qeury_features, 10)
-        print(dist.shape)
-        print(indices.shape)
+        start_time = time.time()
+        dist, indices = agent.search(qeury_features, 1000)
+        end_time = time.time()
+        print('Numpy Agent takes {} ms to search'.format((end_time-start_time) * 1000.0))
 
 if __name__ == '__main__':
     unittest.main()
