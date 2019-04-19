@@ -48,6 +48,8 @@ class EmbeddingContainer(object):
                 Dimension of the embedding vector, e.g. 1024 or 2048.
             logit_size, int:
                 Disable this by giving size equals to 0.
+            probabilities: an ndarray of probabilities each class, disable this by giving size equals to 0.
+                It prefers passing top_k scores.
             container_size, int:
                 Number of embedding vector that container can store.
         
@@ -138,15 +140,25 @@ class EmbeddingContainer(object):
         """Fetch the labels from given instance_ids."""
         if isinstance(instance_ids, list):
             return [self._label_by_instance_id[img_id] for img_id in instance_ids]
-        else:
+        elif isinstance(instance_ids, int):
             return self._label_by_instance_id[instance_ids]
-            #raise ValueError('instance_ids should be int or list.')
+        elif isinstance(instance_ids, (np.ndarray, np.generic)):
+            return [self._label_by_instance_id[img_id] for img_id in instance_ids.tolist()]
+        else:
+            raise TypeError('instance_ids should be int, list or array.')
 
     def get_instance_ids_by_label(self, label_id):
         """Fetch the instance_ids from given label_id."""
         if not np.issubdtype(type(label_id), np.integer):
             raise ValueError('Query label id should be integer.')
         return self._instance_id_by_label[label_id]
+
+    def get_instance_ids_by_exclusive_label(self, label_id):
+        """Fetch instance_ids except given label_id."""
+        if not np.issubdtype(type(label_id), np.integer):
+            raise ValueError('Query label id should be integer.')
+        exclusive_label_ids = [_id for _id in self._label_ids if _id != label_id]
+        return self.get_instance_ids_by_label_ids(exclusive_label_ids)
 
     def get_instance_ids_by_label_ids(self, label_ids):
         """Fetch the instance_ids from given label_id."""
