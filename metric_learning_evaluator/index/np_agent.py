@@ -24,6 +24,21 @@ def euclidean_distance(matrixA, matrixB):
     distances = np.sum(np.square(np.subtract(matrixA, matrixB)), axis=1)
     return distances
 
+def angular_distance(vectorA, vectorB):
+    """
+      Args:
+        vectorA : 1D numpy array
+        vectorB : 1D numpy array
+      Return:
+        angle (degrees) between two vectors : Float
+    """
+    def _unit_vector(vector):
+        return vector / np.linalg.norm(vector)
+
+    v1_u = _unit_vector(vectorA)
+    v2_u = _unit_vector(vectorB)
+    return np.degrees(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0)))
+
 def indexing_array(distances, target_array):
     """Sort target array according to distances
       Args:
