@@ -132,8 +132,13 @@ class EmbeddingContainer(object):
                 raise ValueError('instance_ids should be int or list.')
         if isinstance(label_ids, int):
             label_ids = [label_ids]
-        indices = [self._index_by_instance_id[self.get_instance_ids_by_label(label_id)] 
-            for label_id in label_ids]
+        
+        indices = []
+        for label_id in label_ids:
+            for inst_id in self.get_instance_ids_by_label(label_id):
+                indices.append(self._index_by_instance_id[inst_id])
+        # indices = [self._index_by_instance_id[self.get_instance_ids_by_label(label_id)] 
+            # for label_id in label_ids]
         return self._embeddings[indices, ...]
 
     def get_label_by_instance_ids(self, instance_ids):
