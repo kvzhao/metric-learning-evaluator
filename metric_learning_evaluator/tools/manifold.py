@@ -9,6 +9,7 @@ import numpy as np
 from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 from metric_learning_evaluator.index.np_agent import euclidean_distance
+from metric_learning_evaluator.index.np_agent import angular_distance
 from metric_learning_evaluator.index.np_agent import indexing_array
 
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
@@ -245,6 +246,59 @@ class Manifold(object):
         c2all_indices, c2all_distances = self._agent.search(self._all_center_embeddings, top_k)
         return c2all_distances
 
+    def one_class_pair_wise_relation(self, label_id, pair_num_limit=None):
+        """
+          Args:
+            label_id : 
+            pair_num_limit : 
+          Return:
+            intra_class_angles : 1D numpy, angles between all pairs that have label_id,
+                                 size < pair_num_limit if given
+            inter_class_angles : 1D numpy, angles between randomly selected negative pair,
+                                 size < pair_num_limit if given
+        """
+        def _randomly_select_negative_pair_instance_ids(label_id, num_pairs):
+            random_indices = []
+            for _ in range(num_pairs):
+                random_idx = np.random.randint(0, len(self._embedding_container.instance_ids))
+                if self._embedding_container.get_label_by_instance_ids(random_idx) != label_id:
+                    random_indices.append(random_idx)
+            return random_indices
+
+        embeddings = self._embedding_container.get_embedding_by_label_ids(label_id)
+        num_instances = len(embeddings)
+
+        intra_class_angles = []
+        for i in range(num_instances):
+            for j in range(i+1, num_instances):
+                if pair_num_limit is not None and len(intra_class_angles) > pair_num_limit:
+                    break
+                intra_class_angles.append(angular_distance(embeddings[i], embeddings[j]))
+
+        negative_embeddings = self._embedding_container.get_embedding_by_instance_ids(
+            _randomly_select_negative_pair_instance_ids(label_id, len(intra_class_angles)) )
+
+        inter_class_anlges = []
+        for u, v in zip(embeddings, negative_embeddings):
+            inter_class_anlges.append(angular_distance(u,v))
+
+        return np.array(intra_class_angles), np.array(inter_class_anlges)
+
+    def all_pair_wise_relation(self, pair_num_limit=None):
+        from tqdm import tqdm
+        """ Call one_class_pair_wise_relation for all label ids """
+        all_intra_angles = []
+        all_inter_angles = []
+        for label_id in tqdm(self._labelmap.keys()):
+            # TODO : change the type in embedding container
+            if not isinstance(label_id, int):
+                label_id = label_id.item() # np.int16, 32, 64.. --> python int
+            
+            intra_angles, inter_angles = self.one_class_pair_wise_relation(label_id, pair_num_limit)
+            all_intra_angles.extend(intra_angles)
+            all_inter_angles.extend(inter_angles)
+        return all_intra_angles, all_inter_angles
+
     def clear(self):
         self._labelmap = None
         self._class_ids = None
@@ -254,3 +308,6 @@ class Manifold(object):
 
         self._all_center = {}
         self._class_to_instance_ids = {}
+
+class CrossManifoldAnalysis(object):
+    pass
