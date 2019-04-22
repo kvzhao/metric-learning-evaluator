@@ -14,7 +14,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '../../')))
 
 import numpy as np
 
@@ -101,6 +101,13 @@ class EmbeddingContainer(object):
         if not logit is None:
             self._logits[self._current, ...] = logit
 
+        # check type of label_id, instance_id
+        try:
+            label_id = int(label_id)
+            instance_id = int(instance_id)
+        except:
+            raise TypeError("The label id or instance id has wrong type")
+
         # NOTE: same instance_id maps to many embedding!?
         self._index_by_instance_id[instance_id] = self._current
         self._label_by_instance_id[instance_id] = label_id
@@ -137,8 +144,6 @@ class EmbeddingContainer(object):
         for label_id in label_ids:
             for inst_id in self.get_instance_ids_by_label(label_id):
                 indices.append(self._index_by_instance_id[inst_id])
-        # indices = [self._index_by_instance_id[self.get_instance_ids_by_label(label_id)] 
-            # for label_id in label_ids]
         return self._embeddings[indices, ...]
 
     def get_label_by_instance_ids(self, instance_ids):

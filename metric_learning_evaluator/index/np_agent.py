@@ -1,10 +1,10 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '../../')))
 
-from metric_learning_evaluator.index.agent_base import AgentBase
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.index.agent_base import AgentBase
 
 import numpy as np
 
