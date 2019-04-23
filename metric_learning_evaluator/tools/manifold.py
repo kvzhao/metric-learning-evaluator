@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(
 
 import numpy as np
 
+from tqdm import tqdm
 from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 from metric_learning_evaluator.index.np_agent import euclidean_distance
@@ -252,7 +253,7 @@ class Manifold(object):
             label_id : 
             pair_num_limit : 
           Return:
-            intra_class_angles : 1D numpy, angles between all pairs that have label_id,
+            intra_class_angles: 1D numpy, angles between all pairs that have label_id,
                                  size < pair_num_limit if given
             inter_class_angles : 1D numpy, angles between randomly selected negative pair,
                                  size < pair_num_limit if given
@@ -278,14 +279,13 @@ class Manifold(object):
         negative_embeddings = self._embedding_container.get_embedding_by_instance_ids(
             _randomly_select_negative_pair_instance_ids(label_id, len(intra_class_angles)) )
 
-        inter_class_anlges = []
+        inter_class_angles = []
         for u, v in zip(embeddings, negative_embeddings):
-            inter_class_anlges.append(angular_distance(u,v))
+            inter_class_angles.append(angular_distance(u,v))
 
-        return np.array(intra_class_angles), np.array(inter_class_anlges)
+        return np.array(intra_class_angles), np.array(inter_class_angles)
 
     def all_pair_wise_relation(self, pair_num_limit=None):
-        from tqdm import tqdm
         """ Call one_class_pair_wise_relation for all label ids """
         all_intra_angles = []
         all_inter_angles = []
