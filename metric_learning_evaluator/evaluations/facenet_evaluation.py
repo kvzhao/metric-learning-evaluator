@@ -23,7 +23,7 @@ from metric_learning_evaluator.data_tools.attribute_container import AttributeCo
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 
-from metric_learning_evaluator.utils.distances import euclidean_distance_filter
+from metric_learning_evaluator.index.utils import euclidean_distance_filter
 from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
 from collections import defaultdict
