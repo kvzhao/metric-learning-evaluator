@@ -1,8 +1,7 @@
-
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '../../')))
 
 import numpy as np
 
@@ -101,6 +100,7 @@ class Manifold(object):
 
         # class_id: [instance_ids]
         for _class_id in self._class_ids:
+            _class_id = int(_class_id)
             same_class_instance_ids = self._embedding_container.get_instance_ids_by_label(_class_id)
             self._class_to_instance_ids[_class_id] = np.asarray(same_class_instance_ids)
 
@@ -272,7 +272,7 @@ class Manifold(object):
         intra_class_angles = []
         for i in range(num_instances):
             for j in range(i+1, num_instances):
-                if pair_num_limit is not None and len(intra_class_angles) > pair_num_limit:
+                if pair_num_limit is not None and len(intra_class_angles) >= pair_num_limit:
                     break
                 intra_class_angles.append(angular_distance(embeddings[i], embeddings[j]))
 
@@ -297,7 +297,7 @@ class Manifold(object):
             intra_angles, inter_angles = self.one_class_pairwise_relation(label_id, pair_num_limit)
             all_intra_angles.extend(intra_angles)
             all_inter_angles.extend(inter_angles)
-        return all_intra_angles, all_inter_angles
+        return np.array(all_intra_angles), np.array(all_inter_angles)
 
     def clear(self):
         self._labelmap = None
