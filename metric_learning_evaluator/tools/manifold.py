@@ -247,7 +247,7 @@ class Manifold(object):
         c2all_indices, c2all_distances = self._agent.search(self._all_center_embeddings, top_k)
         return c2all_distances
 
-    def one_class_pair_wise_relation(self, label_id, pair_num_limit=None):
+    def one_class_pairwise_relation(self, label_id, pair_num_limit=None):
         """
           Args:
             label_id : 
@@ -285,7 +285,7 @@ class Manifold(object):
 
         return np.array(intra_class_angles), np.array(inter_class_angles)
 
-    def all_pair_wise_relation(self, pair_num_limit=None):
+    def all_pairwise_relation(self, pair_num_limit=None):
         """ Call one_class_pair_wise_relation for all label ids """
         all_intra_angles = []
         all_inter_angles = []
@@ -294,7 +294,7 @@ class Manifold(object):
             if not isinstance(label_id, int):
                 label_id = label_id.item() # np.int16, 32, 64.. --> python int
             
-            intra_angles, inter_angles = self.one_class_pair_wise_relation(label_id, pair_num_limit)
+            intra_angles, inter_angles = self.one_class_pairwise_relation(label_id, pair_num_limit)
             all_intra_angles.extend(intra_angles)
             all_inter_angles.extend(inter_angles)
         return all_intra_angles, all_inter_angles
