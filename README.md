@@ -16,6 +16,7 @@
 - `query`: Attribute database general interface
 - `tools`: Analysis toolkits
 - `data_tools`: General data containers including embedding, attribute and result containers
+- `utils`: Contains sampler, switcher
 
 ## Installation
 
