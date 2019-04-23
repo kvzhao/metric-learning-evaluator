@@ -45,3 +45,26 @@ def indexing_array(distances, target_array):
         sorted_target
     """
     return target_array[distances.argsort()]
+
+def euclidean_distance_filter(matrixA, matrixB, thresholds=[0.5, 1.0]):
+    """
+      Args:
+        matrixA: 2d numpy array
+        matrixB
+      Return:
+        positives: A dictionary of list
+
+      NOTE:
+        Should we use normalized distance?
+    """
+    positives = {}
+
+    if isinstance(thresholds, float):
+        thresholds = [thresholds]
+
+    for threshold in thresholds:
+        distances = euclidean_distance(matrixA, matrixB)
+        positive = np.less(distances, threshold)
+        positives[threshold] = positive
+
+    return positives
