@@ -54,12 +54,12 @@ def main(args):
     manifold = Manifold(embedding_container, label_names)
     
     if args.label_id is not None:
-        intra_class_anlges, inter_class_angles = manifold.one_class_pair_wise_relation(label_id=args.label_id)
+        intra_class_angles, inter_class_angles = manifold.one_class_pair_wise_relation(label_id=args.label_id)
     else:
-        intra_class_anlges, inter_class_angles = manifold.all_pair_wise_relation()
+        intra_class_angles, inter_class_angles = manifold.all_pair_wise_relation()
 
-    plt.hist( intra_class_anlges, bins=100, alpha=0.5, density=True) 
-    plt.hist( inter_class_angles, bins=100, alpha=0.5, density=True)
+    plt.hist(intra_class_angles, bins=100, alpha=0.5, density=True) 
+    plt.hist(inter_class_angles, bins=100, alpha=0.5, density=True)
     if args.label_id:
         plt.title(manifold._labelmap[args.label_id])
     plt.legend(['positive pairs','negative pairs'])
