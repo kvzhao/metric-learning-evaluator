@@ -7,14 +7,14 @@
             Efficient object which handles the shared (globally) embedding vectors.
 
         AttributeContainer:
-            Data object for maintaining attribute table in each EvaluationObejct.
+            Data object for maintaining attribute table in each EvaluationObject.
 
     @bird, dennis, kv
 """
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../')))
+    os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
 
