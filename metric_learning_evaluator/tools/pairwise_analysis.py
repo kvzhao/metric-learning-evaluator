@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '../../')))
 
 
 import numpy as np
@@ -12,8 +12,8 @@ from metric_learning_evaluator.data_tools.feature_object import FeatureDataObjec
 
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
-from metric_learning_evaluator.utils.distances import euclidean_distance
-from metric_learning_evaluator.utils.distances import indexing_array
+from metric_learning_evaluator.index.utils import euclidean_distance
+from metric_learning_evaluator.index.utils import indexing_array
 
 from metric_learning_evaluator.tools.manifold import Manifold
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
@@ -23,6 +23,8 @@ from pprint import pprint
 
 import pickle
 
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 def main(args):
@@ -54,18 +56,22 @@ def main(args):
     manifold = Manifold(embedding_container, label_names)
     
     if args.label_id is not None:
-        intra_class_anlges, inter_class_angles = manifold.one_class_pair_wise_relation(label_id=args.label_id)
+        intra_class_angles, inter_class_angles = manifold.one_class_pairwise_relation(label_id=args.label_id)
+        plt_title = manifold._labelmap[args.label_id]
+        save_name = manifold._labelmap[args.label_id] + ".png"
     else:
-        intra_class_anlges, inter_class_angles = manifold.all_pair_wise_relation()
+        intra_class_angles, inter_class_angles = manifold.all_pairwise_relation()
+        plt_title = "All classes"
+        save_name = "angles.png"
 
-    plt.hist( intra_class_anlges, bins=100, alpha=0.5, density=True) 
-    plt.hist( inter_class_angles, bins=100, alpha=0.5, density=True)
+    plt.hist(intra_class_angles, bins=100, alpha=0.5, density=True) 
+    plt.hist(inter_class_angles, bins=100, alpha=0.5, density=True)
     if args.label_id:
         plt.title(manifold._labelmap[args.label_id])
     plt.legend(['positive pairs','negative pairs'])
     plt.xlabel('degrees')
-    plt.savefig("angles.png")
-    plt.show()
+    plt.savefig(save_name)
+
 
 if __name__ == '__main__':
     import argparse
@@ -79,6 +85,8 @@ if __name__ == '__main__':
                         help='Path to output folder.')
     parser.add_argument('-lid', '--label_id', type=int, default=None,
                         help="The label id to be analyzed")
-
+    parser.add_argument('-plim', '--pair_limit', type=int, default=None,
+                        help="The limit of num of pairs per class")
+    
     args = parser.parse_args()
     main(args)

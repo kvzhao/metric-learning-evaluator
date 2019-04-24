@@ -1,38 +1,15 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+    os.path.join(os.path.dirname(__file__), '../../')))
 
-from metric_learning_evaluator.index.agent_base import AgentBase
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
+from metric_learning_evaluator.index.agent_base import AgentBase
 
+from metric_learning_evaluator.index.utils import euclidean_distance
+from metric_learning_evaluator.index.utils import indexing_array
 import numpy as np
 
-def euclidean_distance(matrixA, matrixB):
-    """
-      Args:
-        matrixA: 2D numpy array
-        matrixB: 2D numpy array
-      Return:
-        distances: 
-    """
-    if not isinstance(matrixA, (np.generic, np.ndarray)):
-        matrixA = np.asarray(matrixA)
-    if not isinstance(matrixB, (np.generic, np.ndarray)):
-        matrixB = np.asarray(matrixB)
-
-    distances = np.sum(np.square(np.subtract(matrixA, matrixB)), axis=1)
-    return distances
-
-def indexing_array(distances, target_array):
-    """Sort target array according to distances
-      Args:
-        distances:
-        target_array:
-      Returns:
-        sorted_target
-    """
-    return target_array[distances.argsort()]
 
 class NumpyAgent(AgentBase):
     def __init__(self,

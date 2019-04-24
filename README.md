@@ -2,13 +2,31 @@
 
 ## System Architecture Overview
 
+[Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
+
 ![](figures/tf-metric-evaluator_v0.3.png)
+
+
+### Modules & Components
+- `core`: Define standard fields
+- config_parser
+- `evaluations`: Customized applications for measuring model performance
+- `metrics`: Computational objects used in evaluations
+- `index`: Provide fast algorithm for query features and distance functions
+- `query`: Attribute database general interface
+- `tools`: Analysis toolkits
+  - NOTE: should we promote to analysis tool?
+- `data_tools`: General data containers including embedding, attribute and result containers
+- `utils`: Contains sampler, switcher
+- (OPTION) `inference`: Tools for extracting features, detect boxes and pre-labelling.
 
 ## Installation
 
 ```
 python setup.py install
 ```
+
+### Intallation of libHNSW
 
 ## Usage
 How to use evaluator?

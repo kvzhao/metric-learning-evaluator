@@ -24,8 +24,8 @@ from metric_learning_evaluator.evaluations.standard_fields import EvaluationStan
 from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
-from metric_learning_evaluator.utils.distances import euclidean_distance
-from metric_learning_evaluator.utils.distances import indexing_array
+from metric_learning_evaluator.index.utils import euclidean_distance
+from metric_learning_evaluator.index.utils import indexing_array
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.utils.attributes_groups_divider import AttributesGroupsDivider
