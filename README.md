@@ -15,14 +15,18 @@
 - `index`: Provide fast algorithm for query features and distance functions
 - `query`: Attribute database general interface
 - `tools`: Analysis toolkits
+  - NOTE: should we promote to analysis tool?
 - `data_tools`: General data containers including embedding, attribute and result containers
 - `utils`: Contains sampler, switcher
+- (OPTION) `inference`: Tools for extracting features, detect boxes and pre-labelling.
 
 ## Installation
 
 ```
 python setup.py install
 ```
+
+### Intallation of libHNSW
 
 ## Usage
 How to use evaluator?
