@@ -35,7 +35,7 @@ from collections import defaultdict
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from metric_learning_evaluator.data_tools.attribute_container  import AttributeContainer
-from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields

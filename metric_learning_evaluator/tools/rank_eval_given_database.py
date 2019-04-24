@@ -7,7 +7,7 @@ import numpy as np
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
-from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
@@ -27,8 +27,8 @@ def main(args):
     if data_dir is None or database_dir is None:
         raise ValueError('data_dir or database should be assigned.')
 
-    qeury_features = FeatureDataObject()
-    db_features = FeatureDataObject()
+    qeury_features = FeatureObject()
+    db_features = FeatureObject()
 
     qeury_features.load(data_dir)
     db_features.load(database_dir)

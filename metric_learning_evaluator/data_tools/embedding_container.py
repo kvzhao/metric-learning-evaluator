@@ -22,7 +22,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 import collections
 from collections import defaultdict
-from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 
 
 class EmbeddingContainer(object):

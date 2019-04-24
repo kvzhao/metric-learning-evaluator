@@ -12,7 +12,7 @@ import numpy as np
 from abc import ABCMeta
 from abc import abstractmethod
 
-class FeatureDataStandardFields:
+class FeatureObjectStandardFields:
     embeddings = 'embeddings'
     label_ids = 'label_ids'
     label_names = 'label_names'
@@ -20,14 +20,14 @@ class FeatureDataStandardFields:
     filename_strings = 'filename_strings'
     super_labels = 'super_labels'
 
-fields = FeatureDataStandardFields
+fields = FeatureObjectStandardFields
 
 def get_var_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_locals.items()
     return [k for k, v in callers_local_vars if v is var][0]
 
 # NOTE: Rename -> FeatureObjectBase
-class FeatureDataBase(object):
+class FeatureObjectBase(object):
 
     def __init__(self):
 
@@ -129,10 +129,10 @@ class FeatureDataBase(object):
         self._super_labels = _super_labels
 
 # TODO: rename -> FeatureObject
-class FeatureDataObject(FeatureDataBase):
+class FeatureObject(FeatureObjectBase):
 
     def __init__(self):
-        super(FeatureDataObject, self).__init__()
+        super(FeatureObject, self).__init__()
 
     def load(self, data_dir):
 
