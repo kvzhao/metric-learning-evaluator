@@ -31,7 +31,7 @@ import numpy as np
 
 from pprint import pprint
 from metric_learning_evaluator.builder import EvaluatorBuilder
-from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 
 import argparse
 
@@ -41,11 +41,11 @@ parser.add_argument('--config', '-c', type=str, default=None,
         help='Path to the evaluation configuration with yaml format.')
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
-        help='Path to the source dataset, tfrecord | dataset_backbone | folder')
+        help='Path to the source (query) dataset.')
 parser.add_argument('--database', '-db', type=str, default=None,
         help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
-        help='Type of the input dataset.')
+        help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
         help='Path to the output dir for saving report.')
 
@@ -60,9 +60,14 @@ def main():
     config_path = args.config
     data_type = args.data_type
     data_dir = args.data_dir
+    database_dir = args.database
 
     if not data_dir:
         raise ValueError('data_dir must be assigned!')
+
+    if data_dir and database_dir:
+        print('Both query and database are given.')
+        raise NotImplementedError('Query to Database function is not implemented yet.')
 
     if not config_path:
         # TODO @kv: Generate the default config.
@@ -82,7 +87,7 @@ def main():
                                  mode='offline')
 
     if data_type == 'folder':
-        feature_importer = FeatureDataObject()
+        feature_importer = FeatureObject()
         feature_importer.load(data_dir)
         embeddings = feature_importer.embeddings
         filenames = feature_importer.filename_strings
