@@ -38,6 +38,7 @@ class EmbeddingContainer(object):
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
       TODO @kv: implement save & load.
       TODO @kv: Error-hanlding when current exceeds container_size
+      TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
 
     """
     def __init__(self, embedding_size, logit_size, container_size=10000):

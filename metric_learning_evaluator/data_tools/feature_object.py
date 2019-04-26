@@ -26,7 +26,6 @@ def get_var_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_locals.items()
     return [k for k, v in callers_local_vars if v is var][0]
 
-# NOTE: Rename -> FeatureObjectBase
 class FeatureObjectBase(object):
 
     def __init__(self):
@@ -128,7 +127,6 @@ class FeatureObjectBase(object):
         self._check_numpy_arrlike(_super_labels)
         self._super_labels = _super_labels
 
-# TODO: rename -> FeatureObject
 class FeatureObject(FeatureObjectBase):
 
     def __init__(self):

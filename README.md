@@ -14,11 +14,32 @@
 - `metrics`: Computational objects used in evaluations
 - `index`: Provide fast algorithm for query features and distance functions
 - `query`: Attribute database general interface
-- `tools`: Analysis toolkits
+- `tools`: Analysis tool-kits
   - NOTE: should we promote to analysis tool?
 - `data_tools`: General data containers including embedding, attribute and result containers
 - `utils`: Contains sampler, switcher
 - (OPTION) `inference`: Tools for extracting features, detect boxes and pre-labelling.
+
+
+### Roadmap and TODOs
+
+#### Roadmap
+- analysis
+- front-end gui
+
+#### TODO
+- Save out data reside in container.
+  - Consider concatenating each containers
+- Manifold
+  - locality
+  - input robustness
+  - margin search
+  - find reasonable center
+- ImageContainer?
+  - ContainerBaseObject?
+  - <T>Container <-> <T>Object
+
+- Change cmdline name, design operation logic
 
 ## Installation
 
@@ -26,7 +47,9 @@
 python setup.py install
 ```
 
-### Intallation of libHNSW
+### Intallation of `hnswlib`
+
+Source: [hnswlib](https://github.com/nmslib/hnswlib)
 
 ## Usage
 How to use evaluator?
@@ -40,6 +63,8 @@ INFO:tensorflow:Saving dict for global step 1500: global_step = 1500, loss = 7.4
 ```
 
 - Off-line mode
+
+NOTE: There will be a new usage logic and operations  .
 
 One can use command-line tool called `ml-eval` to execute evaluations.
 
@@ -82,10 +107,6 @@ NOTE: Off-line mode not fully supported now.
 - attribute container should be the only way that external information is added
   - we should parse grouping_rules.json in parser
 - number of sampled instances
-
-## TODO
-- Save out data reside in container.
-  - Consider concatenating each containers
 
 
 ## Cooperative Repo
