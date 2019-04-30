@@ -27,8 +27,8 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from utils.image_utils import read_jpeg_image
-from utils.read_json_labelmap import read_json_labelmap
+from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_image
+from metric_learning_evaluator.inference.utils.read_json_labelmap import read_json_labelmap
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.utils.sample_strategy import sample_fields
