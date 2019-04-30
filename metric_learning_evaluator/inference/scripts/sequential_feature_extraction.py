@@ -35,7 +35,6 @@ from metric_learning_evaluator.utils.sample_strategy import sample_fields
 
 from metric_learning_evaluator.inference.components.extractor import FeatureExtractor
 
-from metric_learning_evaluator.data_tools.image_container import ImageContainer
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 
