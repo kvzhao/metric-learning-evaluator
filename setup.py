@@ -2,9 +2,11 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-APP_NAME = 'ml-eval'
-VERSION = '0.0.1'
 
+# eml, short for evalute metric learning
+# need a good name, and a good command-line logic
+APP_NAME = 'ml-eval'
+VERSION = '0.0.2'
 
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as f:
@@ -30,8 +32,8 @@ setup_info = dict(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            '{} = metric_learning_evaluator.app:main'.format(
-                APP_NAME)
+            '{app_name} = metric_learning_evaluator.app:main'.format(
+                app_name=APP_NAME)
         ],
     },
 )

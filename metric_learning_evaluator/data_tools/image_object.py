@@ -25,6 +25,7 @@ class ImageObject(object):
       Object describing the image and instance:
 
         ImageID:0
+        ImageBuffer
             - InstanceID:0
                 - Box
                 - Conf
@@ -109,6 +110,11 @@ class ImageObject(object):
     @property
     def instances(self):
         return self._instances
+
+    @property
+    def instance_array(self):
+        # get an 4d tensor of instances
+        pass
 
     @property
     def instance_ids(self):
