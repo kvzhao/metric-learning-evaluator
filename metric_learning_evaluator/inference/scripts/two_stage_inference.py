@@ -87,7 +87,11 @@ def main(args):
     # NOTE: Suppose the input is dataset backbone.
     predicted_image_objects = []
     for fname in input_filenames:
-        image = read_jpeg_image(fname)
+        try:
+            image = read_jpeg_image(fname)
+        except:
+            print('{} can not be opened properly, skip'.format(fname))
+            continue
 
         img_obj = retrieval_module.inference(image)
 
