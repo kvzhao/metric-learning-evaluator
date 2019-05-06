@@ -42,14 +42,21 @@
 - Change cmdline name, design operation logic
 
 ## Installation
-
 ```
 python setup.py install
 ```
+Two command-line tools will be installed: `ml-eval` and `ml-inference`.
 
 ### Intallation of `hnswlib`
 
 Source: [hnswlib](https://github.com/nmslib/hnswlib)
+Binding installation
+```
+apt-get install -y python-setuptools python-pip
+pip3 install pybind11 numpy setuptools
+cd python_bindings
+python3 setup.py install
+```
 
 ## Usage
 How to use evaluator?

@@ -3,15 +3,17 @@ import sys
 from setuptools import setup, find_packages
 
 
-# eml, short for evalute metric learning
-# need a good name, and a good command-line logic
-APP_NAME = 'ml-eval'
+# ml, short for `metric learning`
+EVAL_APP_NAME = 'ml-eval'
+INFERENCE_APP_NAME = 'ml-inference'
 VERSION = '0.0.2'
+
+ROOT_FOLDER = 'metric_learning_evaluator'
+APP_FOLDER = 'application'
 
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as f:
         return f.read()
-
 
 install_requires = [
     'pyyaml',
@@ -20,8 +22,8 @@ install_requires = [
     'pytablewriter'
 ]
 
-setup_info = dict(
-    name='metric-learning-evaluator',
+eval_setup_info = dict(
+    name='metric-learning-`evaluator',
     author='Viscovery',
     version=VERSION,
     description='evaluation tool',
@@ -32,10 +34,34 @@ setup_info = dict(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            '{app_name} = metric_learning_evaluator.app:main'.format(
-                app_name=APP_NAME)
+            '{app_name} = {root_folder}.{app_folder}.eval_app:main'.format(
+                app_name=EVAL_APP_NAME,
+                root_folder=ROOT_FOLDER,
+                app_folder=APP_FOLDER)
         ],
     },
 )
+# Install evaluation
+setup(**eval_setup_info)
 
-setup(**setup_info)
+inference_setup_info = dict(
+    name='metric-learning-inference',
+    author='Viscovery',
+    version=VERSION,
+    description='Inference tool',
+    long_discription=read('README.md'),
+    license='BSD',
+    #install_requires=install_requires,
+    include_package_data=True,
+    packages=find_packages(),
+    entry_points={
+        'console_scripts': [
+            '{app_name} = {root_folder}.{app_folder}.inference_app:main'.format(
+                app_name=INFERENCE_APP_NAME,
+                root_folder=ROOT_FOLDER,
+                app_folder=APP_FOLDER)
+        ],
+    },
+)
+# Install inference tools
+setup(**inference_setup_info)
