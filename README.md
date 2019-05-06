@@ -8,22 +8,25 @@
 
 
 ### Modules & Components
+- `application`: Command-line applications
+- `analysis`: Analysis tools
 - `core`: Define standard fields
 - config_parser
 - `evaluations`: Customized applications for measuring model performance
 - `metrics`: Computational objects used in evaluations
 - `index`: Provide fast algorithm for query features and distance functions
 - `query`: Attribute database general interface
-- `tools`: Analysis tool-kits
+- `tools`: Scripts for some utilities
   - NOTE: should we promote to analysis tool?
 - `data_tools`: General data containers including embedding, attribute and result containers
 - `utils`: Contains sampler, switcher
-- (OPTION) `inference`: Tools for extracting features, detect boxes and pre-labelling.
+- `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
 
 
 ### Roadmap and TODOs
 
 #### Roadmap
+- inference
 - analysis
 - front-end gui
 
