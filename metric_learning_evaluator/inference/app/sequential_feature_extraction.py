@@ -15,6 +15,8 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
+from scutils.scdata import DatasetBackbone
+
 from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_image
 from metric_learning_evaluator.inference.utils.read_json_labelmap import read_json_labelmap
 
@@ -70,7 +72,7 @@ def extraction_application(configs, args):
     ### =================================
     all_image_filenames = []
     if data_type == 'datasetbackbone':
-        from scutils.scdata import DatasetBackbone
+        print('Extract features from dataset backbone')
         dataset_backbone_db_path = glob.glob(data_dir + '/*.db')
 
         # TODO: check whether the path is legal or not
@@ -82,6 +84,7 @@ def extraction_application(configs, args):
 
         try:
             for filename in tqdm(filenames):
+                """TODO: cropped or not?"""
                 annotation = src_db.query_anno_info_by_filename(filename)[0]
                 instance_id = annotation['id']
                 category_name = annotation['category']
@@ -95,7 +98,6 @@ def extraction_application(configs, args):
                 img_path = src_db.query_img_abspath_by_filename(filename)[0]
                 img = read_jpeg_image(img_path, img_size)
                 feature = embedder.extract_feature(img)
-
                 embedding_container.add(instance_id=instance_id,
                                         label_id=label_id, embedding=feature[0])
                 # available filename in same order
@@ -104,6 +106,7 @@ def extraction_application(configs, args):
             """TODO:
                 Save embeddings up to current state
             """
+            print('Exception happens for ? reason.')
             pass
 
     elif data_type == 'folder':

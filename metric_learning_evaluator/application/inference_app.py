@@ -55,7 +55,7 @@ def main():
 
     if not config_path:
         # TODO @kv: Generate the default config.
-        raise ValueError('infernce configuration must be assigned!')
+        raise ValueError('inference configuration must be assigned!')
 
     try:
         with open(config_path, 'r') as fp:
