@@ -22,7 +22,7 @@ import yaml
 
 import scutils
 
-from metric_learning_evaluator.inference.app.retrieval import ImageRetrieval
+from metric_learning_evaluator.inference.pipeline.retrieval import ImageRetrieval
 
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 

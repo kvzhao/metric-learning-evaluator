@@ -16,6 +16,7 @@ from metric_learning_evaluator.inference.components.extractor import FeatureExtr
 
 from metric_learning_evaluator.data_tools.image_object import ImageObject
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
 from metric_learning_evaluator.inference.utils.image_utils import bbox_ratio_to_xywh
 from metric_learning_evaluator.inference.utils.image_utils import crop_and_resize
@@ -101,6 +102,7 @@ class ImageRetrieval(object):
             self._database_features = np.squeeze(self._feature_object.embeddings)
             self._database_label_names = self._feature_object.label_names
             self._database_label_ids = self._feature_object.label_ids
+            # TODO @kv: Push embeddings into container, then init the index agent.
 
 
     def _search(self, feature):
