@@ -77,8 +77,8 @@ def detection_application(configs, args):
         formal_bboxes = [bbox_ratio_to_xywh(bbox, img_height, img_width) for bbox in det_bboxes]
 
         img_id = dst_db.imwrite(origin_img)
-
         for bbox in formal_bboxes:
             anno_id = dst_db.init_annotation(img_id)
+            dst_db.update_category(anno_id, 'unknown_instance')
             dst_db.update_bbox(anno_id, bbox)
     dst_db.commit()
