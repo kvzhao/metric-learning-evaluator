@@ -32,7 +32,7 @@ def detection_application(configs, args):
     data_dir = args.data_dir
     out_dir = args.out_dir
     data_type = args.data_type
-    detector_settings = configs['detector_setting']
+    detector_settings = configs['detector_settings']
 
     detector_num_classes = detector_settings['num_classes']
     detector_model_path = detector_settings['model_path']
