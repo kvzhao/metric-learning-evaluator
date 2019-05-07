@@ -5,6 +5,9 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../..')))  # noqa
 
+from os import listdir
+from os.path import join, isfile
+
 import cv2
 import math
 import yaml
@@ -81,7 +84,6 @@ def extraction_application(configs, args):
 
         label_ids, instance_ids = [], []
         embedding_container = EmbeddingContainer(embedding_size, 0, container_capacity)
-
         try:
             for filename in tqdm(filenames):
                 """TODO: cropped or not?"""
@@ -91,6 +93,7 @@ def extraction_application(configs, args):
                 if not category_name in labelmap:
                     #print('NOTICE: {} cannot be found in {} which would be skipped'.format(category_name, labelmap_path))
                     label_id = annotation['cate_id']
+                    label_ids.append(label_id)
                 else:
                     instance_ids.append(filename)
                     label_id = labelmap[category_name]['unique_id']
@@ -111,7 +114,9 @@ def extraction_application(configs, args):
 
     elif data_type == 'folder':
         # folder contains raw images
-        pass
+        input_filenames = [
+            join(data_dir, f) for f in listdir(data_dir) if isfile(join(data_dir, f))]
+        print('Load input data from folder with {} images.'.format(len(input_filenames)))
 
     feature_exporter = FeatureObject()
     feature_exporter.filename_strings = np.asarray(filenames)
@@ -120,16 +125,13 @@ def extraction_application(configs, args):
 
     # suppose the groundtruth is provided
     if data_type == 'datasetbackbone':
-        category_names = []
-        category_ids = []
+        category_names, category_ids = [], []
         try:
             for name in all_image_filenames:
                 annos = src_db.query_anno_info_by_filename(name)
                 for anno in annos:
                     cate_name = anno['category']
                     if not cate_name in labelmap:
-                        # TODO:
-                        print ('WARNING: {} not in labelmap,'.format(cate_name))
                         continue
                     category_names.append(labelmap[cate_name]['label_name'])
                     category_ids.append(labelmap[cate_name]['unique_id'])
@@ -139,8 +141,10 @@ def extraction_application(configs, args):
             feature_exporter.label_ids = np.asarray(category_ids)
             feature_exporter.save(out_dir)
 
-        feature_exporter.label_names = np.asarray(category_names)
-        feature_exporter.label_ids = np.asarray(category_ids)
+        if category_names:
+            feature_exporter.label_names = np.asarray(category_names)
+        if category_ids:
+            feature_exporter.label_ids = np.asarray(category_ids)
 
     feature_exporter.save(out_dir)
     print("Save all extracted features at {}.".format(out_dir))
