@@ -23,7 +23,7 @@ install_requires = [
 ]
 
 eval_setup_info = dict(
-    name='metric-learning-`evaluator',
+    name='metric-learning-evaluator',
     author='Viscovery',
     version=VERSION,
     description='evaluation tool',

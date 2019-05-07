@@ -21,6 +21,7 @@ from metric_learning_evaluator.utils.switcher import switch
 
 from metric_learning_evaluator.inference.app.sequential_feature_extraction import extraction_application
 from metric_learning_evaluator.inference.app.two_stage_retrieval import retrieval_application
+from metric_learning_evaluator.inference.app.agnostic_detection import detection_application
 
 import argparse
 
@@ -28,7 +29,7 @@ parser = argparse.ArgumentParser('Command-line Metric Learning Inference Tool')
 
 # must-have argument
 parser.add_argument('--task', '-t', type=str, default=None,
-        help='Task options: extract | two-stage | cropbox')
+        help='Task options: extract | detect | two-stage |')
 
 parser.add_argument('--config', '-c', type=str, default=None,
         help='Path to the inference configuration with yaml format.')
@@ -76,9 +77,10 @@ def main():
             retrieval_application(config_dict, args)
             break
 
-        if case('cropbox'):
-            print('Execute cropbox (detector)')
+        if case('detect'):
+            print('Execute agnostic detection')
+            detection_application(config_dict, args)
             break
 
         if case():
-            print('Inference tool: Default case is not assigned.')
+            print('Inference tool: task {} is not defined.'.format(task_job))
