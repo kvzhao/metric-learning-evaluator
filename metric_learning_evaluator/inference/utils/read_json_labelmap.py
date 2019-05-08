@@ -12,7 +12,7 @@ def read_json_labelmap(json_path):
         with open(json_path, 'r') as fp:
             label_map = json.load(fp)
     except:
-        raise IOError('Labelmap: {} can not be loaded.')
+        raise IOError('Labelmap: {} can not be loaded.'.format(json_path))
 
     # Check the structure: dict of dict
     # if not (dict: str-int mapping or int-str mapping), convert automatically
