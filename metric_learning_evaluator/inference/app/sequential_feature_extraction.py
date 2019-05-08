@@ -132,9 +132,11 @@ def extraction_application(configs, args):
                 for anno in annos:
                     cate_name = anno['category']
                     if not cate_name in labelmap:
-                        continue
-                    category_names.append(labelmap[cate_name]['label_name'])
-                    category_ids.append(labelmap[cate_name]['unique_id'])
+                        category_names.append('unknown_instance')
+                        category_ids.append(anno['cate_id'])
+                    else:
+                        category_names.append(labelmap[cate_name]['label_name'])
+                        category_ids.append(labelmap[cate_name]['unique_id'])
         except KeyboardInterrupt:
             print('Interrupted by user, save {} features to {}'.format(len(category_names)))
             feature_exporter.label_names = np.asarray(category_names)
