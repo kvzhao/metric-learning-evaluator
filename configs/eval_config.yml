@@ -12,13 +12,13 @@ database:
         path: misc/attributes_table.json
 
 # upper-bound of the evaluation instances
-container_size: 50000
+container_size: 100000
 
 chosen_evaluations:
-    - RankingWithAttributesEvaluation
-    - CheckoutEvaluation
+    #- RankingWithAttributesEvaluation
+    #- CheckoutEvaluation
     - RankingEvaluation
-    - FacenetEvaluation
+    #- FacenetEvaluation
 
 # Configurations for evaluator:
 evaluation_options:
@@ -55,9 +55,9 @@ evaluation_options:
         sampling:
             class_sample_method: uniform
             instance_sample_method: uniform
-            num_of_db_instance: 10
+            num_of_db_instance: 200
             num_of_query_class: 100
-            num_of_query_instance_per_class: 1
+            num_of_query_instance_per_class: 20
             maximum_of_sampled_data: 10000
 
         metric:
@@ -116,7 +116,7 @@ evaluation_options:
             instance_sample_method: uniform
             num_of_db_instance: 10
             num_of_query_class: 100
-            num_of_query_instance_per_class: 2
+            num_of_query_instance_per_class: 50
             maximum_of_sampled_data: 10000
 
         metric:

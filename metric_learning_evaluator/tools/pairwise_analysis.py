@@ -8,14 +8,14 @@ import numpy as np
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
-from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
 from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import indexing_array
 
-from metric_learning_evaluator.tools.manifold import Manifold
+from metric_learning_evaluator.analysis.manifold import Manifold
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
 
 from collections import Counter
@@ -34,7 +34,7 @@ def main(args):
     if data_dir is None:
         raise ValueError('data_dir or database should be assigned.')
 
-    feature_object = FeatureDataObject()
+    feature_object = FeatureObject()
     feature_object.load(data_dir)
 
     embeddings = feature_object.embeddings

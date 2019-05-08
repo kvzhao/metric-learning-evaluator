@@ -1,0 +1,5 @@
+
+detector_settings:
+  num_classes: 1
+  model_path: /home/trained_models/ssd_fpn_0.50.7/frozen_inference_graph.pb
+  labelmap_path: misc/agnostic_labelmap.pbtxt
