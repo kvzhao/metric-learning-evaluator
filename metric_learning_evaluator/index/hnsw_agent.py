@@ -31,6 +31,7 @@ class HNSWAgent(AgentBase):
         self._M = M
 
         self._build()
+        print('HNSW Index Agent is initialized')
 
     def _build(self):
         """Build search engine and index

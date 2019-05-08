@@ -17,6 +17,7 @@ class NumpyAgent(AgentBase):
         super(NumpyAgent, self).__init__(embedding_container)
 
         self._build()
+        print('Numpy Index Agent is initialized')
 
     def _build(self):
         self._indices = np.asarray(self._container.instance_ids)
