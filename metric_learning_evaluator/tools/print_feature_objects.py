@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../..')))  # noqa
+    os.path.join(os.path.dirname(__file__), '..')))  # noqa
 
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.inference.utils.read_json_labelmap import read_json_labelmap
@@ -18,6 +18,9 @@ def main(args):
 
     if labelmap_path is not None:
         labelmap = read_json_labelmap(labelmap_path)
+    else:
+        # fill the map with loaded label_names andd label_ids
+        labelmap = {}
 
     extracted_features = FeatureObject()
     extracted_features.load(data_dir)

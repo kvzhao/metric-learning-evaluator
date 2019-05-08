@@ -15,7 +15,7 @@ from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import indexing_array
 
-from metric_learning_evaluator.tools.manifold import Manifold
+from metric_learning_evaluator.analysis.manifold import Manifold
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
 
 from collections import Counter
