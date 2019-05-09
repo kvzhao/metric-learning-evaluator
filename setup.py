@@ -11,6 +11,8 @@ VERSION = '0.1.0'
 ROOT_FOLDER = 'metric_learning_evaluator'
 APP_FOLDER = 'application'
 
+AUTHOR='kv'
+
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as f:
         return f.read()
@@ -24,9 +26,9 @@ install_requires = [
 
 eval_setup_info = dict(
     name='metric-learning-evaluator',
-    author='Viscovery',
+    author=AUTHOR,
     version=VERSION,
-    description='evaluation tool',
+    description='Metric Learing Evaluation Tool',
     long_discription=read('README.md'),
     license='BSD',
     install_requires=install_requires,
@@ -46,9 +48,9 @@ setup(**eval_setup_info)
 
 inference_setup_info = dict(
     name='metric-learning-inference',
-    author='Viscovery',
+    author=AUTHOR,
     version=VERSION,
-    description='Inference tool',
+    description='Metric Learning Inference Tool',
     long_discription=read('README.md'),
     license='BSD',
     #install_requires=install_requires,
