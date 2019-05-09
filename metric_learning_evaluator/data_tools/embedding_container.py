@@ -36,12 +36,14 @@ class EmbeddingContainer(object):
         - clear: clear the internal buffer
     
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
-      TODO @kv: implement save & load.
-      TODO @kv: Error-hanlding when current exceeds container_size
+      TODO @kv: implement save & load for data container.
+      TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
+      TODO @kv: logits --> scores (used for classifier)
 
     """
-    def __init__(self, embedding_size, logit_size, container_size=10000):
+    def __init__(self, embedding_size, logit_size,
+                 container_size=10000, name='embedding_container'):
         """Constructor of the Container.
 
           Args:
@@ -53,6 +55,8 @@ class EmbeddingContainer(object):
                 It prefers passing top_k scores.
             container_size, int:
                 Number of embedding vector that container can store.
+            name, str:
+                The name string is used for version control.
         
         """
         self._embedding_size = embedding_size
@@ -71,7 +75,12 @@ class EmbeddingContainer(object):
         self._instance_ids = []
         self._label_ids = []
 
+        self._name = name
         self._current = 0
+
+    def __repr__(self):
+        _content = '===== {} =====\n'.format(self._name)
+        _content += 'embeddings: {}'.format(self._embeddings.shape)
     
     def add(self, instance_id, label_id, embedding, logit=None):
         """Add instance_id, label_id and embeddings.

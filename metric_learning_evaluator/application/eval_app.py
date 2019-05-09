@@ -38,9 +38,11 @@ from pprint import pprint
 from metric_learning_evaluator.builder import EvaluatorBuilder
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.utils.switcher import switch
-# should cooperate add_container
-from metric_learning_evaluator.utils.io_utils import fetch_embedding_container_from_featobj
 
+# should cooperate add_container
+from metric_learning_evaluator.utils.io_utils import create_embedding_container_from_featobj
+
+from metric_learning_evaluator.application.standard_fields import ApplicationStatusStandardFields as status_fields
 
 import argparse
 
@@ -62,9 +64,12 @@ parser.add_argument('--out_dir', '-od', type=str, default=None,
 
 parser.add_argument('--embedding_size', '-es', type=int, default=2048,
         help='Dimension of the given embeddings.')
+# score_size, prob_size
 parser.add_argument('--logit_size', '-ls', type=int, default=0,
         help='Size of the logit used in container.')
 
+
+APP_SIGNATURE = '[EVAL]'
 
 def main():
     args = parser.parse_args()
@@ -73,12 +78,17 @@ def main():
     data_dir = args.data_dir
     database_dir = args.database
 
+    status = status_fields.not_determined
+
     if not data_dir:
         raise ValueError('data_dir must be assigned!')
 
+    # argument logic
     if data_dir and database_dir:
-        print('Both query and database are given.')
+        status = status_fields.evaluate_query_database
         raise NotImplementedError('Query to Database function is not implemented yet.')
+    elif data_dir and database_dir is None:
+        status = status_fields.evaluate_single_container
 
     if not config_path:
         # TODO @kv: Generate the default config.
@@ -98,6 +108,7 @@ def main():
                                  mode='offline')
 
     if data_type == 'folder':
+        # i think this is the unified interface:
         feature_importer = FeatureObject()
         feature_importer.load(data_dir)
         embeddings = feature_importer.embeddings
@@ -105,14 +116,22 @@ def main():
         labels = feature_importer.label_ids
 
     print('evaluator metric names: {}'.format(evaluator.metric_names))
-    # Add datum through loop
-    for feat, label, fn in zip(embeddings, labels, filenames):
-        # TODO @kv: Do not confuse `filename` with `instance_id`.
-        fn = fn.replace('.jpg','')
-        fn = fn.replace('.png','')
-        instance_id = int(fn)
-        evaluator.add_instance_id_and_embedding(instance_id, label, feat)
-    total_results = evaluator.evaluate()
 
-    for metric_name in evaluator.metric_names:
-        print('{}: {}'.format(metric_name, total_results[metric_name]))
+    for case in switch(status):
+        print('{} Executes {}'.format(APP_SIGNATURE, status))
+
+        if case(status_fields.evaluate_single_container):
+            # Add datum through loop
+            for feat, label, fn in zip(embeddings, labels, filenames):
+                # TODO @kv: Do not confuse `filename` with `instance_id`.
+                fn = fn.replace('.jpg','')
+                fn = fn.replace('.png','')
+                instance_id = int(fn)
+                evaluator.add_instance_id_and_embedding(instance_id, label, feat)
+            total_results = evaluator.evaluate()
+
+            for metric_name in evaluator.metric_names:
+                print('{}: {}'.format(metric_name, total_results[metric_name]))
+
+            break
+    

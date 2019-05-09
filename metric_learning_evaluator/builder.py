@@ -132,6 +132,7 @@ class EvaluatorBuilder(object):
 
     def add_instance_id_and_embedding(self, instance_id, label_id, embedding, logit=None):
         """Add embedding and label for a sample to be used for evaluation.
+
            If the query attribute names are given in config, this function will
            search them on database automatically.
 
@@ -164,6 +165,27 @@ class EvaluatorBuilder(object):
             self.attribute_container.add(int(instance_id), queried_attributes)
 
         self._instance_counter += 1
+
+    def add_container(self, embedding_container=None, attribute_container=None):
+        """Add filled containers
+           Both embedding & attribute should be provided previously.
+
+          Args:
+            embedding_container: EmbeddingContainer, default is None.
+            attribute_container: AttributeContainer, default is None.
+          Notice:
+            Sanity check:
+        """
+        # replace container
+        if embedding_container is not None:
+            self.embedding_container.clear()
+            self.embedding_container = embedding_container
+            print('Update embedding container.')
+
+        if attribute_container is not None:
+            self.attribute_container.clear()
+            self.attribute_container = attribute_container
+            print('Update attribute container.')
     
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
