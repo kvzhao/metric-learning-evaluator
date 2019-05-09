@@ -38,6 +38,8 @@ from pprint import pprint
 from metric_learning_evaluator.builder import EvaluatorBuilder
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.utils.switcher import switch
+# should cooperate add_container
+from metric_learning_evaluator.utils.io_utils import fetch_embedding_container_from_featobj
 
 
 import argparse
@@ -106,7 +108,9 @@ def main():
     # Add datum through loop
     for feat, label, fn in zip(embeddings, labels, filenames):
         # TODO @kv: Do not confuse `filename` with `instance_id`.
-        instance_id = int(fn.replace('.jpg',''))
+        fn = fn.replace('.jpg','')
+        fn = fn.replace('.png','')
+        instance_id = int(fn)
         evaluator.add_instance_id_and_embedding(instance_id, label, feat)
     total_results = evaluator.evaluate()
 
