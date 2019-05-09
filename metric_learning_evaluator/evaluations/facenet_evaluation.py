@@ -278,7 +278,6 @@ class FacenetEvaluation(MetricEvaluationBase):
         label_ids = np.asarray(label_ids)
 
         num_sampled_classes = math.ceil(ratio_of_class * num_classes)
-        print(num_sampled_classes)
         if ratio_of_class == 1.0:
             sampled_classes = classes
         else:

@@ -66,9 +66,6 @@ class MetricEvaluationBase(object):
         self._metrics = self._config_parser.get_metrics(self.evaluation_name)
         self._attributes = self._config_parser.get_attributes(self.evaluation_name)
 
-        # Verbose
-        print (self._config_parser.get_per_eval_config(self.evaluation_name))
-
     @property
     def evaluation_name(self):
         return self._evaluation_name
