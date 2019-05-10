@@ -38,6 +38,7 @@ def main(args):
     qeury_label_names = qeury_features.label_names
 
     if num_sampled_qeury is not None:
+        print('Sample {} query from given feature_object'.format(num_sampled_qeury))
         sampled_query_indices = np.random.choice(
             np.arange(len(query_label_ids)), num_sampled_qeury, replace=False)
         query_embeddings = query_embeddings[sampled_query_indices]
@@ -78,7 +79,7 @@ def main(args):
                                  ranking_metrics.topk_hit_accuracy, condition={'k': 1})
         result_container.add(attribute_fields.all_classes, 'mAP',
                                  ranking_metrics.mean_average_precision)
-    print(result_container)
+    print(result_container.results)
 
 if __name__ == '__main__':
     import argparse
