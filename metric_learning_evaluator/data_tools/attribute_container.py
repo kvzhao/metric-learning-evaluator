@@ -4,7 +4,7 @@
     Brief intro:
 
         AttributeContainer:
-            Data object for maintaining attribute table in each EvaluationObejct.
+            Data object for maintaining attribute table in each EvaluationObject.
 
     @bird, dennis, kv
 """
@@ -20,8 +20,13 @@ from collections import defaultdict
 
 import numpy as np
 
+from metric_learning_evaluator.query.general_database import QueryInterface
+
 class AttributeContainer(object):
-    """The Data Container for Attributes (Grouping table).
+    """The Data Container for Attributes (domain & property)
+
+      Domain:
+      Property:
 
       Usage:
         User would add instance_id & corresponding attributes into container

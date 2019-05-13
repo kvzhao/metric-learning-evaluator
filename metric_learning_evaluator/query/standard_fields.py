@@ -5,6 +5,13 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 
+class QueryDatabaseStandardFields:
+    datasetbackbone = 'DatasetBackbone'
+    zeus = 'Zeus'
+    json = 'Json'
+    # built-in sqlite3 attribute table
+    native = 'Native'
+
 class AttributeStandardFields(object):
     """Collection of Known Attributes.
     """
