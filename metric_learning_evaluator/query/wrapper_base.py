@@ -1,4 +1,3 @@
-# Should I use the base wrapper?
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
@@ -9,6 +8,9 @@ from abc import ABCMeta
 from abc import abstractmethod
 
 class DatabaseWrapperBase(object):
+    """
+      Wrapper should be re-defined
+    """
 
     def __init__(self):
         pass

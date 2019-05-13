@@ -68,6 +68,8 @@ class QueryInterface(object):
                 return: attribute_values: "Color.Red" (list of str)
         """
 
+        self.database.query_property_
+
         all_attr_names = self.database.query_attributes_by_instance_id(instance_id)
 
         if required_attribute_names is None:

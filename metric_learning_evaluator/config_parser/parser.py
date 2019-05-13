@@ -83,11 +83,6 @@ class ConfigParser(object):
                     required_attributes.extend(attrs)
         self._required_attributes = list(set(required_attributes))
 
-        # Extract all defined names in metric standard fields
-        #metric_items = inspect.getmembers(metric_fields, lambda a: not(inspect.isroutine(a)))
-        #metric_items = [a for a in metric_items if not(a[0].startswith('__') and a[0].endswith('__'))]
-        #self._metric_items = [v for _, v in metric_items]
-
     @property
     def chosen_evaluation_names(self):
         return self._chosen_evaluation_names
@@ -135,7 +130,8 @@ class ConfigParser(object):
           Args:
             eval_name, string: Name of the evaluation object.
           Return:
-            List of attributes to be evaluated at given evaluation.
+            attribute:
+                Dict of assigned domain and property.
         """
         if eval_name is None:
             if self._required_attributes:
