@@ -30,8 +30,21 @@ class NativeWrapper(object):
         #     raise FileNotFoundError("DB path: {} not found".format(grouping_rules_file_path))
 
 
-    def query_domain_by_instance_id(self, instance_id):
-        pass
+    def query_attributes_by_instance_id(self, instance_id):
+        _attrs = []
+        _attrs.extend(self._query_domain_by_instance_id(instance_id))
+        _attrs.extend(self._query_property_by_instance_id(instance_id))
+        return _attrs
 
-    def query_property_by_instance_id(self, instance_id):
-        pass
+    def _query_domain_by_instance_id(self, instance_id):
+        # query tag-like, return a list
+        return self._database.query_domain_by_instance_ids(instance_id)
+
+    def _query_property_by_instance_id(self, instance_id):
+        # query {attr_name: attr_vale} structure and flatten it to [attr_name.attr_value, ]
+        _attr_flatten = []
+        attr_dict_list = self._database.query_property_by_instance_ids(instance_id)
+        for _attr_dict in attr_dict_list:
+            for k, v in _attr_dict.items():
+                _attr_flatten.append('.'.join([k, v]))
+        return _attr_flatten

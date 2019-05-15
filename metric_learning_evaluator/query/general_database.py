@@ -31,6 +31,7 @@ class QueryInterface(object):
         # create wrapper
         database_object = DATABASE_DICT[database_type]
         self.database = database_object(database_config)
+        print('Initialize Query Interface with {} backend.'.format(database_type))
 
     def query(self, instance_id, required_attribute_names=None):
         """Query function:
@@ -67,8 +68,6 @@ class QueryInterface(object):
                 attribute_names: Color, Shape.Can
                 return: attribute_values: "Color.Red" (list of str)
         """
-
-        self.database.query_property_
 
         all_attr_names = self.database.query_attributes_by_instance_id(instance_id)
 

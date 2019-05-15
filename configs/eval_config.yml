@@ -4,12 +4,15 @@
 # NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
 #       and with the key: `evaluator`.
 
-# database: Zeus | DatasetBackbone | None
+# database: Zeus | DatasetBackbone | Native
 database:
-    database_type: Json
+    database_type: Native
     database_config:
         # path to attributes_table.json
-        path: misc/attributes_table.json
+        path: misc/native_attr_table_example.db
+
+# index agent option: Numpy | HNSW
+index_agent: HNSW
 
 # upper-bound of the evaluation instances
 container_size: 100000
@@ -71,7 +74,21 @@ evaluation_options:
             function:
             threshold:
 
-        attribute: # not support
+        # As a section of codes
+        attribute: # developing
+            # if `query` & `database` are not defined, sampling instead
+            cross_reference:
+                - query->database
+                - seen+query->unseen+database # seen to unseen
+                - (seen+query)->(seen-unseen+database) # seen to total
+                - seen + query -> (seen-unseen+database) # seen to total
+            # e.g attribute_name `color` with values `red`, `blue` or 'yellow'.
+            group:
+                - color.red
+                - color.red+color.blue
+                - color.red + color.blue
+                #- color.* # have to implement string parser handling *
+                # color.red, color.yellow
 
         option:
             path_database: # not done
@@ -92,10 +109,11 @@ evaluation_options:
             mAP: true
 
         attribute:
-            - seen_to_seen
-            - unseen_to_unseen
-            - seen_to_total
-            - unseen_to_total
+            cross_reference:
+                - seen+query->seen+database
+                - unseen->unseen
+            group:
+                - color
 
         option:
             num_of_seen_query_class: 100
