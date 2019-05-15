@@ -104,33 +104,3 @@ class Interpreter(object):
                 bytecode_method()
             else:
                 bytecode_method(argument)
-
-if __name__ == '__main__':
-    what_to_execute = {
-        'instructions': [
-            ('LOAD_LIST', 0),
-            ('STORE_NAME', 0),
-            ('LOAD_LIST', 1),
-            ('STORE_NAME', 1),
-            ('LOAD_NAME', 0),
-            ('LOAD_NAME', 1),
-            ('JOIN', None),
-            ('PRINT', None),
-        ],
-
-        'values': [
-            [1,3,5],
-            [2,4],
-            [6],
-        ],
-
-        'names': [
-            'A',
-            'B',
-            'C',
-        ],
-    }
-
-    interpreter = Interpreter()
-    interpreter.run_code(what_to_execute)
-    outcome = interpreter.fetch()
