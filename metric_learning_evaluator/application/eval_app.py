@@ -65,8 +65,8 @@ parser.add_argument('--out_dir', '-od', type=str, default=None,
 parser.add_argument('--embedding_size', '-es', type=int, default=2048,
         help='Dimension of the given embeddings.')
 # score_size, prob_size
-parser.add_argument('--logit_size', '-ls', type=int, default=0,
-        help='Size of the logit used in container.')
+parser.add_argument('--prob_size', '-ps', type=int, default=0,
+        help='Size of the output probability size used in container, set 0 to disable')
 
 
 APP_SIGNATURE = '[EVAL]'
@@ -103,7 +103,7 @@ def main():
 
     # open file
     evaluator = EvaluatorBuilder(args.embedding_size,
-                                 args.logit_size,
+                                 args.prob_size,
                                  config_dict,
                                  mode='offline')
 

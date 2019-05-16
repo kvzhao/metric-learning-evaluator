@@ -40,9 +40,10 @@ class EmbeddingContainer(object):
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO @kv: logits --> scores (used for classifier)
+      TODO @kv: maybe we should add filename in container.
 
     """
-    def __init__(self, embedding_size, logit_size,
+    def __init__(self, embedding_size, prob_size,
                  container_size=10000, name='embedding_container'):
         """Constructor of the Container.
 
@@ -60,14 +61,14 @@ class EmbeddingContainer(object):
         
         """
         self._embedding_size = embedding_size
-        self._logit_size = logit_size
+        self._prob_size = prob_size
         self._container_size = container_size
         # logits, prelogits (embeddeing),
         self._embeddings = np.empty((container_size, embedding_size), dtype=np.float32)
-        if logit_size == 0:
-            self._logits = None
+        if prob_size == 0:
+            self._probs = None
         else:
-            self._logits = np.empty((container_size, logit_size), dtype=np.float32)
+            self._probs = np.empty((container_size, prob_size), dtype=np.float32)
         self._label_by_instance_id = {}
         self._index_by_instance_id = {}
         self._instance_id_by_label = defaultdict(list)
@@ -82,9 +83,9 @@ class EmbeddingContainer(object):
         _content = '===== {} =====\n'.format(self._name)
         _content += 'embeddings: {}'.format(self._embeddings.shape)
     
-    def add(self, instance_id, label_id, embedding, logit=None):
+    def add(self, instance_id, label_id, embedding, prob=None):
         """Add instance_id, label_id and embeddings.
-        TODO: Add one more argument: logit
+        TODO: Add one more argument: prob
           Args:
             instance_id, int:
                 Unique instance_id which can not be repeated in the container.
@@ -92,8 +93,8 @@ class EmbeddingContainer(object):
                 Index of given class corresponds to the instance.
             embedding, numpy array:
                 One dimensional embedding vector with size less than self._embedding_size.
-            (optional) logit, numpy array:
-                One dimensional vector.
+            (optional) prob, numpy array:
+                One dimensional vector which records class-wise scores.
         """
 
         # assertions: embedding size, 
@@ -108,8 +109,8 @@ class EmbeddingContainer(object):
 
         self._embeddings[self._current, ...] = embedding
 
-        if not logit is None:
-            self._logits[self._current, ...] = logit
+        if not prob is None:
+            self._probs[self._current, ...] = prob
 
         # check type of label_id, instance_id
         try:
@@ -197,9 +198,9 @@ class EmbeddingContainer(object):
         return self._embeddings[:self._current]
 
     @property
-    def logits(self):
+    def probs(self):
         # get logits up to current index
-        return self._logits[:self._current]
+        return self._probs[:self._current]
 
     @property
     def instance_ids(self):
@@ -220,6 +221,10 @@ class EmbeddingContainer(object):
     @property
     def embedding_size(self):
         return self._embedding_size
+
+    @property
+    def prob_size(self):
+        return self._prob_size
 
     @property
     def counts(self):
