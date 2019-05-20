@@ -127,9 +127,7 @@ def main():
                 if isinstance(fn, str):
                     fn = fn.replace('.jpg','')
                     fn = fn.replace('.png','')
-                    instance_id = int(fn)
-                elif isinstance(fn, np.int64):
-                    instance_id = fn
+                instance_id = int(fn)
                 evaluator.add_instance_id_and_embedding(instance_id, label, feat)
             total_results = evaluator.evaluate()
 
@@ -137,4 +135,3 @@ def main():
                 print('{}: {}'.format(metric_name, total_results[metric_name]))
 
             break
-    

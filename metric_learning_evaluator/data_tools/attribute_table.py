@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.abspath(
 
 import json
 import sqlite3
+import numpy as np
 from glob import glob
 from contextlib import closing
 
