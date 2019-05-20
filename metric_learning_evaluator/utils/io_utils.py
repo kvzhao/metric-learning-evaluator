@@ -15,7 +15,8 @@ from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
 
-def fetch_embedding_container_from_featobj(folder_path, verbose=True):
+# TODO @kv : rename
+def create_embedding_container_from_featobj(folder_path, verbose=True):
     """Directly load feature object into embedding container.
       Args:
         folder_path: string, path to the folder of FeatureObject
