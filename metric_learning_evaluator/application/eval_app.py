@@ -124,9 +124,12 @@ def main():
             # Add datum through loop
             for feat, label, fn in zip(embeddings, labels, filenames):
                 # TODO @kv: Do not confuse `filename` with `instance_id`.
-                fn = fn.replace('.jpg','')
-                fn = fn.replace('.png','')
-                instance_id = int(fn)
+                if isinstance(fn, str):
+                    fn = fn.replace('.jpg','')
+                    fn = fn.replace('.png','')
+                    instance_id = int(fn)
+                elif isinstance(fn, np.int64):
+                    instance_id = fn
                 evaluator.add_instance_id_and_embedding(instance_id, label, feat)
             total_results = evaluator.evaluate()
 
