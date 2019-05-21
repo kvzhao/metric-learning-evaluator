@@ -52,6 +52,7 @@ class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
     """
 
+    #TODO @kv: logit_size -> prob_size
     def __init__(self, embedding_size, logit_size, config_dict, mode='online'):
         """Evaluator Builder.
 
@@ -61,6 +62,7 @@ class EvaluatorBuilder(object):
           Args:
             embedding_size: Integer describes 1d embedding size.
             logit_size:
+            TODO @kv: logit_size -> prob_size
             config_dict: Dict, loaded yaml foramt dict.
             mode: String, `online` or `offline`.
 
@@ -79,6 +81,7 @@ class EvaluatorBuilder(object):
         # allocate shared embedding containers
         container_size = self.configs.container_size
         self.embedding_size = embedding_size
+        # TODO @kv: logit_size -> prob_size
         self.logit_size = logit_size
 
         self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
@@ -94,7 +97,7 @@ class EvaluatorBuilder(object):
         self._total_metrics = {}
 
         # Allocate general query interface
-        if not self.configs.database:
+        if not self.configs.database[config_fields.database_type]:
             # TODO @kv: consistent check with query condition
             self.query_interface = None
         else:
@@ -106,10 +109,11 @@ class EvaluatorBuilder(object):
             Parse the config and create evaluators.
         """
 
-        # Parse the Configuration
-        self.evaluations = {}
+        # Allocate evaluation object with corresponding configuration
+        self.evaluations = {} # evaluations -> evaluation_objects
         for eval_name in self.configs.chosen_evaluation_names:
-            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](self.configs)
+            eval_config = self.configs.get_eval_config(eval_name)
+            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](eval_config)
 
     @property
     def evaluation_names(self):
@@ -135,6 +139,8 @@ class EvaluatorBuilder(object):
 
            If the query attribute names are given in config, this function will
            search them on database automatically.
+        
+        #TODO: Consider `filename`, `probability` (<- logit)
 
         Args:
             instance_id, integer:
@@ -161,7 +167,9 @@ class EvaluatorBuilder(object):
             # TODO @dennis.liu : use grouping rules instead required_attributes
             # if not self.configs.required_attributes:
             #     print ('WARNING: No required attributes are pre-defined.')
+            # TODO @kv: refactoring
             queried_attributes = self.query_interface.query(instance_id)
+            # TODO @kv: Should we check the quired attribute contains in required?
             self.attribute_container.add(int(instance_id), queried_attributes)
 
         self._instance_counter += 1
@@ -178,11 +186,16 @@ class EvaluatorBuilder(object):
         """
         # replace container
         if embedding_container is not None:
+            if not isinstance(embedding_container, EmbeddingContainer):
+                # raise error
+                return
             self.embedding_container.clear()
             self.embedding_container = embedding_container
             print('Update embedding container.')
 
         if attribute_container is not None:
+            if not isinstance(attribute_container, AttributeContainer):
+                return
             self.attribute_container.clear()
             self.attribute_container = attribute_container
             print('Update attribute container.')

@@ -35,7 +35,8 @@ class ConfigStandardFields(object):
     evaluation_options = 'evaluation_options'
 
     cross_reference = 'cross_reference'
-    filtering = 'filtering'
+    # group is the filtering condition
+    group = 'group'
 
     # topics under `evaluation`
     metric = 'metric'
@@ -46,5 +47,5 @@ class ConfigStandardFields(object):
 
     # Following two are deprecated
     embedding_size = 'embedding_size'
-    logit_size = 'logit_size'
+    logit_size = 'logit_size' # DEPRECATED
     prob_size = 'prob_size'
