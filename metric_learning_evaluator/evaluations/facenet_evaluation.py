@@ -93,7 +93,7 @@ class FacenetEvaluation(MetricEvaluationBase):
         """
         super(FacenetEvaluation, self).__init__(config)
 
-        print('Create {}'.format(self._evaluation_name))
+        print('Create {}'.format(self.evaluation_name))
 
         # Preprocess Configurations and check legal
         self._must_have_config = [
@@ -117,30 +117,30 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         # Set default values for must-have configs
         for _config in self._must_have_config:
-            if _config not in self._configs:
+            if _config not in self.configs:
                 if _config in self._default_values:
-                    self._configs[_config] = self._default_values[_config]
+                    self.configs[_config] = self._default_values[_config]
                 else:
                     print('WARNING: {} should be assigned'.format(_config))
             else:
-                print('Use assigned {}: {}'.format(_config, self._configs[_config]))
+                print('Use assigned {}: {}'.format(_config, self.configs[_config]))
 
         # Set distance thresholds by config
-        distance_config = self._configs[eval_fields.distance_measure]
+        distance_config = self.configs[eval_fields.distance_measure]
         distance_thres = distance_config[eval_fields.threshold]
         dist_start = distance_thres[eval_fields.start]
         dist_end = distance_thres[eval_fields.end]
         dist_step = distance_thres[eval_fields.step]
         # TODO @kv: Do we need sanity check for start < end?
-        self._distance_thresholds = np.arange(dist_start, dist_end, dist_step)
+        self.distance_thresholds = np.arange(dist_start, dist_end, dist_step)
 
         # Attributes
-        if len(self._attributes) == 0:
+        if len(self.attributes) == 0:
             self._has_attribute = False
-        elif len(self._attributes) == 1:
-            if attribute_fields.all_classes in self._attributes:
+        elif len(self.attributes) == 1:
+            if attribute_fields.all_classes in self.attributes:
                 self._has_attribute = False
-            elif attribute_fields.all_attributes in self._attributes:
+            elif attribute_fields.all_attributes in self.attributes:
                 self._has_attribute = True
         else:
             self._has_attribute = True
@@ -150,17 +150,36 @@ class FacenetEvaluation(MetricEvaluationBase):
     @property
     def metric_names(self):
         _metric_names = []
-        for _metric_name, _content in self._metrics.items():
+        for _metric_name, _content in self.metrics.items():
             if _content is None:
                 continue
-            for _attr_name in self._attributes:
-                for threshold in self._distance_thresholds:
+            for _attr_name in self.attributes:
+                for threshold in self.distance_thresholds:
                     _name = '{}/{}@thres={}'.format(
                         _attr_name, _metric_name, threshold)
                     _metric_names.append(_name)
         return _metric_names
 
+
     def compute(self, embedding_container, attribute_container=None):
+        """Procedure:
+            - prepare the pair list for eval set
+            - compute distance
+            - calculate accuracy
+        """
+        result_container = ResultContainer()
+
+        has_database = self.configs.has_database
+        # sample pairs
+
+        if not(attribute_container is None and has_database):
+            # With attribute container & database
+            print(attribute_container.attribute_names)
+        else:
+            # Without attribute container
+            pass
+
+    def old_compute(self, embedding_container, attribute_container=None):
         """Procedure:
             - prepare the pair list for eval set
             - compute distance
@@ -173,7 +192,7 @@ class FacenetEvaluation(MetricEvaluationBase):
         img_ids = embedding_container.instance_ids
 
         # configs
-        sampling_config = self._configs[eval_fields.sampling]
+        sampling_config = self.sampling
         num_of_pairs = sampling_config[facenet_fields.num_of_pairs]
         ratio_of_class = sampling_config[facenet_fields.ratio_of_class]
         num_of_instance_per_class = sampling_config[facenet_fields.num_of_instance_per_class]
