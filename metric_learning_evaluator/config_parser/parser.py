@@ -11,6 +11,7 @@ from metric_learning_evaluator.evaluations.standard_fields import EvaluationStan
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
 from metric_learning_evaluator.core.registered import REGISTERED_DATABASE_TYPE
+from metric_learning_evaluator.core.registered import REGISTERED_INDEX_AGENT
 
 from pprint import pprint
 
@@ -77,7 +78,9 @@ class ConfigParser(object):
         for _eval_name in self._chosen_evaluation_names:
             if _eval_name in REGISTERED_EVALUATION_OBJECTS and _eval_name in self._all_evaluation_options:
                 self._evaluations[_eval_name] = EvaluationConfigParser(
-                    self._all_evaluation_options[_eval_name], self.has_query_interface)
+                    self._all_evaluation_options[_eval_name],
+                    self.has_query_interface,
+                    self.index_agent)
 
         # Collect attribute items defined in each evaluation
         required_attributes = []
@@ -245,7 +248,7 @@ class ConfigParser(object):
 
 
 class EvaluationConfigParser(object):
-    def __init__(self, per_eval_dict, has_database=False):
+    def __init__(self, per_eval_dict, has_database=False, agent_type=config_fields.numpy_agent):
         """Per Evaluation Config
 
            This object will be passed to each EvaluationObject which handles:
@@ -262,6 +265,15 @@ class EvaluationConfigParser(object):
         """
         self._eval_config = per_eval_dict
         self._has_database = has_database
+        self._agent_type = agent_type
+
+    @property
+    def has_database(self):
+        return self._has_database
+
+    @property
+    def agent_type(self):
+        return self._agent_type
 
     @property
     def sampling_section(self):
@@ -288,13 +300,27 @@ class EvaluationConfigParser(object):
             return _attr
 
     @property
+    def attributes(self):
+        # flatten list of string
+        commands = []
+        commands.extend(self.attribute_cross_reference_commands)
+        commands.extend(self.attribute_group_commands)
+        commands = list(set(commands))
+        if not commands:
+            commands.append(attr_fields.All)
+        return commands
+
+    @property
     def attribute_items(self):
         # return: List of string
         # individual attribute name used as key in container
         attr_items = []
         attr_items.extend(self.attribute_group_items)
         attr_items.extend(self.attribute_cross_reference_items)
-        return list(set(attr_items))
+        attr_items = list(set(attr_items))
+        if not attr_items:
+            attr_items.append(attr_fields.All)
+        return attr_items
 
     @property
     def attribute_cross_reference_commands(self):
