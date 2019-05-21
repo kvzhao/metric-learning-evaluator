@@ -9,7 +9,7 @@ database:
     database_type: Native
     database_config:
         # path to attributes_table.json
-        path: misc/native_attr_table_example.db
+        path: misc/sample_features/attr_table.db
 
 # index agent option: Numpy | HNSW
 index_agent: HNSW
@@ -18,10 +18,7 @@ index_agent: HNSW
 container_size: 100000
 
 chosen_evaluations:
-    #- RankingWithAttributesEvaluation
-    #- CheckoutEvaluation
     - RankingEvaluation
-    #- FacenetEvaluation
 
 # Configurations for evaluator:
 evaluation_options:
@@ -50,7 +47,10 @@ evaluation_options:
                 end: 1.5
                 step: 0.25
         attribute: # not support
-
+            group:
+                - shape.bar + shape.bag
+                - shape.bottle
+                - shape.box
         option:
             path_pairlist: # not done
 
@@ -82,11 +82,20 @@ evaluation_options:
                 - seen+query->unseen+database # seen to unseen
                 - (seen+query)->(seen-unseen+database) # seen to total
                 - seen + query -> (seen-unseen+database) # seen to total
+                - seen -> unseen
+                - seen -> Taiwan
             # e.g attribute_name `color` with values `red`, `blue` or 'yellow'.
             group:
                 - color.red
+                - color.yellow
                 - color.red+color.blue
                 - color.red + color.blue
+                - appearance
+                - appearance.bright
+                - appearance.dark
+                - shape.bar + shape.bag
+                - shape.bottle
+                - shape.box
                 #- color.* # have to implement string parser handling *
                 # color.red, color.yellow
 
@@ -126,36 +135,5 @@ evaluation_options:
             unseen_unique_ids: misc/unseen_unique_ids_gp1444.json
             label_map: misc/labelmap_1933.json
             save_report:
-
-    RankingWithAttributesEvaluation:
-
-        sampling:
-            class_sample_method: uniform
-            instance_sample_method: uniform
-            num_of_db_instance: 10
-            num_of_query_class: 100
-            num_of_query_instance_per_class: 50
-            maximum_of_sampled_data: 10000
-
-        metric:
-            # top_1_hit is defaults
-            top_k_hit_accuracy:
-                - 1
-                - 5
-            mAP: true
-
-        distance_measure:
-            function:
-            threshold:
-
-        attribute: # not support
-            # path to grouping_rules.json
-            # TODO: Parse json at parser
-            grouping_rules: misc/grouping_rules.json
-
-        option:
-            path_database: # not done
-            seen_dataset: # not done
-            unseen_dataset: # not done
 
 # OPTIONS OF EACH ITEMS
