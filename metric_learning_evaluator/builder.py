@@ -218,7 +218,10 @@ class EvaluatorBuilder(object):
                 _display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
             else:
                 _display_name = _eval_name
-            self._total_metrics[_display_name] = res_container.flatten
+            if res_container:
+                self._total_metrics[_display_name] = res_container.flatten
+            else:
+                self._total_metrics[_display_name] = {}
 
         # Return example:
         # dict = {'RankingEvaluation': {'all_classes': {'top_1_hit_accuracy': {1: 0.9929824561403509},

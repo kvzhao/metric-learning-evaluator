@@ -28,11 +28,15 @@ def create_embedding_container_from_featobj(folder_path, verbose=True):
     feature_importer.load(folder_path)
     embeddings = feature_importer.embeddings
     filenames = feature_importer.filename_strings
+    instance_ids = feature_importer.instance_ids
 
     labels = feature_importer.label_ids
 
     # pseudo instance_ids
-    instance_ids = np.arange(embeddings.shape[0])
+    pseudo_instance_ids = np.arange(embeddings.shape[0])
+
+    if instance_ids.size == 0:
+        instance_ids = pseudo_instance_ids
 
     num_feature, dim_feature = embeddings.shape
     if verbose:
@@ -41,11 +45,12 @@ def create_embedding_container_from_featobj(folder_path, verbose=True):
     # err handling: label_ids.shape == 0
 
     container = EmbeddingContainer(embedding_size=dim_feature, 
-        logit_size=0, container_size=num_feature)
-    for feat, label, fn in zip(embeddings, labels, filenames):
+        prob_size=0, container_size=num_feature)
+    for inst_id, feat, label in zip(instance_ids, embeddings, labels):
         # use filename_string as instance_id, convert to integer
-        for postfix in ['.png', '.jpg', '.jpeg', '.JPG']:
-            fn = fn.replace(postfix, '')
-        pseudo_instance_id = int(fn)
-        container.add(pseudo_instance_id, label, feat)
+        #for postfix in ['.png', '.jpg', '.jpeg', '.JPG']:
+        #    fn = fn.replace(postfix, '')
+        #pseudo_instance_id = int(fn)
+        inst_id = int(inst_id)
+        container.add(inst_id, label, feat)
     return container

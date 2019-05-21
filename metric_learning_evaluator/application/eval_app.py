@@ -109,11 +109,15 @@ def main():
 
     if data_type == 'folder':
         # i think this is the unified interface:
+        # TODO @kv: Move this paragraph down into `case`
         feature_importer = FeatureObject()
         feature_importer.load(data_dir)
         embeddings = feature_importer.embeddings
         filenames = feature_importer.filename_strings
         labels = feature_importer.label_ids
+        instance_ids = feature_importer.instance_ids
+        # TODO @kv: check instance_ids size, if empty, use filenames instead
+        #           or generate pseudo instance ids
 
     print('evaluator metric names: {}'.format(evaluator.metric_names))
 
@@ -122,16 +126,18 @@ def main():
 
         if case(status_fields.evaluate_single_container):
             # Add datum through loop
-            for feat, label, fn in zip(embeddings, labels, filenames):
+            for inst_id, feat, label in zip(instance_ids, embeddings, labels):
                 # TODO @kv: Do not confuse `filename` with `instance_id`.
-                if isinstance(fn, str):
-                    fn = fn.replace('.jpg','')
-                    fn = fn.replace('.png','')
-                instance_id = int(fn)
-                evaluator.add_instance_id_and_embedding(instance_id, label, feat)
+                #if isinstance(fn, str):
+                #    fn = fn.replace('.jpg','')
+                #    fn = fn.replace('.png','')
+                #instance_id = int(fn)
+                inst_id = int(inst_id)
+                evaluator.add_instance_id_and_embedding(inst_id, label, feat)
             total_results = evaluator.evaluate()
 
             for metric_name in evaluator.metric_names:
-                print('{}: {}'.format(metric_name, total_results[metric_name]))
+                if metric_name in total_results:
+                    print('{}: {}'.format(metric_name, total_results[metric_name]))
 
             break
