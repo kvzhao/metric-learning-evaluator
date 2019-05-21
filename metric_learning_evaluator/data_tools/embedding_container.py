@@ -41,6 +41,7 @@ class EmbeddingContainer(object):
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO @kv: logits --> scores (used for classifier)
       TODO @kv: maybe we should add filename in container.
+      TODO @kv: update or init container with blob of numpy array
 
     """
     def __init__(self, embedding_size, prob_size,
@@ -50,7 +51,7 @@ class EmbeddingContainer(object):
           Args:
             embedding_size, int:
                 Dimension of the embedding vector, e.g. 1024 or 2048.
-            logit_size, int:
+            prob_size, int:
                 Disable this by giving size equals to 0.
             probabilities: an ndarray of probabilities each class, disable this by giving size equals to 0.
                 It prefers passing top_k scores.
@@ -63,7 +64,6 @@ class EmbeddingContainer(object):
         self._embedding_size = embedding_size
         self._prob_size = prob_size
         self._container_size = container_size
-        # logits, prelogits (embeddeing),
         self._embeddings = np.empty((container_size, embedding_size), dtype=np.float32)
         if prob_size == 0:
             self._probs = None
@@ -99,7 +99,9 @@ class EmbeddingContainer(object):
 
         # assertions: embedding size, 
         assert embedding.shape[0] <= self._embedding_size, "Size of embedding vector is greater than the default."
-        # TODO @kv: Also check the logit size, and if it exists.
+        # TODO @kv: Also check the prob size, and if it exists.
+        if prob is not None:
+            assert prob.shape[0] <= self._prob_size, "Size of prob vector is greater than the default."
 
         # NOTE @kv: Do we have a better round-off?
         assert self._current < self._container_size, "The embedding container is out of capacity!"

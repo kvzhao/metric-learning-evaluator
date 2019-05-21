@@ -37,13 +37,14 @@ class Manifold(object):
        - margin
        - locality
        - global structure
-
     """
 
     def __init__(self, embedding_container, label_names=None, agent_type='HNSW'):
         """
           Args:
             embedding_container: Object of EmbeddingContainer
+            TODO @kv,
+            index_agent:
         """
         self._label_names = label_names
 
