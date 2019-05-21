@@ -9,8 +9,7 @@ sys.path.insert(0, os.path.abspath(
 from abc import ABCMeta
 from abc import abstractmethod
 
-from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-
+import numpy as np
 
 class AgentBase(object):
     """
@@ -19,12 +18,15 @@ class AgentBase(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, embedding_container: EmbeddingContainer):
+    def __init__(self, instance_ids, embeddings):
         """
           Args:
-            embedding_container:
+            instance_ids: 1D Numpy array
+            embeddings: 2D numpy array with shape = (num_feature, dim_feature)
         """
-        self._container = embedding_container
+        self._embeddings = embeddings
+        self._embeddings = np.squeeze(embeddings)
+        self._instance_ids = instance_ids
 
     @abstractmethod
     def search(self, query_embeddings, top_k):

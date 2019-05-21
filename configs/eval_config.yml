@@ -4,21 +4,21 @@
 # NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
 #       and with the key: `evaluator`.
 
-# database: Zeus | DatasetBackbone | None
+# database: Zeus | DatasetBackbone | Native
 database:
-    database_type: Json
+    database_type: Native
     database_config:
         # path to attributes_table.json
-        path: misc/attributes_table.json
+        path: misc/sample_features/attr_table.db
+
+# index agent option: Numpy | HNSW
+index_agent: HNSW
 
 # upper-bound of the evaluation instances
 container_size: 100000
 
 chosen_evaluations:
-    #- RankingWithAttributesEvaluation
-    #- CheckoutEvaluation
     - RankingEvaluation
-    #- FacenetEvaluation
 
 # Configurations for evaluator:
 evaluation_options:
@@ -47,7 +47,10 @@ evaluation_options:
                 end: 1.5
                 step: 0.25
         attribute: # not support
-
+            group:
+                - shape.bar + shape.bag
+                - shape.bottle
+                - shape.box
         option:
             path_pairlist: # not done
 
@@ -71,7 +74,30 @@ evaluation_options:
             function:
             threshold:
 
-        attribute: # not support
+        # As a section of codes
+        attribute: # developing
+            # if `query` & `database` are not defined, sampling instead
+            cross_reference:
+                - query->database
+                - seen+query->unseen+database # seen to unseen
+                - (seen+query)->(seen-unseen+database) # seen to total
+                - seen + query -> (seen-unseen+database) # seen to total
+                - seen -> unseen
+                - seen -> Taiwan
+            # e.g attribute_name `color` with values `red`, `blue` or 'yellow'.
+            group:
+                - color.red
+                - color.yellow
+                - color.red+color.blue
+                - color.red + color.blue
+                - appearance
+                - appearance.bright
+                - appearance.dark
+                - shape.bar + shape.bag
+                - shape.bottle
+                - shape.box
+                #- color.* # have to implement string parser handling *
+                # color.red, color.yellow
 
         option:
             path_database: # not done
@@ -92,10 +118,11 @@ evaluation_options:
             mAP: true
 
         attribute:
-            - seen_to_seen
-            - unseen_to_unseen
-            - seen_to_total
-            - unseen_to_total
+            cross_reference:
+                - seen+query->seen+database
+                - unseen->unseen
+            group:
+                - color
 
         option:
             num_of_seen_query_class: 100
@@ -108,36 +135,5 @@ evaluation_options:
             unseen_unique_ids: misc/unseen_unique_ids_gp1444.json
             label_map: misc/labelmap_1933.json
             save_report:
-
-    RankingWithAttributesEvaluation:
-
-        sampling:
-            class_sample_method: uniform
-            instance_sample_method: uniform
-            num_of_db_instance: 10
-            num_of_query_class: 100
-            num_of_query_instance_per_class: 50
-            maximum_of_sampled_data: 10000
-
-        metric:
-            # top_1_hit is defaults
-            top_k_hit_accuracy:
-                - 1
-                - 5
-            mAP: true
-
-        distance_measure:
-            function:
-            threshold:
-
-        attribute: # not support
-            # path to grouping_rules.json
-            # TODO: Parse json at parser
-            grouping_rules: misc/grouping_rules.json
-
-        option:
-            path_database: # not done
-            seen_dataset: # not done
-            unseen_dataset: # not done
 
 # OPTIONS OF EACH ITEMS

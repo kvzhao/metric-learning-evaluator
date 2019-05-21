@@ -19,9 +19,10 @@ import numpy as np
 
 from metric_learning_evaluator.utils.switcher import switch
 
-from metric_learning_evaluator.inference.app.sequential_feature_extraction import extraction_application
 from metric_learning_evaluator.inference.app.two_stage_retrieval import retrieval_application
 from metric_learning_evaluator.inference.app.agnostic_detection import detection_application
+from metric_learning_evaluator.inference.app.sequential_feature_extraction import extraction_application
+from metric_learning_evaluator.application.standard_fields import ApplicationStatusStandardFields as status_fields
 
 import argparse
 
@@ -47,6 +48,10 @@ parser.add_argument('--out_dir', '-od', type=str, default=None,
 parser.add_argument('--data_type', '-dt', type=str, default='datasetbackbone',
         help='Type of given `data_dir`: datasetbackbone | folder')
 
+APP_SIGNATURE = '[INFERENCE]'
+
+COMMAND_OPERATION_MAPPING = {
+}
 
 def main():
     args = parser.parse_args()

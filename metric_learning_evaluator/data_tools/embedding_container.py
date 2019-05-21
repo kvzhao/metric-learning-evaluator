@@ -36,34 +36,39 @@ class EmbeddingContainer(object):
         - clear: clear the internal buffer
     
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
-      TODO @kv: implement save & load.
-      TODO @kv: Error-hanlding when current exceeds container_size
+      TODO @kv: implement save & load for data container.
+      TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
+      TODO @kv: logits --> scores (used for classifier)
+      TODO @kv: maybe we should add filename in container.
+      TODO @kv: update or init container with blob of numpy array
 
     """
-    def __init__(self, embedding_size, logit_size, container_size=10000):
+    def __init__(self, embedding_size, prob_size,
+                 container_size=10000, name='embedding_container'):
         """Constructor of the Container.
 
           Args:
             embedding_size, int:
                 Dimension of the embedding vector, e.g. 1024 or 2048.
-            logit_size, int:
+            prob_size, int:
                 Disable this by giving size equals to 0.
             probabilities: an ndarray of probabilities each class, disable this by giving size equals to 0.
                 It prefers passing top_k scores.
             container_size, int:
                 Number of embedding vector that container can store.
+            name, str:
+                The name string is used for version control.
         
         """
         self._embedding_size = embedding_size
-        self._logit_size = logit_size
+        self._prob_size = prob_size
         self._container_size = container_size
-        # logits, prelogits (embeddeing),
         self._embeddings = np.empty((container_size, embedding_size), dtype=np.float32)
-        if logit_size == 0:
-            self._logits = None
+        if prob_size == 0:
+            self._probs = None
         else:
-            self._logits = np.empty((container_size, logit_size), dtype=np.float32)
+            self._probs = np.empty((container_size, prob_size), dtype=np.float32)
         self._label_by_instance_id = {}
         self._index_by_instance_id = {}
         self._instance_id_by_label = defaultdict(list)
@@ -71,11 +76,16 @@ class EmbeddingContainer(object):
         self._instance_ids = []
         self._label_ids = []
 
+        self._name = name
         self._current = 0
+
+    def __repr__(self):
+        _content = '===== {} =====\n'.format(self._name)
+        _content += 'embeddings: {}'.format(self._embeddings.shape)
     
-    def add(self, instance_id, label_id, embedding, logit=None):
+    def add(self, instance_id, label_id, embedding, prob=None):
         """Add instance_id, label_id and embeddings.
-        TODO: Add one more argument: logit
+        TODO: Add one more argument: prob
           Args:
             instance_id, int:
                 Unique instance_id which can not be repeated in the container.
@@ -83,13 +93,15 @@ class EmbeddingContainer(object):
                 Index of given class corresponds to the instance.
             embedding, numpy array:
                 One dimensional embedding vector with size less than self._embedding_size.
-            (optional) logit, numpy array:
-                One dimensional vector.
+            (optional) prob, numpy array:
+                One dimensional vector which records class-wise scores.
         """
 
         # assertions: embedding size, 
         assert embedding.shape[0] <= self._embedding_size, "Size of embedding vector is greater than the default."
-        # TODO @kv: Also check the logit size, and if it exists.
+        # TODO @kv: Also check the prob size, and if it exists.
+        if prob is not None:
+            assert prob.shape[0] <= self._prob_size, "Size of prob vector is greater than the default."
 
         # NOTE @kv: Do we have a better round-off?
         assert self._current < self._container_size, "The embedding container is out of capacity!"
@@ -99,8 +111,8 @@ class EmbeddingContainer(object):
 
         self._embeddings[self._current, ...] = embedding
 
-        if not logit is None:
-            self._logits[self._current, ...] = logit
+        if not prob is None:
+            self._probs[self._current, ...] = prob
 
         # check type of label_id, instance_id
         try:
@@ -188,9 +200,9 @@ class EmbeddingContainer(object):
         return self._embeddings[:self._current]
 
     @property
-    def logits(self):
+    def probs(self):
         # get logits up to current index
-        return self._logits[:self._current]
+        return self._probs[:self._current]
 
     @property
     def instance_ids(self):
@@ -211,6 +223,10 @@ class EmbeddingContainer(object):
     @property
     def embedding_size(self):
         return self._embedding_size
+
+    @property
+    def prob_size(self):
+        return self._prob_size
 
     @property
     def counts(self):

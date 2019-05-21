@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../')))
+    os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
 
@@ -37,13 +37,14 @@ class Manifold(object):
        - margin
        - locality
        - global structure
-
     """
 
     def __init__(self, embedding_container, label_names=None, agent_type='HNSW'):
         """
           Args:
             embedding_container: Object of EmbeddingContainer
+            TODO @kv,
+            index_agent:
         """
         self._label_names = label_names
 

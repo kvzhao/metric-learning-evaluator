@@ -3,7 +3,6 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../')))
 
-from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.index.agent_base import AgentBase
 
 from metric_learning_evaluator.index.utils import euclidean_distance
@@ -12,14 +11,14 @@ import numpy as np
 
 
 class NumpyAgent(AgentBase):
-    def __init__(self,
-                 embedding_container: EmbeddingContainer):
-        super(NumpyAgent, self).__init__(embedding_container)
+    def __init__(self, instance_ids, embeddings):
+        super(NumpyAgent, self).__init__(instance_ids, embeddings)
 
         self._build()
+        print('Numpy Index Agent is initialized')
 
     def _build(self):
-        self._indices = np.asarray(self._container.instance_ids)
+        self._indices = np.asarray(self._instance_ids)
 
     def search(self, query_embeddings, top_k=None):
         """Batch query
@@ -32,7 +31,7 @@ class NumpyAgent(AgentBase):
         """
 
         batch_size = query_embeddings.shape[0]
-        database_size = self._container.counts
+        database_size, embedding_size = self._embeddings.shape
         if top_k is None or top_k > database_size:
             top_k = database_size
 
@@ -40,7 +39,7 @@ class NumpyAgent(AgentBase):
         batch_indices = np.empty((batch_size, top_k), dtype=np.float32)
 
         for batch_idx, query_embed in enumerate(query_embeddings):
-            distances = euclidean_distance(query_embed, self._container.embeddings)
+            distances = euclidean_distance(query_embed, self._embeddings)
 
             sorted_distances = indexing_array(distances, distances)
             sorted_indices = indexing_array(distances, self._indices)

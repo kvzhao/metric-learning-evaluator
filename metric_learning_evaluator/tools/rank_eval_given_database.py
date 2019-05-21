@@ -22,7 +22,7 @@ def main(args):
     data_dir = args.data_dir
     database_dir = args.database
     out_dir = args.out_dir
-
+    num_sampled_qeury = args.num_sampled_qeury
 
     if data_dir is None or database_dir is None:
         raise ValueError('data_dir or database should be assigned.')
@@ -36,6 +36,13 @@ def main(args):
     query_embeddings = qeury_features.embeddings
     query_label_ids = qeury_features.label_ids
     qeury_label_names = qeury_features.label_names
+
+    if num_sampled_qeury is not None:
+        print('Sample {} query from given feature_object'.format(num_sampled_qeury))
+        sampled_query_indices = np.random.choice(
+            np.arange(len(query_label_ids)), num_sampled_qeury, replace=False)
+        query_embeddings = query_embeddings[sampled_query_indices]
+        query_label_ids = query_label_ids[sampled_query_indices]
 
     db_embeddings = db_features.embeddings
     db_label_ids = db_features.label_ids
@@ -72,7 +79,7 @@ def main(args):
                                  ranking_metrics.topk_hit_accuracy, condition={'k': 1})
         result_container.add(attribute_fields.all_classes, 'mAP',
                                  ranking_metrics.mean_average_precision)
-    print(result_container)
+    print(result_container.results)
 
 if __name__ == '__main__':
     import argparse
@@ -86,6 +93,8 @@ if __name__ == '__main__':
                         help='Path to Input DatasetBackbone or raw image folder.')
     parser.add_argument('-od', '--out_dir', type=str, default=None,
                         help='Path to Output DatasetBackbone.')
+    parser.add_argument('-ns', '--num_sampled_qeury', type=int, default=None,
+                        help='Number of sampled query instances per class.')
 
     args = parser.parse_args()
     main(args)

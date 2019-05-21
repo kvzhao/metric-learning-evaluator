@@ -33,12 +33,14 @@ class TestNumpyAgent(unittest.TestCase):
     def test(self):
 
         num_elements = 100000
-        num_query = 1000
+        num_query = 1
         dim = 2048
 
-        embedding_container = fill_embedding_container(num_elements, dim)
+        #embedding_container = fill_embedding_container(num_elements, dim)
+        mock_features = np.random.random((num_elements, dim))
+        mock_instances = np.arange(num_elements)
 
-        agent = NumpyAgent(embedding_container)
+        agent = NumpyAgent(mock_instances, mock_features)
 
         qeury_features = np.random.random((num_query, dim))
 

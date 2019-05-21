@@ -14,6 +14,7 @@ from abc import abstractmethod
 
 class FeatureObjectStandardFields:
     embeddings = 'embeddings'
+    probabilities = 'probabilities'
     label_ids = 'label_ids'
     label_names = 'label_names'
     instance_ids = 'instance_ids'
@@ -32,12 +33,14 @@ class FeatureObjectBase(object):
 
         self._array_names = [
             fields.embeddings,
+            fields.probabilities,
             fields.label_ids,
             fields.instance_ids,
             fields.filename_strings,
             fields.super_labels]
         self._array_name_map = {
             fields.embeddings: None,
+            fields.probabilities: None,
             fields.label_ids: None,
             fields.label_names: None,
             fields.instance_ids: None,
@@ -73,6 +76,25 @@ class FeatureObjectBase(object):
                 _embeddings.shape))
             _embeddings = np.squeeze(_embeddings)
         self._array_name_map[fields.embeddings] = _embeddings
+
+    @property
+    def probabilities(self):
+        if self._array_name_map[fields.probabilities] is None:
+            print ('WARNING: Get the empty probabilities array')
+        if len(self._array_name_map[fields.probabilities].shape) >= 3:
+            print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
+                self._array_name_map[fields.embeddings].shape))
+            self._array_name_map[fields.probabilities]= np.squeeze(self._array_name_map[fields.probabilities])
+        return self._array_name_map[fields.probabilities]
+
+    @probabilities.setter
+    def probabilities(self, _probabilities):
+        self._check_numpy_arrlike(_probabilities)
+        if len(_probabilities.shape) >= 3:
+            print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
+                _probabilities.shape))
+            _probabilities = np.squeeze(_probabilities)
+        self._array_name_map[fields.probabilities] = _probabilities
 
     @property
     def label_ids(self):
@@ -156,3 +178,6 @@ class FeatureObject(FeatureObjectBase):
             if not _arr is None:
                 dst_path = '/'.join([data_dir, _name])
                 np.save(dst_path, _arr)
+
+    def merge(self, another):
+        pass

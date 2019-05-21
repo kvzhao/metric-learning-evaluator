@@ -12,7 +12,6 @@ import itertools
 import numpy as np
 from random import shuffle
 
-
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from metric_learning_evaluator.data_tools.attribute_container  import AttributeContainer
@@ -25,6 +24,10 @@ from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
 from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import indexing_array
+
+from metric_learning_evaluator.index.np_agent import NumpyAgent
+from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
+
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
@@ -43,7 +46,11 @@ ranking_fields = RankingEvaluationStandardFields
 class RankingEvaluation(MetricEvaluationBase):
 
     def __init__(self, config):
-        """Ranking Evaluation
+        """Ranking Evaluation 
+            TODO with Attributes
+          Two kinds of attribute
+            - grouping 
+            - cross reference
         """
         super(RankingEvaluation, self).__init__(config)
 
@@ -64,7 +71,7 @@ class RankingEvaluation(MetricEvaluationBase):
             metric_fields.mAP,
         ]
 
-        print ('Create {}'.format(self._evaluation_name))
+        print ('Create {}'.format(self.evaluation_name))
         self.show_configs()
 
     # metric_names
@@ -72,8 +79,8 @@ class RankingEvaluation(MetricEvaluationBase):
     def metric_names(self):
         # TODO @kv: make these easier
         _metric_names = []
-        for _metric_name, _content in self._metrics.items():
-            for _attr_name in self._attributes:
+        for _metric_name, _content in self.metrics.items():
+            for _attr_name in self.attributes:
                 if _content is None:
                     continue
                 if _metric_name in self._metric_without_threshold:
@@ -82,21 +89,48 @@ class RankingEvaluation(MetricEvaluationBase):
                 if _metric_name in self._metric_with_threshold:
                     # special condition
                     if _metric_name == metric_fields.top_k_hit_accuracy:
-                        top_k_list = self._metrics[metric_fields.top_k_hit_accuracy]
+                        top_k_list = self.metrics[metric_fields.top_k_hit_accuracy]
                         for top_k in top_k_list:
                             _name = '{}/{}@k={}'.format(_attr_name, _metric_name, top_k)
                             _metric_names.append(_name)
         return _metric_names
 
+    def new_compute(self, embedding_container, attribute_container=None):
+        result_container = ResultContainer()
+
+        has_database = self.configs.has_database
+        # Two types of query attributes
+        print (self.configs.agent_type)
+        instance_ids = embedding_container.instance_ids
+        label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+        print(len(instance_ids), len(label_ids))
+
+
+        if not(attribute_container is None and has_database):
+            # With attribute container & database
+            print(attribute_container.attribute_names)
+            print(attribute_container.instance_to_attribute)
+            print(attribute_container.attribute_to_instance)
+            print(self.configs.has_database)
+            print(self.attributes)
+            print(self.attribute_items)
+        else:
+            # Without attribute container
+            print('No attribute container')
+            print(self.configs.has_database)
+            print(self.attributes)
+            print(self.attribute_items)
+
     def compute(self, embedding_container, attribute_container=None):
         result_container = ResultContainer()
+
         # Check whether attribute_container is given or not.
-        if not attribute_container or attribute_fields.all_classes in self._attributes:
+        if True:
             instance_ids = embedding_container.instance_ids
             label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
 
-            ranking_config = self._metrics
-            sample_config = self._configs[eval_fields.sampling]
+            ranking_config = self.metrics
+            sample_config = self.sampling
 
             # sampling configs
             class_sample_method = sample_config[sample_fields.class_sample_method]
@@ -154,12 +188,12 @@ class RankingEvaluation(MetricEvaluationBase):
                     hit_arrays[_idx, ...] = hits
 
                 ranking_metrics.add_inputs(hit_arrays)
-                result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
+                result_container.add(attribute_fields.All, ranking_fields.top_k_hit_accuracy,
                                      ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
 
-            result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
+            result_container.add(attribute_fields.All, ranking_fields.top_k_hit_accuracy,
                                  ranking_metrics.top1_hit_accuracy, condition={'k': 1})
-            result_container.add(attribute_fields.all_classes, ranking_fields.mAP,
+            result_container.add(attribute_fields.All, ranking_fields.mAP,
                                  ranking_metrics.mean_average_precision)
 
             return result_container
