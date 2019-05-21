@@ -33,12 +33,14 @@ class TestHNSWAgent(unittest.TestCase):
     def test(self):
 
         num_elements = 100000
-        num_query = 1000
-        dim = 2048
+        num_query = 1
+        dim = 128
 
-        embedding_container = fill_embedding_container(num_elements, dim)
+        #embedding_container = fill_embedding_container(num_elements, dim)
+        mock_features = np.random.random((num_elements, dim))
+        mock_instances = np.arange(num_elements)
 
-        agent = HNSWAgent(embedding_container)
+        agent = HNSWAgent(mock_instances, mock_features)
 
         qeury_features = np.random.random((num_query, dim))
 
