@@ -62,9 +62,13 @@ class MetricEvaluationBase(object):
         # Fetch all information from eval_config, If not None:
         # preprocessing eval config in each customized evaluation
         self.metrics = self.configs.metric_section
-        self.attributes = self.configs.attribute_section
+        self.attributes = self.configs.attributes
+        self.attribute_items = self.configs.attribute_items
         self.sampling = self.configs.sampling_section
         self.option = self.configs.option_section
+
+        self.cross_reference_commands = self.configs.attribute_cross_reference_commands
+        self.group_commands = self.configs.attribute_group_commands
 
     @property
     def evaluation_name(self):
