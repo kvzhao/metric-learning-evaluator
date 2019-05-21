@@ -1,0 +1,10 @@
+
+labelmap_path: misc/labelmap_1933.json
+embedding_container_capacity: 100000
+
+extractor_settings:
+  image_size: 150
+  embedding_size: 2048
+  model_path: path_to_frozen_model
+  # label `unknown_instance` if databse is not given
+  database_path: path_to_extracted_feature_object

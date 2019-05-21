@@ -2,12 +2,64 @@
 
 ## System Architecture Overview
 
+[Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
+
 ![](figures/tf-metric-evaluator_v0.3.png)
 
-## Installation
 
+### Modules & Components
+- `application`: Command-line applications
+- `analysis`: Analysis tools
+- `core`: Define standard fields
+- config_parser
+- `evaluations`: Customized applications for measuring model performance
+- `metrics`: Computational objects used in evaluations
+- `index`: Provide fast algorithm for query features and distance functions
+- `query`: Attribute database general interface
+- `tools`: Scripts for some utilities
+  - NOTE: should we promote to analysis tool?
+- `data_tools`: General data containers including embedding, attribute and result containers
+- `utils`: Contains sampler, switcher
+- `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
+
+
+### Roadmap and TODOs
+
+#### Roadmap
+- inference
+- analysis
+- front-end gui
+
+#### TODO
+- Save out data reside in container.
+  - Consider concatenating each containers
+- Manifold
+  - locality
+  - input robustness
+  - margin search
+  - find reasonable center
+- ImageContainer?
+  - ContainerBaseObject?
+  - <T>Container <-> <T>Object
+
+- Change cmdline name, design operation logic
+
+## Installation
 ```
 python setup.py install
+```
+Two command-line tools will be installed: `ml-evaluation` and `ml-inference`.
+
+### Intallation of `hnswlib`
+
+Source: [hnswlib](https://github.com/nmslib/hnswlib)
+Binding installation
+```
+git clone https://github.com/nmslib/hnswlib
+apt-get install -y python-setuptools python-pip
+pip3 install pybind11 numpy setuptools
+cd hnswlib/python_bindings
+python3 setup.py install
 ```
 
 ## Usage
@@ -23,7 +75,9 @@ INFO:tensorflow:Saving dict for global step 1500: global_step = 1500, loss = 7.4
 
 - Off-line mode
 
-One can use command-line tool called `ml_evaluate` to execute evaluations.
+NOTE: There will be a new usage logic and operations  .
+
+One can use command-line tool called `ml-eval` to execute evaluations.
 
 ```
 usage: Command-line Metric Learning Evaluation Tool [-h] [--config CONFIG]
@@ -57,6 +111,13 @@ ml_evaluator -c eval_config.yml -dd extracted_embeddings_facenet-centerloss-batc
 ```
 
 NOTE: Off-line mode not fully supported now.
+
+## ISSUES
+- Pushed embeddings are more than container size.
+- Configuration and metric names are not standard
+- attribute container should be the only way that external information is added
+  - we should parse grouping_rules.json in parser
+- number of sampled instances
 
 
 ## Cooperative Repo

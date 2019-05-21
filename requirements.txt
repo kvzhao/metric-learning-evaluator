@@ -1,3 +1,5 @@
+numpy
 pyyaml
 scipy
 sklearn
+pytablewriter

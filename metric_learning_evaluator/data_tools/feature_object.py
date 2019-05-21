@@ -12,7 +12,7 @@ import numpy as np
 from abc import ABCMeta
 from abc import abstractmethod
 
-class FeatureDataStandardFields:
+class FeatureObjectStandardFields:
     embeddings = 'embeddings'
     label_ids = 'label_ids'
     label_names = 'label_names'
@@ -20,14 +20,13 @@ class FeatureDataStandardFields:
     filename_strings = 'filename_strings'
     super_labels = 'super_labels'
 
-fields = FeatureDataStandardFields
+fields = FeatureObjectStandardFields
 
 def get_var_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_locals.items()
     return [k for k, v in callers_local_vars if v is var][0]
 
-# NOTE: Rename -> FeatureObjectBase
-class FeatureDataBase(object):
+class FeatureObjectBase(object):
 
     def __init__(self):
 
@@ -60,11 +59,19 @@ class FeatureDataBase(object):
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
             print ('WARNING: Get the empty embeddings array')
+        if len(self._array_name_map[fields.embeddings].shape) >= 3:
+            print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
+                self._array_name_map[fields.embeddings].shape))
+            self._array_name_map[fields.embeddings]= np.squeeze(self._array_name_map[fields.embeddings])
         return self._array_name_map[fields.embeddings]
 
     @embeddings.setter
     def embeddings(self, _embeddings):
         self._check_numpy_arrlike(_embeddings)
+        if len(_embeddings.shape) >= 3:
+            print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
+                _embeddings.shape))
+            _embeddings = np.squeeze(_embeddings)
         self._array_name_map[fields.embeddings] = _embeddings
 
     @property
@@ -120,11 +127,10 @@ class FeatureDataBase(object):
         self._check_numpy_arrlike(_super_labels)
         self._super_labels = _super_labels
 
-# TODO: rename -> FeatureObject
-class FeatureDataObject(FeatureDataBase):
+class FeatureObject(FeatureObjectBase):
 
     def __init__(self):
-        super(FeatureDataObject, self).__init__()
+        super(FeatureObject, self).__init__()
 
     def load(self, data_dir):
 

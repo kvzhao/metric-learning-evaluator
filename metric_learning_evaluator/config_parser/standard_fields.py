@@ -9,10 +9,15 @@ class ConfigStandardFields(object):
 
     # Key of database
     database = 'database'
-    # Types of database
+    # Types of warpper
+    database_type = 'database_type'
     datasetbackbone = 'DatasetBackbone'
     zeus = 'Zeus'
+    json = 'Json'
     none = 'None'
+    # Config of wrapper
+    database_config = 'database_config'
+
     # System-related configs
     container_size = 'container_size'
     chosen_evaluations = 'chosen_evaluations'

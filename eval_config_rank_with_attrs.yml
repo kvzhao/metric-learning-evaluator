@@ -6,29 +6,33 @@
 
 # database: Zeus | DatasetBackbone | None
 database:
+    database_type: Json
+    database_config:
+        # path to attributes_table.json
+        path: /vol/08822301/dennis.liu/tracking_scenarios_6/re-id/cam_2_65_2019-01-20_123135/attributes_table.json
 
 # upper-bound of the evaluation instances
 container_size: 30000
 
 chosen_evaluations:
-    - RankingEvaluation
-#    - FacenetEvaluation
+#    - RankingEvaluation
+    - RankingWithAttributesEvaluation
 
 # Configurations for evaluator:
 evaluation_options:
     # Implemented Evaluations
     FacenetEvaluation:
         sampling:
+            # random_sample | amount_weighted | amount_inverse_weighted
+            class_sample_method: random_sample
             num_of_pairs: 1000
             num_of_instance_per_class: 1
             ratio_of_class: 0.1
-            # random_sample | amount_weighted | amount_inverse_weighted
-            class_sample_method: random_sample
 
         # these will be checked in FacenetEvaluation
         metric:
             accuracy:            true
-            vaidation_rate:      true
+            validation_rate:     true
             false_accept_rate:   false
             true_positive_rate:  true
             false_positive_rate: false
@@ -45,7 +49,8 @@ evaluation_options:
         option:
             path_pairlist: # not done
 
-    RankingEvaluation:
+    RankingWithAttributesEvaluation:
+
         sampling:
             class_sample_method: uniform
             instance_sample_method: uniform
@@ -66,10 +71,15 @@ evaluation_options:
             threshold:
 
         attribute: # not support
+            # path to grouping_rules.json
+            grouping_rules: /vol/08822301/dennis.liu/tracking_scenarios_6/re-id/cam_2_65_2019-01-20_123135/grouping_rules.json
 
         option:
             path_database: # not done
             seen_dataset: # not done
             unseen_dataset: # not done
+
+
+
 
 # OPTIONS OF EACH ITEMS

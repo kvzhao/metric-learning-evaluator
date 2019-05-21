@@ -7,11 +7,16 @@
         folder
         ├── embeddings.npy
         ├── filename_strings.npy
-        └── labels.npy
+        └── label_ids.npy
 
     TODO @kv:
       This program would handle source data from folder (with numpy arrays)
       tfrecord or dataset backbone.
+    NOTE:
+      support data_dir & database objects are `feat_obj` and `raw_images`. (tfrecord in the future?)
+        ->  status flow
+      offline can be totally different mode without calling evaluate.
+      # control attribute container.
 
     NOTE: for developing
     Quickly build up this program.
@@ -22,24 +27,34 @@
 
 import os
 import sys
+
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
+
 import yaml
 import numpy as np
 
 from pprint import pprint
 from metric_learning_evaluator.builder import EvaluatorBuilder
-from metric_learning_evaluator.data_tools.feature_object import FeatureDataObject
+from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+from metric_learning_evaluator.utils.switcher import switch
+
 
 import argparse
 
 parser = argparse.ArgumentParser('Command-line Metric Learning Evaluation Tool')
 
+# must-have argument
 parser.add_argument('--config', '-c', type=str, default=None,
         help='Path to the evaluation configuration with yaml format.')
+
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
-        help='Path to the source dataset, tfrecord | dataset_backbone | folder')
+        help='Path to the source (query) dataset.')
+parser.add_argument('--database', '-db', type=str, default=None,
+        help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
-        help='Type of the input dataset.')
+        help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
         help='Path to the output dir for saving report.')
 
@@ -54,9 +69,14 @@ def main():
     config_path = args.config
     data_type = args.data_type
     data_dir = args.data_dir
+    database_dir = args.database
 
     if not data_dir:
         raise ValueError('data_dir must be assigned!')
+
+    if data_dir and database_dir:
+        print('Both query and database are given.')
+        raise NotImplementedError('Query to Database function is not implemented yet.')
 
     if not config_path:
         # TODO @kv: Generate the default config.
@@ -72,19 +92,23 @@ def main():
     # open file
     evaluator = EvaluatorBuilder(args.embedding_size,
                                  args.logit_size,
-                                 config_dict)
+                                 config_dict,
+                                 mode='offline')
 
     if data_type == 'folder':
-        feature_importer = FeatureDataObject()
+        feature_importer = FeatureObject()
         feature_importer.load(data_dir)
         embeddings = feature_importer.embeddings
         filenames = feature_importer.filename_strings
         labels = feature_importer.label_ids
 
+    print('evaluator metric names: {}'.format(evaluator.metric_names))
     # Add datum through loop
     for feat, label, fn in zip(embeddings, labels, filenames):
-        evaluator.add_instance_id_and_embedding(fn, label, feat)
+        # TODO @kv: Do not confuse `filename` with `instance_id`.
+        instance_id = int(fn.replace('.jpg',''))
+        evaluator.add_instance_id_and_embedding(instance_id, label, feat)
     total_results = evaluator.evaluate()
 
-    pprint (total_results)
-    print(evaluator.metric_names)
+    for metric_name in evaluator.metric_names:
+        print('{}: {}'.format(metric_name, total_results[metric_name]))

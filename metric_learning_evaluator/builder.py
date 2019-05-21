@@ -42,6 +42,7 @@ from metric_learning_evaluator.evaluations.standard_fields import EvaluationStan
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
+from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
@@ -51,14 +52,17 @@ class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
     """
 
-    def __init__(self, embedding_size, logit_size, config_dict):
+    def __init__(self, embedding_size, logit_size, config_dict, mode='online'):
         """Evaluator Builder.
 
           The object builds evaluation functions according to the given configuration 
           and manage shared data (embeddings, labels and attributes) in container objects.
 
           Args:
-            embedding_size, 
+            embedding_size: Integer describes 1d embedding size.
+            logit_size:
+            config_dict: Dict, loaded yaml foramt dict.
+            mode: String, `online` or `offline`.
 
           Building procedure: (TODO @kv: update these steps)
             * parse the config
@@ -69,8 +73,6 @@ class EvaluatorBuilder(object):
             * (optional) get update_ops
         """
 
-
-
         # TODO @kv: Change config_path to parsed dictionary
         self.configs = ConfigParser(config_dict)
 
@@ -80,9 +82,11 @@ class EvaluatorBuilder(object):
         self.logit_size = logit_size
 
         self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
-
-        # TODO @kv: If no attributes are given, do not allocate it?
         self.attribute_container = AttributeContainer()
+
+        self.mode = mode
+        if self.mode not in ['online', 'offline']:
+            raise ValueError('Evaluator mode: {} is not defined.'.format(self.mode))
 
         self._build()
 
@@ -90,17 +94,16 @@ class EvaluatorBuilder(object):
         self._total_metrics = {}
 
         # Allocate general query interface
-        if not self.configs.database_type:
+        if not self.configs.database:
             # TODO @kv: consistent check with query condition
             self.query_interface = None
         else:
-            self.query_interface = QueryInterface(self.configs.database_type)
+            self.query_interface = QueryInterface(self.configs.database)
 
     def _build(self):
         """
           Build:
             Parse the config and create evaluators.
-            TODO @kv: Add a counter to calculate number of added data
         """
 
         # Parse the Configuration
@@ -123,7 +126,7 @@ class EvaluatorBuilder(object):
                 _display_eval_name = _eval_name
             _metric_name_per_evaluation = self.evaluations[_eval_name].metric_names
             for _metric_name in _metric_name_per_evaluation:
-                _metric_name = '{}-{}'.format(_display_eval_name, _metric_name)
+                _metric_name = '{}/{}'.format(_display_eval_name, _metric_name)
                 _metric_names.append(_metric_name)
         return _metric_names
 
@@ -135,8 +138,7 @@ class EvaluatorBuilder(object):
         Args:
             instance_id, integer:
                 A integer identifier for the image. instance_id
-            label_id, integer:
-                An index of label.
+            label_id: An interger to describe class
             embedding, list or numpy array:
                 Embedding, feature vector
         """
@@ -155,10 +157,11 @@ class EvaluatorBuilder(object):
         # if not evaluations_need_query: no queries are needed.
 
         if self.query_interface:
-            if not self.configs.required_attributes:
-                print ('WARNING: No required attributes are pre-defined.')
-            queried_attributes = self.query_interface.query(instance_id, self.configs.required_attributes)
-            self.attribute_container.add(instance_id, queried_attributes)
+            # TODO @dennis.liu : use grouping rules instead required_attributes
+            # if not self.configs.required_attributes:
+            #     print ('WARNING: No required attributes are pre-defined.')
+            queried_attributes = self.query_interface.query(instance_id)
+            self.attribute_container.add(int(instance_id), queried_attributes)
 
         self._instance_counter += 1
     
@@ -191,7 +194,7 @@ class EvaluatorBuilder(object):
         flatten = {}
         for _eval_name, _content in self._total_metrics.items():
             for _metric, _value in _content.items():
-                _combined_name = '{}-{}'.format(
+                _combined_name = '{}/{}'.format(
                     _eval_name, _metric)
                 flatten[_combined_name] = _value
         

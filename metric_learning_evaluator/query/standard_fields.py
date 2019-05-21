@@ -21,3 +21,9 @@ class AttributeStandardFields(object):
     supercategory = 'supercategory'
     color = 'color'
     shape = 'shape'
+
+    # Customized for checkout
+    seen_to_seen = 'seen_to_seen'
+    unseen_to_unseen = 'unseen_to_unseen'
+    seen_to_total = 'seen_to_total'
+    unseen_to_total = 'unseen_to_total'

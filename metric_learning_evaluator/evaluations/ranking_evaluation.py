@@ -23,8 +23,8 @@ from metric_learning_evaluator.evaluations.standard_fields import EvaluationStan
 from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
-from metric_learning_evaluator.utils.distances import euclidean_distance
-from metric_learning_evaluator.utils.distances import indexing_array
+from metric_learning_evaluator.index.utils import euclidean_distance
+from metric_learning_evaluator.index.utils import indexing_array
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
@@ -77,14 +77,14 @@ class RankingEvaluation(MetricEvaluationBase):
                 if _content is None:
                     continue
                 if _metric_name in self._metric_without_threshold:
-                    _name = '{}-{}'.format(_attr_name, _metric_name)
+                    _name = '{}/{}'.format(_attr_name, _metric_name)
                     _metric_names.append(_name)
                 if _metric_name in self._metric_with_threshold:
                     # special condition
                     if _metric_name == metric_fields.top_k_hit_accuracy:
                         top_k_list = self._metrics[metric_fields.top_k_hit_accuracy]
                         for top_k in top_k_list:
-                            _name = '{}-{}-@k={}'.format(_attr_name, _metric_name, top_k)
+                            _name = '{}/{}@k={}'.format(_attr_name, _metric_name, top_k)
                             _metric_names.append(_name)
         return _metric_names
 
@@ -158,7 +158,7 @@ class RankingEvaluation(MetricEvaluationBase):
                                      ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
 
             result_container.add(attribute_fields.all_classes, ranking_fields.top_k_hit_accuracy,
-                                 ranking_metrics.topk_hit_accuracy, condition={'k': 1})
+                                 ranking_metrics.top1_hit_accuracy, condition={'k': 1})
             result_container.add(attribute_fields.all_classes, ranking_fields.mAP,
                                  ranking_metrics.mean_average_precision)
 
