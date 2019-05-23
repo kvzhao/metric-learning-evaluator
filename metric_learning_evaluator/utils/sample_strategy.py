@@ -38,7 +38,9 @@ class SampleStrategyStandardFields:
     num_of_sampled_class = 'num_of_sampled_class'
     num_of_sampled_instance_per_class = 'num_of_sampled_instance_per_class'
 
-    num_of_db_instance = 'num_of_db_instance'
+    num_of_db_class = 'num_of_db_class'
+    num_of_db_instance = 'num_of_db_instance' # DEPRECATE THIS
+    num_of_db_instance_per_class = 'num_of_db_instance_per_class'
     num_of_query_class = 'num_of_query_class'
     num_of_query_instance_per_class = 'num_of_query_instance_per_class'
     maximum_of_sampled_data = 'maximum_of_sampled_data'
@@ -106,8 +108,9 @@ class SampleStrategy(object):
         if not (self._label_ids is None or self._instance_ids is None):
             self._class_distribution = Counter(self._label_ids)
             self._classes = list(self._class_distribution.keys())
-            self._num_of_class = len(self._classes)
-            self._num_of_instances = sum(self._class_distribution.values())
+            self._num_of_total_classes = len(self._classes)
+            self._num_of_total_instances = sum(self._class_distribution.values())
+            self._instance_id_hits = [0] * self._num_of_total_instances
             self._class_histogram = {}
 
             self._instance2class = {}
@@ -129,22 +132,42 @@ class SampleStrategy(object):
     def verbose(self):
         # Show information about distribution
         print('sampler: {} classes with {} instances'.format(
-            self._num_of_class, self._num_of_instances))
+            self._num_of_total_classes, self._num_of_total_instances))
+        # Statistics:
 
-    def _sample(self,
-                class_sample_method,
-                instance_sample_method,
-                num_of_sampled_class,
-                num_of_sampled_instance,
-                maximum_of_sampled_data=None,
-                ):
-        """
+    # Utility functions
+    @staticmethod
+    def split_():
+        pass
+
+    # As a most basic function
+    @staticmethod
+    def _sample(
+               instance_ids,
+               label_ids,
+               num_of_total_classes,
+               num_of_total_instances,
+               class_sample_method,
+               instance_sample_method,
+               num_of_sampled_class,
+               num_of_sampled_instance,
+               maximum_of_sampled_data=None,
+               ):
+        """Fundamental sampling function widely used in sampler. 
+
           Args:
-            class_sample_method
-            instance_sample_method
-            num_of_sampled_instance
-            num_of_sampled_class
-            maximum_of_sampled_data
+            class_sample_method: string
+                sampling strategy
+            instance_sample_method: string
+                Only uniform sampling supported, sample_fields.uniform.
+            num_of_sampled_class: Integer or String
+                Number of sampled instances per class. Sanity check
+            num_of_sampled_instance: Integer of String
+                Number of sampled instances per class. Sanity check
+            maximum_of_sampled_data:
+                Integer
+            only_sample_once:
+                A boolean, set true for sample each instance only once.
 
           Returns:
             A dict of class and instances: 
@@ -152,13 +175,37 @@ class SampleStrategy(object):
           Strategy:
             Trade-off between num_of_class and num_of_data, if sampled data exceeds maximum
             reduce instances per class.
+        
+          TODO
+            - prepare internal group structure
+
         """
+        # sanity check
+        if isinstance(num_of_sampled_class, str):
+            if num_of_sampled_class == sample_fields.all_class:
+                num_of_sampled_class = num_of_total_classes
+        elif not isinstance(num_of_sampled_class, int):
+            raise TypeError('num_of_sampled_class must be integer')
+
+        if isinstance(num_of_sampled_instance, str):
+            raise NotImplementedError('{} is not supported'.format(
+                num_of_sampled_instance))
+        elif not isinstance(num_of_sampled_instance, int):
+            raise TypeError('num_of_sampled_instance must be integer')
+
+        if num_of_sampled_class > num_of_total_classes:
+            print('Assigned #of class > provided ({}>{}), sample {} classes only.'.format(
+                num_of_sampled_class, num_of_total_classes, num_of_total_classes))
+            num_of_sampled_class = num_of_total_classes
         probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance
         if maximum_of_sampled_data:
             upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance,
                                               maximum_of_sampled_data)
         else:
-            upper_bound_of_sampled_data = probable_num_of_sampled_data
+            if probable_num_of_sampled_data > num_of_total_instances:
+                upper_bound_of_sampled_data = num_of_total_instances
+            else:
+                upper_bound_of_sampled_data = probable_num_of_sampled_data
         if probable_num_of_sampled_data > upper_bound_of_sampled_data:
             reduced_num_of_sampled_instance = math.floor(
                 upper_bound_of_sampled_data / num_of_sampled_class)
@@ -167,11 +214,12 @@ class SampleStrategy(object):
                     num_of_sampled_instance, reduced_num_of_sampled_instance))
             num_of_sampled_instance = reduced_num_of_sampled_instance
 
+        class_ids = list(set(label_ids))
         if class_sample_method == sample_fields.uniform:
             sampled_classes = np.random.choice(
-                self._classes, num_of_sampled_class, replace=False)
+                class_ids, num_of_sampled_class, replace=False)
         elif class_sample_method == sample_fields.all_class:
-            sampled_classes = self._classes
+            sampled_classes = class_ids
         elif class_sample_method == sample_fields.instance_number_weighted:
             raise NotImplementedError
         elif class_sample_method == sample_fields.instance_number_inverse_weighted:
@@ -180,17 +228,19 @@ class SampleStrategy(object):
             print('class sample method {} is not defined, use {} as default.'.format(
                 class_sample_method, sample_fields.uniform))
             sampled_classes = np.random.choice(
-                self._classes, num_of_sampled_class, replace=False)
+                class_ids, num_of_sampled_class, replace=False)
 
         if not instance_sample_method in [sample_fields.uniform, sample_fields.all_instance]:
             instance_sample_method = sample_fields.uniform
             print('instance sample method {} is not defined, use {} as default.'.format(
                 instance_sample_method, sample_fields.uniform))
-
-        instances = []
-        labels = []
+        
+        instance_group = defaultdict(list)
+        for _inst_id, _class in zip(instance_ids, label_ids):
+            instance_group[_class].append(_inst_id)
+        sampled_instance_ids, sampled_label_ids = [], []
         for _class in sampled_classes:
-            instance_ids_per_class = self._instance_group[_class]
+            instance_ids_per_class = instance_group[_class]
             num_instance_per_class = len(instance_ids_per_class)
             num_sampled_instance_per_class = min(num_instance_per_class,
                                                  num_of_sampled_instance)
@@ -205,12 +255,30 @@ class SampleStrategy(object):
                 raise NotImplementedError
 
             for sampled_instance in sampled_instances:
-                instances.append(sampled_instance)
-            labels.extend([_class] * num_sampled_instance_per_class)
-            self._class_histogram[_class] += num_sampled_instance_per_class
+                sampled_instance_ids.append(sampled_instance)
+            sampled_label_ids.extend([_class] * num_sampled_instance_per_class)
+            #self._class_histogram[_class] += num_sampled_instance_per_class
 
-        return {sample_fields.sampled_instance_ids: instances,
-                sample_fields.sampled_label_ids: labels}
+        return {sample_fields.sampled_instance_ids: sampled_instance_ids,
+                sample_fields.sampled_label_ids: sampled_label_ids}
+
+    def sample(self,
+               class_sample_method,
+               instance_sample_method,
+               num_of_sampled_class,
+               num_of_sampled_instance,
+               maximum_of_sampled_data=None):
+        # NOTE: get return and count in histogram?
+        return self._sample(
+            instance_ids=self._instance_ids,
+            label_ids=self._label_ids,
+            num_of_total_classes=self._num_of_total_classes,
+            num_of_total_instances=self._num_of_total_instances,
+            class_sample_method=class_sample_method,
+            instance_sample_method=instance_sample_method,
+            num_of_sampled_class=num_of_sampled_class,
+            num_of_sampled_instance=num_of_sampled_instance,
+            maximum_of_sampled_data=maximum_of_sampled_data)
 
     def sample_pairs(self,
                      class_sample_method,
@@ -339,6 +407,7 @@ class SampleStrategy(object):
         }
         return sampled_db, sampled_query
 
+    # bad naming convention
     def class_uniform_sampler(self,
                               num_of_sampled_class,
                               num_of_db_instance_per_class,
@@ -433,7 +502,8 @@ class SampleStrategy(object):
         self._class_histogram = None
         self._instance2class = None
         self._instance_group = None
-        self._num_of_class = None
+        self._num_of_total_classes = None
+        self._num_of_total_instances = None
         self._classes = None
         self._num_of_instance_per_class_mean = None
         self._num_of_instance_per_class_std = None
