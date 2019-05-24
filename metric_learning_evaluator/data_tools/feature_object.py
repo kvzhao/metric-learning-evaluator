@@ -62,6 +62,7 @@ class FeatureObjectBase(object):
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
             print ('WARNING: Get the empty embeddings array')
+            return np.empty(0)
         if len(self._array_name_map[fields.embeddings].shape) >= 3:
             print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.embeddings].shape))
@@ -81,6 +82,7 @@ class FeatureObjectBase(object):
     def probabilities(self):
         if self._array_name_map[fields.probabilities] is None:
             print ('WARNING: Get the empty probabilities array')
+            return np.empty(0)
         if len(self._array_name_map[fields.probabilities].shape) >= 3:
             print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.embeddings].shape))
