@@ -85,8 +85,8 @@ class FeatureObjectBase(object):
             return np.empty(0)
         if len(self._array_name_map[fields.probabilities].shape) >= 3:
             print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
-                self._array_name_map[fields.embeddings].shape))
-            self._array_name_map[fields.probabilities]= np.squeeze(self._array_name_map[fields.probabilities])
+                self._array_name_map[fields.probabilities].shape))
+                _probabilities = np.squeeze(probabilities)
         return self._array_name_map[fields.probabilities]
 
     @probabilities.setter
@@ -107,6 +107,7 @@ class FeatureObjectBase(object):
     @label_ids.setter
     def label_ids(self, _label_ids):
         self._check_numpy_arrlike(_label_ids)
+        _label_ids = np.squeeze(_label_ids)
         self._array_name_map[fields.label_ids] = _label_ids
 
     @property
@@ -118,6 +119,7 @@ class FeatureObjectBase(object):
     @label_names.setter
     def label_names(self, _label_names):
         self._check_numpy_arrlike(_label_names)
+        _label_names = np.squeeze(_label_names)
         self._array_name_map[fields.label_names] = _label_names
 
     @property
@@ -129,6 +131,7 @@ class FeatureObjectBase(object):
     @instance_ids.setter
     def instance_ids(self, _instance_ids):
         self._check_numpy_arrlike(_instance_ids)
+        _instance_ids = np.squeeze(_instance_ids)
         self._array_name_map[fields.instance_ids] = _instance_ids
 
     @property
