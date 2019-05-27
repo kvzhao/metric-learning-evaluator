@@ -86,7 +86,7 @@ class FeatureObjectBase(object):
         if len(self._array_name_map[fields.probabilities].shape) >= 3:
             print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.probabilities].shape))
-                _probabilities = np.squeeze(probabilities)
+            _probabilities = np.squeeze(probabilities)
         return self._array_name_map[fields.probabilities]
 
     @probabilities.setter
