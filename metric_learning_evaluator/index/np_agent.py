@@ -34,7 +34,7 @@ class NumpyAgent(AgentBase):
                 where K is the number of queries; d is the dimension of embedding.
             top_k: an int, top-k results
           Returns:
-            A tuple of (batch_distances, batch_indices)
+            A tuple of (batch_indices, batch_distances)
         """
 
         batch_size = query_embeddings.shape[0]
@@ -54,4 +54,4 @@ class NumpyAgent(AgentBase):
             batch_distances[batch_idx, ...] = sorted_distances[:top_k]
             batch_indices[batch_idx, ...] = sorted_indices[:top_k]
 
-        return (batch_distances, batch_indices)
+        return (batch_indices, batch_distances)

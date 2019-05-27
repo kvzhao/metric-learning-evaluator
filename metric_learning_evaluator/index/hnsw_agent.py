@@ -54,7 +54,7 @@ class HNSWAgent(AgentBase):
                 where K is the number of queries; d is the dimension of embedding.
             top_k: an int, top-k results
           Returns:
-            A tuple of (batch_distances, batch_indices)
+            A tuple of (batch_indices, batch_distances)
         """
         # NOTE: preprocessing and check
         return self.engine.knn_query(query_embeddings, k=top_k)

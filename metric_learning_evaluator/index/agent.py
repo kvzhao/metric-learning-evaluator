@@ -4,10 +4,16 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-#from metric_learning_evaluator.index.np_agent import NumpyAgent
-#from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
-from metric_learning_evaluator.core.registered import REGISTERED_INDEX_AGENT
+from metric_learning_evaluator.index.np_agent import NumpyAgent
+from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.utils.switcher import switch
+from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields
+config_fields = ConfigStandardFields
+
+REGISTERED_INDEX_AGENT = {
+    config_fields.numpy_agent: NumpyAgent,
+    config_fields.hnsw_agent: HNSWAgent,
+}
 
 class IndexAgent:
     # Wrapper of the IndexAgent
