@@ -356,10 +356,6 @@ class SampleStrategy(object):
                 need_query = False
 
             num_instance_given_class = len(instance_ids_of_given_class)
-            # BAD IMPLEMENTATION
-            # check the number of given class
-
-            print(_class, num_instance_given_class, required_num_of_instance_per_class)
 
             if num_instance_given_class == 1:
                 # can not split, skip
