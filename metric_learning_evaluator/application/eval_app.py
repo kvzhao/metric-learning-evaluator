@@ -126,14 +126,20 @@ def main():
 
         if case(status_fields.evaluate_single_container):
             # Add datum through loop
-            for inst_id, feat, label in zip(instance_ids, embeddings, labels):
+            if instance_ids is None:
+                if filenames is None:
+                    raise ValueError('instance_ids and filenames should not be empty!')
+                unique_ids = filenames
+            else:
+                unique_ids = instance_ids
+            for inst_id, feat, label in zip(unique_ids, embeddings, labels):
                 # TODO @kv: Do not confuse `filename` with `instance_id`.
-                #if isinstance(fn, str):
-                #    fn = fn.replace('.jpg','')
-                #    fn = fn.replace('.png','')
-                #instance_id = int(fn)
+                if isinstance(inst_id, str):
+                    inst_id = inst_id.replace('.jpg','')
+                    inst_id = inst_id.replace('.png','')
                 inst_id = int(inst_id)
                 evaluator.add_instance_id_and_embedding(inst_id, label, feat)
+
             total_results = evaluator.evaluate()
 
             for metric_name in evaluator.metric_names:
