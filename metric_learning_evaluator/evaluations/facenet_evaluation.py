@@ -72,7 +72,7 @@ facenet_fields = FacenetEvaluationStandardFields
 
 class FacenetEvaluation(MetricEvaluationBase):
 
-    def __init__(self, config):
+    def __init__(self, config, mode=None):
         """
           FaceNet evaluates accuracy with pair instances.
 
@@ -91,7 +91,7 @@ class FacenetEvaluation(MetricEvaluationBase):
             Equal Error Rate (EER): 0.004
           -------------------------------------------------
         """
-        super(FacenetEvaluation, self).__init__(config)
+        super(FacenetEvaluation, self).__init__(config, mode)
 
         print('Create {}'.format(self.evaluation_name))
 

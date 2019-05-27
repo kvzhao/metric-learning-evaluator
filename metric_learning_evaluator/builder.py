@@ -113,7 +113,7 @@ class EvaluatorBuilder(object):
         self.evaluations = {} # evaluations -> evaluation_objects
         for eval_name in self.configs.chosen_evaluation_names:
             eval_config = self.configs.get_eval_config(eval_name)
-            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](eval_config)
+            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](eval_config, self.mode)
 
     @property
     def evaluation_names(self):

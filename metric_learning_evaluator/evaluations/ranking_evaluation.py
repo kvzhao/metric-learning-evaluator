@@ -18,12 +18,8 @@ from metric_learning_evaluator.data_tools.attribute_container  import AttributeC
 
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
-
 from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
-
-from metric_learning_evaluator.index.utils import euclidean_distance
-from metric_learning_evaluator.index.utils import indexing_array
 
 from metric_learning_evaluator.index.agent import IndexAgent
 
@@ -44,14 +40,14 @@ ranking_fields = RankingEvaluationStandardFields
 
 class RankingEvaluation(MetricEvaluationBase):
 
-    def __init__(self, config):
+    def __init__(self, config, mode=None):
         """Ranking Evaluation 
             TODO with Attributes
           Two kinds of attribute
             - grouping 
             - cross reference
         """
-        super(RankingEvaluation, self).__init__(config)
+        super(RankingEvaluation, self).__init__(config, mode)
 
         self._must_have_metrics = []
         self._default_values = {

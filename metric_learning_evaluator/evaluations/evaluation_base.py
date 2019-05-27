@@ -39,7 +39,7 @@ class MetricEvaluationBase(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, eval_config):
+    def __init__(self, eval_config, mode=None):
         """Base Object for Evaluation.
           <Customized>Evaluation is the functional object which 
                       executes computation with metric functions.
@@ -66,6 +66,8 @@ class MetricEvaluationBase(object):
         self.attribute_items = self.configs.attribute_items
         self.sampling = self.configs.sampling_section
         self.option = self.configs.option_section
+        # mode: online | offline | None
+        self.mode = mode
 
         self.cross_reference_commands = self.configs.attribute_cross_reference_commands
         self.group_commands = self.configs.attribute_group_commands
