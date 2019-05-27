@@ -52,8 +52,7 @@ class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
     """
 
-    #TODO @kv: logit_size -> prob_size
-    def __init__(self, embedding_size, logit_size, config_dict, mode='online'):
+    def __init__(self, embedding_size, prob_size, config_dict, mode='online'):
         """Evaluator Builder.
 
           The object builds evaluation functions according to the given configuration 
@@ -61,8 +60,7 @@ class EvaluatorBuilder(object):
 
           Args:
             embedding_size: Integer describes 1d embedding size.
-            logit_size:
-            TODO @kv: logit_size -> prob_size
+            prob_size: Integer describes size of the logits.
             config_dict: Dict, loaded yaml foramt dict.
             mode: String, `online` or `offline`.
 
@@ -81,10 +79,9 @@ class EvaluatorBuilder(object):
         # allocate shared embedding containers
         container_size = self.configs.container_size
         self.embedding_size = embedding_size
-        # TODO @kv: logit_size -> prob_size
-        self.logit_size = logit_size
+        self.prob_size = prob_size
 
-        self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
+        self.embedding_container = EmbeddingContainer(embedding_size, prob_size, container_size)
         self.attribute_container = AttributeContainer()
 
         self.mode = mode
@@ -134,13 +131,11 @@ class EvaluatorBuilder(object):
                 _metric_names.append(_metric_name)
         return _metric_names
 
-    def add_instance_id_and_embedding(self, instance_id, label_id, embedding, logit=None):
+    def add_instance_id_and_embedding(self, instance_id, label_id, embedding, probability=None):
         """Add embedding and label for a sample to be used for evaluation.
 
            If the query attribute names are given in config, this function will
            search them on database automatically.
-        
-        #TODO: Consider `filename`, `probability` (<- logit)
 
         Args:
             instance_id, integer:
@@ -150,11 +145,11 @@ class EvaluatorBuilder(object):
                 Embedding, feature vector
         """
 
-        # NOTE: If we call classification, then add logit.
+        # NOTE: If we call classification, then add probability.
         # TODO @kv: If instance_id is None, use index as default.
         if instance_id is None or instance_id == -1:
             instance_id = self._instance_counter
-        self.embedding_container.add(instance_id, label_id, embedding, logit)
+        self.embedding_container.add(instance_id, label_id, embedding, probability)
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
             print ('{} embeddings are added.'.format(self.embedding_container.counts))

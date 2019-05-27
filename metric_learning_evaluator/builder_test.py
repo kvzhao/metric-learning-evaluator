@@ -26,7 +26,7 @@ class TestEvaluatorBuilder(unittest.TestCase):
             },
             fields.container_size: 100000,
             fields.embedding_size: 2048,
-            fields.logit_size: 1400,
+            fields.prob_size: 1400,
         }
         list_of_evaluations = [
             'MockEvaluation', 'ClassificationEvaluation', 'RankingEvaluation'
@@ -46,7 +46,7 @@ class TestEvaluatorBuilder(unittest.TestCase):
             fields.evaluation: fields.mock,
             fields.container_size: 100000,
             fields.embedding_size: 2048,
-            fields.logit_size: 0,
+            fields.prob_size: 0,
         }
 
     def test_add_id_and_images(self):
@@ -61,7 +61,7 @@ class TestEvaluatorBuilder(unittest.TestCase):
             },
             fields.container_size: 100000,
             fields.embedding_size: 2048,
-            fields.logit_size: 0,
+            fields.prob_size: 0,
         }
         list_of_evaluations = [
             fields.mock,
@@ -85,7 +85,7 @@ class TestEvaluatorBuilder(unittest.TestCase):
             },
             fields.container_size: 100,
             fields.embedding_size: 10,
-            fields.logit_size: num_classes,
+            fields.prob_size: num_classes,
         }
 
         mock_embeddings = np.random.rand(num_samples, 10)
