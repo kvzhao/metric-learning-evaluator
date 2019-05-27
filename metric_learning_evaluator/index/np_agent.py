@@ -53,5 +53,5 @@ class NumpyAgent(AgentBase):
 
             batch_distances[batch_idx, ...] = sorted_distances[:top_k]
             batch_indices[batch_idx, ...] = sorted_indices[:top_k]
-
+        # NOTE: returned indices are np.float -> convert to np.int
         return (batch_indices, batch_distances)
