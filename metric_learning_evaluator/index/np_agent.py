@@ -11,9 +11,16 @@ import numpy as np
 
 
 class NumpyAgent(AgentBase):
-    def __init__(self, instance_ids, embeddings):
+    def __init__(self,
+                 instance_ids,
+                 embeddings,
+                 distance_measure='l2',
+                 ef_construction=200,
+                 num_threads=4,
+                 M=32):
         super(NumpyAgent, self).__init__(instance_ids, embeddings)
 
+        self.distance_measure = distance_measure
         self._build()
         print('Numpy Index Agent is initialized')
 
