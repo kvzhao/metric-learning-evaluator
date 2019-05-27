@@ -57,6 +57,8 @@ class SampleStrategyStandardFields:
     query_label_ids = 'query_label_ids'
     db_instance_ids = 'db_instance_ids'
     db_label_ids = 'db_label_ids'
+    database_instance_ids = 'database_instance_ids'
+    database_label_ids = 'database_label_ids'
 
 
 sample_fields = SampleStrategyStandardFields
@@ -135,11 +137,6 @@ class SampleStrategy(object):
             self._num_of_total_classes, self._num_of_total_instances))
         # Statistics:
 
-    # Utility functions
-    @staticmethod
-    def split_():
-        pass
-
     # As a most basic function
     @staticmethod
     def _sample(
@@ -150,7 +147,7 @@ class SampleStrategy(object):
                class_sample_method,
                instance_sample_method,
                num_of_sampled_class,
-               num_of_sampled_instance,
+               num_of_sampled_instance_per_class,
                maximum_of_sampled_data=None,
                ):
         """Fundamental sampling function widely used in sampler. 
@@ -166,19 +163,13 @@ class SampleStrategy(object):
                 Number of sampled instances per class. Sanity check
             maximum_of_sampled_data:
                 Integer
-            only_sample_once:
-                A boolean, set true for sample each instance only once.
 
           Returns:
-            A dict of class and instances: 
+            A dict of sampled instance and label ids
 
           Strategy:
-            Trade-off between num_of_class and num_of_data, if sampled data exceeds maximum
+            Trade-off between #of required and #of total data and if sampled data exceeds maximum
             reduce instances per class.
-        
-          TODO
-            - prepare internal group structure
-
         """
         # sanity check
         if isinstance(num_of_sampled_class, str):
@@ -187,19 +178,19 @@ class SampleStrategy(object):
         elif not isinstance(num_of_sampled_class, int):
             raise TypeError('num_of_sampled_class must be integer')
 
-        if isinstance(num_of_sampled_instance, str):
+        if isinstance(num_of_sampled_instance_per_class, str):
             raise NotImplementedError('{} is not supported'.format(
-                num_of_sampled_instance))
-        elif not isinstance(num_of_sampled_instance, int):
-            raise TypeError('num_of_sampled_instance must be integer')
+                num_of_sampled_instance_per_class))
+        elif not isinstance(num_of_sampled_instance_per_class, int):
+            raise TypeError('num_of_sampled_instance_per_class must be integer')
 
         if num_of_sampled_class > num_of_total_classes:
             print('Assigned #of class > provided ({}>{}), sample {} classes only.'.format(
                 num_of_sampled_class, num_of_total_classes, num_of_total_classes))
             num_of_sampled_class = num_of_total_classes
-        probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance
+        probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance_per_class
         if maximum_of_sampled_data:
-            upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance,
+            upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance_per_class,
                                               maximum_of_sampled_data)
         else:
             if probable_num_of_sampled_data > num_of_total_instances:
@@ -211,8 +202,8 @@ class SampleStrategy(object):
                 upper_bound_of_sampled_data / num_of_sampled_class)
             print(
                 'Notice: Reduce number of sampled instances per class from {} to {} due to limitation.'.format(
-                    num_of_sampled_instance, reduced_num_of_sampled_instance))
-            num_of_sampled_instance = reduced_num_of_sampled_instance
+                    num_of_sampled_instance_per_class, reduced_num_of_sampled_instance))
+            num_of_sampled_instance_per_class = reduced_num_of_sampled_instance
 
         class_ids = list(set(label_ids))
         if class_sample_method == sample_fields.uniform:
@@ -241,13 +232,13 @@ class SampleStrategy(object):
         sampled_instance_ids, sampled_label_ids = [], []
         for _class in sampled_classes:
             instance_ids_per_class = instance_group[_class]
-            num_instance_per_class = len(instance_ids_per_class)
-            num_sampled_instance_per_class = min(num_instance_per_class,
-                                                 num_of_sampled_instance)
+            _num_instance_per_class = len(instance_ids_per_class)
+            _num_sampled_instance_per_class = min(_num_instance_per_class,
+                                                 num_of_sampled_instance_per_class)
 
             if instance_sample_method == sample_fields.uniform:
                 sampled_instances = np.random.choice(instance_ids_per_class,
-                                                     num_sampled_instance_per_class,
+                                                     _num_sampled_instance_per_class,
                                                      replace=False)
             elif instance_sample_method == sample_fields.all_instance:
                 sampled_instances = instance_ids_per_class
@@ -256,8 +247,8 @@ class SampleStrategy(object):
 
             for sampled_instance in sampled_instances:
                 sampled_instance_ids.append(sampled_instance)
-            sampled_label_ids.extend([_class] * num_sampled_instance_per_class)
-            #self._class_histogram[_class] += num_sampled_instance_per_class
+            sampled_label_ids.extend([_class] * _num_sampled_instance_per_class)
+            #self._class_histogram[_class] += _num_sampled_instance_per_class
 
         return {sample_fields.sampled_instance_ids: sampled_instance_ids,
                 sample_fields.sampled_label_ids: sampled_label_ids}
@@ -266,9 +257,24 @@ class SampleStrategy(object):
                class_sample_method,
                instance_sample_method,
                num_of_sampled_class,
-               num_of_sampled_instance,
+               num_of_sampled_instance_per_class,
                maximum_of_sampled_data=None):
-        # NOTE: get return and count in histogram?
+        """Sample instance & label ids:
+          Args:
+            class_sample_method: string
+                sampling strategy
+            instance_sample_method: string
+                Only uniform sampling supported, sample_fields.uniform.
+            num_of_sampled_class: Integer or String
+                Number of sampled instances per class. Sanity check
+            num_of_sampled_instance_per_class: Integer of String
+                Number of sampled instances per class. Sanity check
+            maximum_of_sampled_data:
+                Integer
+          Returns:
+            A dict of sampled instance and label ids
+        """
+        # TODO @kv: get return and count in histogram?
         return self._sample(
             instance_ids=self._instance_ids,
             label_ids=self._label_ids,
@@ -277,7 +283,7 @@ class SampleStrategy(object):
             class_sample_method=class_sample_method,
             instance_sample_method=instance_sample_method,
             num_of_sampled_class=num_of_sampled_class,
-            num_of_sampled_instance=num_of_sampled_instance,
+            num_of_sampled_instance_per_class=num_of_sampled_instance_per_class,
             maximum_of_sampled_data=maximum_of_sampled_data)
 
     def sample_pairs(self,
@@ -291,6 +297,130 @@ class SampleStrategy(object):
         pass
 
     def sample_query_and_database(self,
+                                  class_sample_method,
+                                  instance_sample_method,
+                                  num_of_db_instance_per_class,
+                                  num_of_query_class,
+                                  num_of_query_instance_per_class,
+                                  maximum_of_sampled_data=None
+                                ):
+        """
+          Args:
+            class_sample_method:
+            instance_sample_method:
+            num_of_db_instance:
+            num_of_query_class:
+            num_of_query_instance_per_class:
+            maximum_of_sampled_data:
+          Returns:
+            Dict of db instances, labels and query instances, labels.
+        """
+        if isinstance(num_of_query_class, str):
+            if num_of_query_class == sample_fields.all_class:
+                num_of_query_class = self._num_of_total_classes
+        elif not isinstance(num_of_query_class, int):
+            raise TypeError('num_of_query_class must be integer')
+
+        if num_of_query_class > self._num_of_total_classes:
+            num_of_query_class = self._num_of_total_classes
+
+        # Sanity Check of Numbers
+        num_of_total_database_required = self._num_of_total_classes * num_of_db_instance_per_class
+        num_of_total_query_required = num_of_query_class * num_of_query_instance_per_class
+
+        # If summed more than total, squeeze number of query (instances per class)
+        if (num_of_total_database_required + num_of_total_query_required) > self._num_of_total_instances:
+            rest_num_of_instances = self._num_of_total_instances - num_of_total_database_required
+            if rest_num_of_instances < 0:
+                # DAMN!
+                pass
+            else:
+                reduced_num_of_query_instance_per_class = math.floor(rest_num_of_instances/num_of_query_class)
+                num_of_query_instance_per_class = reduced_num_of_query_instance_per_class
+
+        # Split instance group into database & query candidates
+        sampled_query_instance_ids, sampled_query_label_ids = [], []
+        sampled_database_instance_ids, sampled_database_label_ids = [], []
+        sampled_query_classes = np.random.choice(self._classes, num_of_query_class, replace=False)
+        required_num_of_instance_per_class = num_of_db_instance_per_class + num_of_query_instance_per_class
+
+        # Go through all classes
+        for _class in self._classes:
+            # Shuffle first
+            shuffle(self._instance_group[_class])
+            instance_ids_of_given_class = self._instance_group[_class]
+
+            if _class in sampled_query_classes:
+                need_query = True
+            else:
+                need_query = False
+
+            num_instance_given_class = len(instance_ids_of_given_class)
+            # BAD IMPLEMENTATION
+            # check the number of given class
+
+            print(_class, num_instance_given_class, required_num_of_instance_per_class)
+
+            if num_instance_given_class == 1:
+                # can not split, skip
+                print('NOTICE: label_id:{} #of instance==1, Skipped.'.format(_class))
+                continue
+            elif num_instance_given_class < required_num_of_instance_per_class:
+                # ======== TODO: need more specific rules ==========
+                print('NOTICE: label_id:{} Required instances is more than acquired, Reduced.'.format(_class))
+                if not need_query:
+                    if num_instance_given_class < num_of_db_instance_per_class:
+                        sampled_database_instance_ids.extend(instance_ids_of_given_class)
+                        sampled_database_label_ids.extend([_class] * num_instance_given_class)
+                    else:
+                        _sampled_instance_ids = np.random.choice(
+                            instance_ids_of_given_class, required_num_of_instance_per_class, replace=False)
+                        sampled_database_instance_ids.extend(_sampled_instance_ids[:num_of_db_instance_per_class])
+                        sampled_database_label_ids.extend([_class] * num_of_db_instance_per_class)
+                else:
+                    # ===== NEED QUERY ======
+                    # TODO: Not a good strategy
+                    if num_of_db_instance_per_class < num_instance_given_class:
+                        # complete database buffer, set the rest as query
+                        _reduced_num_of_query = num_instance_given_class - num_of_db_instance_per_class
+                        sampled_database_instance_ids.extend(instance_ids_of_given_class[:num_of_db_instance_per_class])
+                        sampled_database_label_ids.extend([_class] * num_of_db_instance_per_class)
+                        sampled_query_instance_ids.extend(instance_ids_of_given_class[num_of_db_instance_per_class:])
+                        sampled_query_label_ids.extend([_class] * _reduced_num_of_query)
+                    elif num_of_query_instance_per_class < num_instance_given_class:
+                        # complete query buffer, set the rest as database
+                        _reduced_num_of_database = num_instance_given_class - num_of_query_instance_per_class
+                        sampled_query_instance_ids.extend(instance_ids_of_given_class[:num_of_query_instance_per_class])
+                        sampled_query_label_ids.extend([_class] * num_of_query_instance_per_class)
+                        sampled_database_instance_ids.extend(instance_ids_of_given_class[num_of_query_instance_per_class:])
+                        sampled_database_label_ids.extend([_class] * _reduced_num_of_database)
+                    else:
+                        # split into half
+                        _reduced_num_of_query = int(num_instance_given_class / 2)
+                        _reduced_num_of_database = num_instance_given_class - _reduced_num_of_query
+                        sampled_database_instance_ids.extend(instance_ids_of_given_class[:_reduced_num_of_query])
+                        sampled_database_label_ids.extend([_class] * _reduced_num_of_query)
+                        sampled_query_instance_ids.extend(instance_ids_of_given_class[_reduced_num_of_query:])
+                        sampled_query_label_ids.extend([_class] * _reduced_num_of_database)
+            else:
+                _sampled_instance_ids = np.random.choice(
+                    instance_ids_of_given_class, required_num_of_instance_per_class, replace=False)
+                sampled_database_instance_ids.extend(_sampled_instance_ids[:num_of_db_instance_per_class])
+                sampled_database_label_ids.extend([_class] * num_of_db_instance_per_class)
+
+                if need_query:
+                    sampled_query_instance_ids.extend(_sampled_instance_ids[num_of_db_instance_per_class:])
+                    sampled_query_label_ids.extend([_class] * num_of_query_instance_per_class)
+
+        # Pass candidates into _sample function
+        return {
+            sample_fields.database_instance_ids: sampled_database_instance_ids,
+            sample_fields.database_label_ids: sampled_database_label_ids,
+            sample_fields.query_instance_ids: sampled_query_instance_ids,
+            sample_fields.query_label_ids: sampled_query_label_ids,
+        }
+
+    def _deprecated_sample_query_and_database(self,
                                   class_sample_method,
                                   instance_sample_method,
                                   num_of_db_instance,
@@ -312,12 +442,12 @@ class SampleStrategy(object):
 
         # NOTE @dennis.liu: Split _sample method into specific sample function
         if class_sample_method == sample_fields.uniform:
-            sampled_db, sampled_query = self.class_uniform_sampler(num_of_query_class,
+            sampled_db, sampled_query = self.deprecated_class_uniform_sampler(num_of_query_class,
                                                                    num_of_db_instance,
                                                                    num_of_query_instance_per_class,
                                                                    maximum_of_sampled_data=maximum_of_sampled_data)
         if class_sample_method == sample_fields.all_class:
-            sampled_db, sampled_query = self.class_take_all(num_of_db_instance,
+            sampled_db, sampled_query = self.deprecated_class_take_all(num_of_db_instance,
                                                             num_of_query_instance_per_class,
                                                             instance_sample_method)
         elif class_sample_method == sample_fields.instance_number_weighted:
@@ -327,7 +457,7 @@ class SampleStrategy(object):
         else:
             print('class sample method {} is not defined, use {} as default.'.format(
                 class_sample_method, sample_fields.uniform))
-            sampled_db, sampled_query = self.class_uniform_sampler(num_of_query_class,
+            sampled_db, sampled_query = self.deprecated_class_uniform_sampler(num_of_query_class,
                                                                    num_of_db_instance,
                                                                    num_of_query_instance_per_class,
                                                                    maximum_of_sampled_data=maximum_of_sampled_data)
@@ -339,7 +469,7 @@ class SampleStrategy(object):
             sample_fields.query_label_ids: sampled_query[sample_fields.sampled_label_ids]
         }
 
-    def class_take_all(self,
+    def deprecated_class_take_all(self,
                        num_of_db_instance_per_class,
                        num_of_query_instance_per_class,
                        instance_sample_method):
@@ -407,8 +537,8 @@ class SampleStrategy(object):
         }
         return sampled_db, sampled_query
 
-    # bad naming convention
-    def class_uniform_sampler(self,
+    # TODO @kv: This must be deprecated.
+    def deprecated_class_uniform_sampler(self,
                               num_of_sampled_class,
                               num_of_db_instance_per_class,
                               num_of_query_instance_per_class,
