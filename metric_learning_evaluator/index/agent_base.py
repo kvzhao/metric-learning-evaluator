@@ -24,9 +24,10 @@ class AgentBase(object):
             instance_ids: 1D Numpy array
             embeddings: 2D numpy array with shape = (num_feature, dim_feature)
         """
-        self._embeddings = embeddings
         self._embeddings = np.squeeze(embeddings)
         self._instance_ids = instance_ids
+        assert len(self._embeddings.shape) == 2, 'Embedding must be 2D'
+        self._num_embedding, self._dim_embedding = self._embeddings.shape
 
     @abstractmethod
     def search(self, query_embeddings, top_k):

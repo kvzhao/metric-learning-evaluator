@@ -4,6 +4,8 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
+import numpy as np
+
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.utils.switcher import switch
@@ -36,3 +38,12 @@ class IndexAgent:
     
     def search(self, query_embeddings, top_k=10):
         return self.agent_engine.search(query_embeddings, top_k)
+
+    @property
+    def distance_matrix(self):
+        # Notice: This function is time and space consuming.
+        indices, distances = self.agent_engine.search(
+            self.agent_engine._embeddings, self.agent_engine._num_embedding)
+        for i, (idx, dist) in enumerate(zip(indices, distances)):
+            distances[i, ...] = distances[i, np.argsort(idx)]
+        return distances

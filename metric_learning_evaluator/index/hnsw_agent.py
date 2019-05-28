@@ -36,10 +36,9 @@ class HNSWAgent(AgentBase):
         """Build search engine and index
         """
         assert len(self._embeddings.shape) == 2, 'Embedding must be 2D'
-        counts, embedding_size = self._embeddings.shape
         self.engine = hnswlib.Index(space=self._distance_measure,
-                                    dim=embedding_size)
-        self.engine.init_index(max_elements=counts,
+                                    dim=self._dim_embedding)
+        self.engine.init_index(max_elements=self._num_embedding,
                                ef_construction=self._ef_construction, M=self._M)
 
         self.engine.add_items(self._embeddings, self._instance_ids)

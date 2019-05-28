@@ -38,9 +38,8 @@ class NumpyAgent(AgentBase):
         """
 
         batch_size = query_embeddings.shape[0]
-        database_size, embedding_size = self._embeddings.shape
-        if top_k is None or top_k > database_size:
-            top_k = database_size
+        if top_k is None or top_k > self._num_embedding:
+            top_k = self._num_embedding
 
         batch_distances = np.empty((batch_size, top_k), dtype=np.float32)
         batch_indices = np.empty((batch_size, top_k), dtype=np.float32)
