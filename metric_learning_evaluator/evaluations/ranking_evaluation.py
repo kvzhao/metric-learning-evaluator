@@ -114,12 +114,10 @@ class RankingEvaluation(MetricEvaluationBase):
 
             for group_cmd in self.group_commands:
                 fetched = attribute_container.get_instance_id_by_group_command(group_cmd)
-                group_instance_ids = fetched[group_cmd]
-                num_of_instance_given_group = len(group_instance_ids)
-                if num_of_instance_given_group == 0:
+                instance_ids = fetched[group_cmd]
+                if len(instance_ids) == 0:
                     continue
-                instance_ids = group_instance_ids
-                label_ids = embedding_container.get_label_by_instance_ids(group_instance_ids)
+                label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
 
                 self._sample_and_rank(group_cmd, instance_ids, label_ids, embedding_container)
 

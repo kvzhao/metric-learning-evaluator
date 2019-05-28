@@ -35,9 +35,7 @@ def create_embedding_container_from_featobj(folder_path, verbose=True):
     # pseudo instance_ids
     pseudo_instance_ids = np.arange(embeddings.shape[0])
 
-    if instance_ids is None:
-        instance_ids = pseudo_instance_ids
-    elif instance_ids.size == 0:
+    if instance_ids is None or instance_ids.size == 0:
         instance_ids = pseudo_instance_ids
 
     num_feature, dim_feature = embeddings.shape
