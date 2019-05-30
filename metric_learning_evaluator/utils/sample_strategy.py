@@ -320,6 +320,8 @@ class SampleStrategy(object):
             maximum_of_sampled_data:
           Returns:
             Dict of db instances, labels and query instances, labels.
+          TODO:
+            - keyword supports: all_instance (different strategy when used in database & query)
         """
         if isinstance(num_of_query_class, str):
             if num_of_query_class == sample_fields.all_class:
