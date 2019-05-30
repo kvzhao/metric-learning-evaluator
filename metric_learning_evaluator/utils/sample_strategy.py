@@ -168,8 +168,9 @@ class SampleStrategy(object):
             A dict of sampled instance and label ids
 
           Strategy:
-            Trade-off between #of required and #of total data and if sampled data exceeds maximum
-            reduce instances per class.
+            * Trade-off between #of required and #of total data and if sampled data exceeds maximum
+              reduce instances per class.
+            * If all_instance is chosen, no maximum_of_sampled will be checked
         """
         # sanity check
         if isinstance(num_of_sampled_class, str):
@@ -178,32 +179,37 @@ class SampleStrategy(object):
         elif not isinstance(num_of_sampled_class, int):
             raise TypeError('num_of_sampled_class must be integer')
 
+        maximum_check = True
         if isinstance(num_of_sampled_instance_per_class, str):
-            raise NotImplementedError('{} is not supported'.format(
-                num_of_sampled_instance_per_class))
+            if num_of_sampled_instance_per_class not in [sample_fields.all_instance]:
+                raise NotImplementedError('{} is not supported'.format(
+                    num_of_sampled_instance_per_class))
+            else:
+                maximum_check = False
         elif not isinstance(num_of_sampled_instance_per_class, int):
             raise TypeError('num_of_sampled_instance_per_class must be integer')
 
-        if num_of_sampled_class > num_of_total_classes:
-            print('Assigned #of class > provided ({}>{}), sample {} classes only.'.format(
-                num_of_sampled_class, num_of_total_classes, num_of_total_classes))
-            num_of_sampled_class = num_of_total_classes
-        probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance_per_class
-        if maximum_of_sampled_data:
-            upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance_per_class,
-                                              maximum_of_sampled_data)
-        else:
-            if probable_num_of_sampled_data > num_of_total_instances:
-                upper_bound_of_sampled_data = num_of_total_instances
+        if maximum_check:
+            if num_of_sampled_class > num_of_total_classes:
+                print('Assigned #of class > provided ({}>{}), sample {} classes only.'.format(
+                    num_of_sampled_class, num_of_total_classes, num_of_total_classes))
+                num_of_sampled_class = num_of_total_classes
+            probable_num_of_sampled_data = num_of_sampled_class * num_of_sampled_instance_per_class
+            if maximum_of_sampled_data:
+                upper_bound_of_sampled_data = min(num_of_sampled_class * num_of_sampled_instance_per_class,
+                                                maximum_of_sampled_data)
             else:
-                upper_bound_of_sampled_data = probable_num_of_sampled_data
-        if probable_num_of_sampled_data > upper_bound_of_sampled_data:
-            reduced_num_of_sampled_instance = math.floor(
-                upper_bound_of_sampled_data / num_of_sampled_class)
-            print(
-                'Notice: Reduce number of sampled instances per class from {} to {} due to limitation.'.format(
-                    num_of_sampled_instance_per_class, reduced_num_of_sampled_instance))
-            num_of_sampled_instance_per_class = reduced_num_of_sampled_instance
+                if probable_num_of_sampled_data > num_of_total_instances:
+                    upper_bound_of_sampled_data = num_of_total_instances
+                else:
+                    upper_bound_of_sampled_data = probable_num_of_sampled_data
+            if probable_num_of_sampled_data > upper_bound_of_sampled_data:
+                reduced_num_of_sampled_instance = math.floor(
+                    upper_bound_of_sampled_data / num_of_sampled_class)
+                print(
+                    'Notice: Reduce number of sampled instances per class from {} to {} due to limitation.'.format(
+                        num_of_sampled_instance_per_class, reduced_num_of_sampled_instance))
+                num_of_sampled_instance_per_class = reduced_num_of_sampled_instance
 
         class_ids = list(set(label_ids))
         if class_sample_method == sample_fields.uniform:
@@ -233,17 +239,17 @@ class SampleStrategy(object):
         for _class in sampled_classes:
             instance_ids_per_class = instance_group[_class]
             _num_instance_per_class = len(instance_ids_per_class)
-            _num_sampled_instance_per_class = min(_num_instance_per_class,
-                                                 num_of_sampled_instance_per_class)
-
-            if instance_sample_method == sample_fields.uniform:
-                sampled_instances = np.random.choice(instance_ids_per_class,
-                                                     _num_sampled_instance_per_class,
-                                                     replace=False)
-            elif instance_sample_method == sample_fields.all_instance:
+            if isinstance(num_of_sampled_instance_per_class, str) and \
+                num_of_sampled_instance_per_class == sample_fields.all_instance:
+                _num_sampled_instance_per_class = _num_instance_per_class
                 sampled_instances = instance_ids_per_class
             else:
-                raise NotImplementedError
+                _num_sampled_instance_per_class = min(_num_instance_per_class,
+                                                    num_of_sampled_instance_per_class)
+                if instance_sample_method == sample_fields.uniform:
+                    sampled_instances = np.random.choice(instance_ids_per_class,
+                                                        _num_sampled_instance_per_class,
+                                                        replace=False)
 
             for sampled_instance in sampled_instances:
                 sampled_instance_ids.append(sampled_instance)
