@@ -43,6 +43,7 @@ from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluati
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
+from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
@@ -109,6 +110,11 @@ class EvaluatorBuilder(object):
         # Allocate evaluation object with corresponding configuration
         self.evaluations = {} # evaluations -> evaluation_objects
         for eval_name in self.configs.chosen_evaluation_names:
+            if eval_name == eval_fields.classification and self.prob_size == 0:
+                print('{} is assigned, but prob_size == 0, remove from the chosen list.'.format(eval_name))
+                # remove the chosen name in the list
+                self.configs.chosen_evaluation_names.remove(eval_name)
+                continue
             eval_config = self.configs.get_eval_config(eval_name)
             self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](eval_config, self.mode)
 
