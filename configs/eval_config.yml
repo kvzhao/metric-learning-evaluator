@@ -13,6 +13,7 @@ database:
 
 # index agent option: Numpy | HNSW
 index_agent: HNSW
+#index_agent: Numpy
 
 # upper-bound of the evaluation instances
 container_size: 100000
@@ -58,9 +59,12 @@ evaluation_options:
         sampling:
             class_sample_method: uniform
             instance_sample_method: uniform
-            num_of_db_instance: 200
-            num_of_query_class: 100
-            num_of_query_instance_per_class: 20
+            # num_of_class: <int> or `all_class`
+            # [MUST] num_of_db_class: all_class
+            # num_of_instance: <int> or `all_instance`
+            num_of_db_instance_per_class: 30
+            num_of_query_class: all_class
+            num_of_query_instance_per_class: 1
             maximum_of_sampled_data: 10000
 
         metric:
@@ -68,6 +72,7 @@ evaluation_options:
             top_k_hit_accuracy:
                 - 1
                 - 5
+                - 10
             mAP: true
 
         distance_measure:
@@ -90,7 +95,7 @@ evaluation_options:
                 - color.yellow
                 - color.red+color.blue
                 - color.red + color.blue
-                - appearance
+                - appearance.*
                 - appearance.bright
                 - appearance.dark
                 - shape.bar + shape.bag
