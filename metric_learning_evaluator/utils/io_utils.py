@@ -14,6 +14,14 @@ import numpy as np
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
+def check_instance_id(inst_id):
+    if isinstance(inst_id, str):
+        #for postfix in ['.png', '.jpg', '.jpeg', '.JPG']:
+        #    fn = fn.replace(postfix, '')
+        inst_id = inst_id.replace('.jpg','')
+        inst_id = inst_id.replace('.png','')
+    inst_id = int(inst_id)
+    return inst_id
 
 # TODO @kv : rename
 def create_embedding_container_from_featobj(folder_path, verbose=True):
