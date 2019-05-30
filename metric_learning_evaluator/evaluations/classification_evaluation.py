@@ -93,15 +93,40 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
         self.result_container = ResultContainer()
         has_database = self.configs.has_database
+        sampling_config = self.sampling
 
-
-        if has_database and attribute_container is not None:
+        if not (attribute_container is None or not has_database):
             # has attribute
-            pass
+            for group_cmd in self.group_commands:
+                fetched = attribute_container.get_instance_id_by_group_command(group_cmd)
+                instance_ids = fetched[group_cmd]
+                if len(instance_ids) == 0:
+                    continue
+                label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+                sampler = SampleStrategy(
+                embedding_container.instance_ids,
+                embedding_container.label_ids)
+
+                class_sample_method = sampling_config[sample_fields.class_sample_method]
+                instance_sample_method = sampling_config[sample_fields.instance_sample_method]
+                num_of_sampled_class = sampling_config[sample_fields.num_of_sampled_class]
+                num_of_sampled_instance = sampling_config[sample_fields.num_of_sampled_instance_per_class]
+
+                sampled = sampler.sample(
+                    class_sample_method,
+                    instance_sample_method,
+                    num_of_sampled_class,
+                    num_of_sampled_instance,
+                )
+                sampled_instance_ids = sampled[sample_fields.sampled_instance_ids]
+                sampled_label_ids = sampled[sample_fields.sampled_label_ids]
+                probabilities = embedding_container.get_probability_by_instance_ids(sampled_instance_ids)
+
+                self._classification_measure(
+                    group_cmd, sampled_instance_ids, sampled_label_ids, probabilities)
+
         else:
             # no attributes
-            sampling_config = self.sampling
-
             sampler = SampleStrategy(
                 embedding_container.instance_ids,
                 embedding_container.label_ids)
@@ -138,6 +163,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
             label_ids:
             probabilities:
             NOTE: Make sure instance_ids, label_ids and probabilities are in same order.
+            TODO: Push the sampler here
         """
         cls_config = self.metrics
         top_k_list = cls_config[metric_fields.top_k_hit_accuracy]
