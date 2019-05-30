@@ -4,6 +4,7 @@
 # NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
 #       and with the key: `evaluator`.
 
+# TODO: Change name to `attribute_database`
 # database: Zeus | DatasetBackbone | Native
 database:
     database_type: Native
@@ -12,6 +13,7 @@ database:
         path: misc/sample_features/attr_table.db
 
 # index agent option: Numpy | HNSW
+#TODO: taking care about importing lib not installed
 index_agent: HNSW
 #index_agent: Numpy
 
@@ -20,6 +22,7 @@ container_size: 100000
 
 chosen_evaluations:
     - RankingEvaluation
+    - ClassificationEvaluation
 
 # Configurations for evaluator:
 evaluation_options:
@@ -54,6 +57,29 @@ evaluation_options:
                 - shape.box
         option:
             path_pairlist: # not done
+
+    ClassificationEvaluation:
+        sampling:
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_sampled_class: all_class
+            num_of_sampled_instance_per_class: all_instance
+            maximum_of_sampled_data: 100000
+
+        metric:
+            top_k_hit_accuracy:
+                - 1
+                - 5
+
+        distance_measure:
+
+        attribute:
+            group:
+                - appearance.bright
+                - shape.bar + shape.bag
+                - shape.bottle
+                - shape.box
+        option:
 
     RankingEvaluation:
         sampling:
@@ -95,7 +121,6 @@ evaluation_options:
                 - color.yellow
                 - color.red+color.blue
                 - color.red + color.blue
-                - appearance.*
                 - appearance.bright
                 - appearance.dark
                 - shape.bar + shape.bag
