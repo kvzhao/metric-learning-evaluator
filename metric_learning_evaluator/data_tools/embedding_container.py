@@ -159,6 +159,38 @@ class EmbeddingContainer(object):
                 indices.append(self._index_by_instance_id[inst_id])
         return self._embeddings[indices, ...]
 
+    def get_probability_by_instance_ids(self, instance_ids):
+        """Fetch batch of prob vectors by given instance ids."""
+        if self._prob_size == 0:
+            return np.asarray([])
+        if not (type(instance_ids) is int or type(instance_ids) is list):
+            if isinstance(instance_ids, (np.ndarray, np.generic)):
+                instance_ids = instance_ids.tolist()
+            else:
+                raise ValueError('instance_ids should be int or list.')
+        if isinstance(instance_ids, int):
+            instance_ids = [instance_ids]
+        indices = [self._index_by_instance_id[img_id] for img_id in instance_ids]
+        return self._probs[indices, ...]
+
+    def get_probability_by_label_ids(self, label_ids):
+        """Fetch batch of prob vectors by given label ids."""
+        if self._prob_size == 0:
+            return np.asarray([])
+        if not (type(label_ids) is int or type(label_ids) is list):
+            raise ValueError('instance_ids should be int or list.')
+            if isinstance(label_ids, (np.ndarray, np.generic)):
+                label_ids = label_ids.tolist()
+            else:
+                raise ValueError('instance_ids should be int or list.')
+        if isinstance(label_ids, int):
+            label_ids = [label_ids]
+        indices = []
+        for label_id in label_ids:
+            for inst_id in self.get_instance_ids_by_label(label_id):
+                indices.append(self._index_by_instance_id[inst_id])
+        return self._probs[indices, ...]
+
     def get_label_by_instance_ids(self, instance_ids):
         """Fetch the labels from given instance_ids."""
         if isinstance(instance_ids, list):
