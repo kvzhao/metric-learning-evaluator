@@ -158,7 +158,10 @@ class EvaluatorBuilder(object):
         self.embedding_container.add(instance_id, label_id, embedding, probability)
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
-            print ('{} embeddings are added.'.format(self.embedding_container.counts))
+            if probability is None:
+                print ('{} embeddings are added.'.format(self.embedding_container.counts))
+            else:
+                print ('{} embeddings and probabilities are added.'.format(self.embedding_container.counts))
         
         # TODO: consider move `add_instance_id_and_query_attribute` here.
         # Collect all `attribute_name`

@@ -371,7 +371,6 @@ class SampleStrategy(object):
                 continue
             elif num_instance_given_class < required_num_of_instance_per_class:
                 # ======== TODO: need more specific rules ==========
-                print('NOTICE: label_id:{} Required instances is more than acquired, Reduced.'.format(_class))
                 if not need_query:
                     if num_instance_given_class < num_of_db_instance_per_class:
                         sampled_database_instance_ids.extend(instance_ids_of_given_class)
@@ -387,6 +386,7 @@ class SampleStrategy(object):
                     if num_of_db_instance_per_class < num_instance_given_class:
                         # complete database buffer, set the rest as query
                         _reduced_num_of_query = num_instance_given_class - num_of_db_instance_per_class
+                        _reduced_num_of_database = num_instance_given_class - _reduced_num_of_query
                         sampled_database_instance_ids.extend(instance_ids_of_given_class[:num_of_db_instance_per_class])
                         sampled_database_label_ids.extend([_class] * num_of_db_instance_per_class)
                         sampled_query_instance_ids.extend(instance_ids_of_given_class[num_of_db_instance_per_class:])
@@ -394,6 +394,7 @@ class SampleStrategy(object):
                     elif num_of_query_instance_per_class < num_instance_given_class:
                         # complete query buffer, set the rest as database
                         _reduced_num_of_database = num_instance_given_class - num_of_query_instance_per_class
+                        _reduced_num_of_query = num_instance_given_class - _reduced_num_of_database
                         sampled_query_instance_ids.extend(instance_ids_of_given_class[:num_of_query_instance_per_class])
                         sampled_query_label_ids.extend([_class] * num_of_query_instance_per_class)
                         sampled_database_instance_ids.extend(instance_ids_of_given_class[num_of_query_instance_per_class:])
@@ -406,6 +407,10 @@ class SampleStrategy(object):
                         sampled_database_label_ids.extend([_class] * _reduced_num_of_query)
                         sampled_query_instance_ids.extend(instance_ids_of_given_class[_reduced_num_of_query:])
                         sampled_query_label_ids.extend([_class] * _reduced_num_of_database)
+                print('''NOTICE: label_id:{} Required instances(#={}) is more than acquired(#={}), '''
+                      '''Reduced (#of query={}, #of db={}).'''.format(
+                    _class, required_num_of_instance_per_class, num_instance_given_class,
+                    _reduced_num_of_query, _reduced_num_of_database))
             else:
                 _sampled_instance_ids = np.random.choice(
                     instance_ids_of_given_class, required_num_of_instance_per_class, replace=False)

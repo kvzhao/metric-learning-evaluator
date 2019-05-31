@@ -22,7 +22,8 @@ class NumpyAgent(AgentBase):
 
         self.distance_measure = distance_measure
         self._build()
-        print('Numpy Index Agent is initialized')
+        print('Numpy Index Agent is initialized with {} features'.format(
+            self._num_embedding))
 
     def _build(self):
         self._indices = np.asarray(self._instance_ids)

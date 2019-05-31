@@ -155,6 +155,7 @@ def main():
 
             total_results = evaluator.evaluate()
 
+            print('----- evaluation results -----')
             for metric_name in evaluator.metric_names:
                 if metric_name in total_results:
                     print('{}: {}'.format(metric_name, total_results[metric_name]))
