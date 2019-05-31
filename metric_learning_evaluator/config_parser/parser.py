@@ -56,7 +56,6 @@ class ConfigParser(object):
         # Make sure self._config is legal dict before parsing.
         self._parse()
 
-
     def _parse(self):
 
         # Fetch valid evaluation names
@@ -116,7 +115,6 @@ class ConfigParser(object):
             return False
         else:
             return True
-
 
     @property
     def container_size(self):
@@ -326,10 +324,11 @@ class EvaluationConfigParser(object):
     def attribute_cross_reference_commands(self):
         # return: List of commands
         attr_section = self.attribute_section
-        if config_fields.cross_reference in attr_section:
+        if config_fields.cross_reference in attr_section and attr_section[config_fields.cross_reference]:
             # parse string respectively
             cross_reference_commands = attr_section[config_fields.cross_reference]
-            cross_reference_commands = [self._remove_blanks(cmd) for cmd in cross_reference_commands]
+            cross_reference_commands = [self._remove_blanks(cmd)
+                for cmd in cross_reference_commands if cmd is not None]
             return list(set(cross_reference_commands))
         else:
             return []
@@ -351,10 +350,10 @@ class EvaluationConfigParser(object):
     def attribute_group_commands(self):
         # return: List of commands
         attr_section = self.attribute_section
-        if config_fields.group in attr_section:
+        if config_fields.group in attr_section and attr_section[config_fields.group]:
             # parse string respectively
             group_commands = attr_section[config_fields.group]
-            group_commands = [self._remove_blanks(cmd) for cmd in group_commands]
+            group_commands = [self._remove_blanks(cmd) for cmd in group_commands if cmd is not None]
             return list(set(group_commands))
         else:
             return []
