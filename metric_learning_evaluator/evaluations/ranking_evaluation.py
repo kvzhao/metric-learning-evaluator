@@ -114,12 +114,17 @@ class RankingEvaluation(MetricEvaluationBase):
 
             for group_cmd in self.group_commands:
                 fetched = attribute_container.get_instance_id_by_group_command(group_cmd)
-                instance_ids = fetched[group_cmd]
-                if len(instance_ids) == 0:
-                    continue
-                label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+                instance_ids_given_attribute = fetched[group_cmd]
+                if len(instance_ids_given_attribute) == 0:
+                    if group_cmd == attr_fields.All:
+                        # NOTE: round-off
+                        instance_ids_given_attribute = embedding_container.instance_ids
+                    else:
+                        continue
+                label_ids_given_attribute = embedding_container.get_label_by_instance_ids(instance_ids_given_attribute)
 
-                self._sample_and_rank(group_cmd, instance_ids, label_ids, embedding_container)
+                self._sample_and_rank(group_cmd,
+                    instance_ids_given_attribute, label_ids_given_attribute, embedding_container)
 
             # ====== Cross References =====
             # NOTE: How to handle db & query here?

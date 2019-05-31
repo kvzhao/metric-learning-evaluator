@@ -83,7 +83,6 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
           Return:
             results, ResultContainer
-
         """
 
         # check the size is non-zero
@@ -93,70 +92,36 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
         self.result_container = ResultContainer()
         has_database = self.configs.has_database
-        sampling_config = self.sampling
 
+        # TODO: Merge two cases: has attribute or not
         if not (attribute_container is None or not has_database):
             # has attribute
             for group_cmd in self.group_commands:
                 fetched = attribute_container.get_instance_id_by_group_command(group_cmd)
-                instance_ids = fetched[group_cmd]
-                if len(instance_ids) == 0:
-                    continue
-                label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
-                sampler = SampleStrategy(
-                embedding_container.instance_ids,
-                embedding_container.label_ids)
+                instance_ids_given_attribute = fetched[group_cmd]
 
-                class_sample_method = sampling_config[sample_fields.class_sample_method]
-                instance_sample_method = sampling_config[sample_fields.instance_sample_method]
-                num_of_sampled_class = sampling_config[sample_fields.num_of_sampled_class]
-                num_of_sampled_instance = sampling_config[sample_fields.num_of_sampled_instance_per_class]
-
-                sampled = sampler.sample(
-                    class_sample_method,
-                    instance_sample_method,
-                    num_of_sampled_class,
-                    num_of_sampled_instance,
-                )
-                sampled_instance_ids = sampled[sample_fields.sampled_instance_ids]
-                sampled_label_ids = sampled[sample_fields.sampled_label_ids]
-                probabilities = embedding_container.get_probability_by_instance_ids(sampled_instance_ids)
+                if len(instance_ids_given_attribute) == 0:
+                    if group_cmd == attr_fields.All:
+                        # NOTE: round-off
+                        instance_ids_given_attribute = embedding_container.instance_ids
+                    else:
+                        continue
 
                 self._classification_measure(
-                    group_cmd, sampled_instance_ids, sampled_label_ids, probabilities)
+                    group_cmd, instance_ids_given_attribute, embedding_container)
 
         else:
             # no attributes
-            sampler = SampleStrategy(
-                embedding_container.instance_ids,
-                embedding_container.label_ids)
-
-            class_sample_method = sampling_config[sample_fields.class_sample_method]
-            instance_sample_method = sampling_config[sample_fields.instance_sample_method]
-            num_of_sampled_class = sampling_config[sample_fields.num_of_sampled_class]
-            num_of_sampled_instance = sampling_config[sample_fields.num_of_sampled_instance_per_class]
-
-            sampled = sampler.sample(
-                class_sample_method,
-                instance_sample_method,
-                num_of_sampled_class,
-                num_of_sampled_instance,
-            )
-
-            instance_ids = sampled[sample_fields.sampled_instance_ids]
-            label_ids = sampled[sample_fields.sampled_label_ids]
-            probabilities = embedding_container.get_probability_by_instance_ids(instance_ids)
 
             self._classification_measure(
-                attr_fields.All, instance_ids, label_ids, probabilities)
+                attr_fields.All, instance_ids, embedding_container)
 
         return self.result_container
 
     def _classification_measure(self,
                                 attr_name,
                                 instance_ids,
-                                label_ids,
-                                probabilities,):
+                                embedding_container):
         """
           Args:
             instance_ids:
@@ -166,16 +131,38 @@ class ClassificationEvaluation(MetricEvaluationBase):
             TODO: Push the sampler here
         """
         cls_config = self.metrics
+        sampling_config = self.sampling
+
+        # all instance_ids & label_ids
+        label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+        sampler = SampleStrategy(instance_ids, label_ids)
+
+        class_sample_method = sampling_config[sample_fields.class_sample_method]
+        instance_sample_method = sampling_config[sample_fields.instance_sample_method]
+        num_of_sampled_class = sampling_config[sample_fields.num_of_sampled_class]
+        num_of_sampled_instance = sampling_config[sample_fields.num_of_sampled_instance_per_class]
+
+        sampled = sampler.sample(
+            class_sample_method,
+            instance_sample_method,
+            num_of_sampled_class,
+            num_of_sampled_instance,
+        )
+
+        sampled_instance_ids = sampled[sample_fields.sampled_instance_ids]
+        sampled_label_ids = sampled[sample_fields.sampled_label_ids]
+        sampled_probabilities = embedding_container.get_probability_by_instance_ids(instance_ids)
+
         top_k_list = cls_config[metric_fields.top_k_hit_accuracy]
 
         for top_k in top_k_list:
             if top_k == 1:
                 continue
             cls_metrics = RankingMetrics(top_k)
-            hit_arrays = np.empty((probabilities.shape[0], top_k), dtype=np.bool)
+            hit_arrays = np.empty((sampled_probabilities.shape[0], top_k), dtype=np.bool)
 
-            for _idx, gt_label_id in enumerate(label_ids):
-                prob = probabilities[_idx]
+            for _idx, gt_label_id in enumerate(sampled_label_ids):
+                prob = sampled_probabilities[_idx]
                 top_k_hit_ids = np.argsort(prob)[:top_k]
                 top_k_hit_ids = top_k_hit_ids == gt_label_id
                 hit_arrays[_idx, ...] = top_k_hit_ids
