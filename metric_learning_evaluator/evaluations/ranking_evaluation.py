@@ -14,7 +14,6 @@ from random import shuffle
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
-from metric_learning_evaluator.data_tools.attribute_container  import AttributeContainer
 
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
@@ -90,72 +89,51 @@ class RankingEvaluation(MetricEvaluationBase):
                             _metric_names.append(_name)
         return _metric_names
 
-    def compute(self, embedding_container, attribute_container=None):
+    def compute(self, embedding_container):
         """Compute function
           Args:
             embedding_container: EmbeddingContainer
-            attribute_container: AttributeContainer, optional.
           Return:
             result_container: ResultContainer
         """
 
         # NOTE: Set result container as internal object
         self.result_container = ResultContainer()
-        has_database = self.configs.has_database
 
-        if not (attribute_container is None or not has_database):
-            # With attribute container & database
-            # Grouping & Reference are independent
-            
-            # ===== Groupings =====
-            # should we go through items?
-            group_items = self.configs.attribute_group_items
-            cref_items = self.configs.attribute_cross_reference_items
+        # ===== Groupings =====
+        # should we go through items?
+        group_items = self.configs.attribute_group_items
+        cref_items = self.configs.attribute_cross_reference_items
 
-            for group_cmd in self.group_commands:
-                fetched = attribute_container.get_instance_id_by_group_command(group_cmd)
-                instance_ids_given_attribute = fetched[group_cmd]
-                if len(instance_ids_given_attribute) == 0:
-                    if group_cmd == attr_fields.All:
-                        # NOTE: round-off
-                        instance_ids_given_attribute = embedding_container.instance_ids
-                    else:
-                        continue
-                label_ids_given_attribute = embedding_container.get_label_by_instance_ids(instance_ids_given_attribute)
+        for group_cmd in self.group_commands:
+            instance_ids_given_attribute = \
+                embedding_container.get_instance_id_by_group_command(group_cmd)
+            if len(instance_ids_given_attribute) == 0:
+                continue
+            label_ids_given_attribute = \
+                embedding_container.get_label_by_instance_ids(instance_ids_given_attribute)
 
-                self._sample_and_rank(group_cmd,
-                    instance_ids_given_attribute, label_ids_given_attribute, embedding_container)
+            self._sample_and_rank(group_cmd, instance_ids_given_attribute,
+                label_ids_given_attribute, embedding_container)
 
-            # ====== Cross References =====
-            # NOTE: How to handle db & query here?
-            # Command: A->B. Sample on both A & B, then retrieve A from B.
-            for cref_cmd in self.cross_reference_commands:
-                fetched_query, fetched_database = attribute_container.get_instance_id_by_cross_reference_command(cref_cmd)
-                query_instance_ids, database_instance_ids = [], []
-                for query_cmd, _instance_ids in fetched_query.items():
-                    query_instance_ids.extend(_instance_ids)
-                for database_cmd, _instance_ids in fetched_database.items():
-                    database_instance_ids.extend(_instance_ids)
-                if len(query_instance_ids) == 0 or len(database_instance_ids) == 0:
-                    continue
-                query_embeddings = embedding_container.get_embedding_by_instance_ids(query_instance_ids)
-                query_label_ids = embedding_container.get_label_by_instance_ids(query_instance_ids)
-                database_embeddings = embedding_container.get_embedding_by_instance_ids(database_instance_ids)
-                database_label_ids = embedding_container.get_label_by_instance_ids(database_instance_ids)
+        # ====== Cross References =====
+        # NOTE: How to handle db & query here?
+        # Command: A->B. Sample on both A & B, then retrieve A from B.
+        for cref_cmd in self.cross_reference_commands:
+            query_instance_ids, database_instance_ids = \
+                embedding_container.get_instance_id_by_cross_reference_command(cref_cmd)
+            if len(query_instance_ids) == 0 or len(database_instance_ids) == 0:
+                continue
+            query_embeddings = embedding_container.get_embedding_by_instance_ids(query_instance_ids)
+            query_label_ids = embedding_container.get_label_by_instance_ids(query_instance_ids)
+            database_embeddings = embedding_container.get_embedding_by_instance_ids(database_instance_ids)
+            database_label_ids = embedding_container.get_label_by_instance_ids(database_instance_ids)
 
-                self._rank(cref_cmd, embedding_container,
-                    query_label_ids, query_label_ids, query_embeddings,
-                    database_instance_ids, database_label_ids, database_embeddings,)
+            self._rank(cref_cmd, embedding_container,
+                query_label_ids, query_label_ids, query_embeddings,
+                database_instance_ids, database_label_ids, database_embeddings,)
 
-            return self.result_container
-        else:
-            # Without attribute container, sample database and query for evaluation
-            instance_ids = embedding_container.instance_ids
-            label_ids = embedding_container.label_ids
-
-            self._sample_and_rank(attr_fields.All, instance_ids, label_ids, embedding_container)
-
-            return self.result_container
+        return self.result_container
 
     def _rank(self,
               attr_name,

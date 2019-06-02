@@ -1,4 +1,8 @@
 """
+  NOTICE:
+    The AttributeContainer is DEPRECATED, all functionalities are fully supported
+    by EmbeddingContainer instead.
+    
     Define data containers for the metric learning evaluator.
 
     Brief intro:
@@ -75,6 +79,11 @@ class AttributeContainer(object):
       Operations:
         - add: put one datum into container
 
+      Special Group Commands:
+        - all
+        - per_attribute
+        - per_category
+      Special Cross Reference Commands:
     """
 
     def __init__(self):

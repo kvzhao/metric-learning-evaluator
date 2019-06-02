@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.abspath(
 import numpy as np
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
@@ -73,13 +72,12 @@ class ClassificationEvaluation(MetricEvaluationBase):
                             _metric_names.append(_name)
         return _metric_names
 
-    def compute(self, embedding_container, attribute_container=None):
+    def compute(self, embedding_container):
         """Compute Accuracy.
             Get compute classification metrics with categorical scores and label from embedding_container.
             
           Args:
             embedding_container, EmbeddingContainer 
-            attribute_container, AttributeContainer
 
           Return:
             results, ResultContainer
@@ -91,30 +89,15 @@ class ClassificationEvaluation(MetricEvaluationBase):
             raise AttributeError('Logits should be provided when {} is performed'.format(self.evaluation_name))
 
         self.result_container = ResultContainer()
-        has_database = self.configs.has_database
 
-        # TODO: Merge two cases: has attribute or not
-        if not (attribute_container is None or not has_database):
-            # has attribute
-            for group_cmd in self.group_commands:
-                fetched = attribute_container.get_instance_id_by_group_command(group_cmd)
-                instance_ids_given_attribute = fetched[group_cmd]
-
-                if len(instance_ids_given_attribute) == 0:
-                    if group_cmd == attr_fields.All:
-                        # NOTE: round-off
-                        instance_ids_given_attribute = embedding_container.instance_ids
-                    else:
-                        continue
-
-                self._classification_measure(
-                    group_cmd, instance_ids_given_attribute, embedding_container)
-
-        else:
-            # no attributes
+        # has attribute
+        for group_cmd in self.group_commands:
+            instance_ids_given_attribute = embedding_container.get_instance_id_by_group_command(group_cmd)
+            if len(instance_ids_given_attribute) == 0:
+                continue
 
             self._classification_measure(
-                attr_fields.All, instance_ids, embedding_container)
+                group_cmd, instance_ids_given_attribute, embedding_container)
 
         return self.result_container
 

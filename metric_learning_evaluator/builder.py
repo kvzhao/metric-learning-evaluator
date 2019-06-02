@@ -29,7 +29,6 @@ import yaml
 import numpy as np
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 from metric_learning_evaluator.query.general_database import QueryInterface
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
@@ -72,6 +71,8 @@ class EvaluatorBuilder(object):
             * add datum
             * run evaluate
             * (optional) get update_ops
+        TODO:
+            - deprecate attribute container
         """
 
         # TODO @kv: Change config_path to parsed dictionary
@@ -83,7 +84,6 @@ class EvaluatorBuilder(object):
         self.prob_size = prob_size
 
         self.embedding_container = EmbeddingContainer(embedding_size, prob_size, container_size)
-        self.attribute_container = AttributeContainer()
 
         self.mode = mode
         if self.mode not in ['online', 'offline']:
@@ -155,36 +155,28 @@ class EvaluatorBuilder(object):
         # TODO @kv: If instance_id is None, use index as default.
         if instance_id is None or instance_id == -1:
             instance_id = self._instance_counter
-        self.embedding_container.add(instance_id, label_id, embedding, probability)
+
+        if self.query_interface:
+            queried_attributes = self.query_interface.query(instance_id)
+            self.embedding_container.add(instance_id, label_id,
+                embedding, probability, attributes=queried_attributes)
+        else:
+            self.embedding_container.add(instance_id, label_id, embedding, probability)
+
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
             if probability is None:
                 print ('{} embeddings are added.'.format(self.embedding_container.counts))
             else:
                 print ('{} embeddings and probabilities are added.'.format(self.embedding_container.counts))
-        
-        # TODO: consider move `add_instance_id_and_query_attribute` here.
-        # Collect all `attribute_name`
-        # if not evaluations_need_query: no queries are needed.
-
-        if self.query_interface:
-            # TODO @dennis.liu : use grouping rules instead required_attributes
-            # if not self.configs.required_attributes:
-            #     print ('WARNING: No required attributes are pre-defined.')
-            # TODO @kv: refactoring
-            queried_attributes = self.query_interface.query(instance_id)
-            # TODO @kv: Should we check the quired attribute contains in required?
-            self.attribute_container.add(int(instance_id), queried_attributes)
 
         self._instance_counter += 1
 
-    def add_container(self, embedding_container=None, attribute_container=None):
-        """Add filled containers
-           Both embedding & attribute should be provided previously.
+    def add_container(self, embedding_container=None):
+        """Add filled containers which should be provided previously.
 
           Args:
             embedding_container: EmbeddingContainer, default is None.
-            attribute_container: AttributeContainer, default is None.
           Notice:
             Sanity check:
         """
@@ -197,13 +189,6 @@ class EvaluatorBuilder(object):
             self.embedding_container = embedding_container
             print('Update embedding container.')
 
-        if attribute_container is not None:
-            if not isinstance(attribute_container, AttributeContainer):
-                return
-            self.attribute_container.clear()
-            self.attribute_container = attribute_container
-            print('Update attribute container.')
-    
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
         
@@ -215,8 +200,8 @@ class EvaluatorBuilder(object):
         #TODO @kv: Consider with metric_names together
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
-            res_container = _evaluation.compute(self.embedding_container,
-                                                   self.attribute_container)
+            res_container = _evaluation.compute(self.embedding_container)
+
             # TODO: flatten results and return
             if _eval_name in EVALUATION_DISPLAY_NAMES:
                 _display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
@@ -245,7 +230,6 @@ class EvaluatorBuilder(object):
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""
         self.embedding_container.clear()
-        self.attribute_container.clear()
 
         for _, _container in self._total_metrics.items():
             _container.clear()

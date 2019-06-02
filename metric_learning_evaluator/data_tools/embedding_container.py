@@ -9,6 +9,8 @@
         AttributeContainer:
             Data object for maintaining attribute table in each EvaluationObject.
 
+    NOTE: The container is the stack,
+
     @bird, dennis, kv
 """
 import os
@@ -16,6 +18,7 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
+import re
 import numpy as np
 
 from abc import ABCMeta
@@ -23,6 +26,14 @@ from abc import abstractmethod
 import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+
+
+from metric_learning_evaluator.utils.switcher import switch
+from metric_learning_evaluator.query.general_database import QueryInterface
+from metric_learning_evaluator.utils.interpreter import Interpreter
+from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
+from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_field
 
 
 class EmbeddingContainer(object):
@@ -39,7 +50,6 @@ class EmbeddingContainer(object):
       TODO @kv: implement save & load for data container.
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
-      TODO @kv: logits --> scores (used for classifier)
       TODO @kv: maybe we should add filename in container.
       TODO @kv: update or init container with blob of numpy array
 
@@ -64,17 +74,17 @@ class EmbeddingContainer(object):
         self._embedding_size = embedding_size
         self._prob_size = prob_size
         self._container_size = container_size
+        # TODO: Check the dimensionality of size
         self._embeddings = np.empty((container_size, embedding_size), dtype=np.float32)
         if prob_size == 0:
             self._probs = None
         else:
             self._probs = np.empty((container_size, prob_size), dtype=np.float32)
-        self._label_by_instance_id = {}
-        self._index_by_instance_id = {}
-        self._instance_id_by_label = defaultdict(list)
-        # orderness is maintained in _instance_ids
-        self._instance_ids = []
-        self._label_ids = []
+
+        self._init_internals()
+
+        # used for parsing commands
+        self._interpreter = Interpreter()
 
         self._name = name
         self._current = 0
@@ -82,20 +92,48 @@ class EmbeddingContainer(object):
     def __repr__(self):
         _content = '===== {} =====\n'.format(self._name)
         _content += 'embeddings: {}'.format(self._embeddings.shape)
-    
-    def add(self, instance_id, label_id, embedding, prob=None):
+
+    def _init_internals(self):
+        # maps index used in numpy array and instance_id list
+        self._label_by_instance_id = {}
+        self._index_by_instance_id = {}
+        # orderness should be maintained in _instance_ids
+        self._instance_ids = []
+        self._label_ids = []
+        self._filename_strings = []
+        self._label_names = []
+        # attribute-id mapping, shallow key-value pair
+        self._instance_id_by_label = defaultdict(list)
+        self._attribute_by_instance = defaultdict(list)
+        # instance_ids with same attribute
+        self._instance_by_attribute = {}
+
+    def add(self, instance_id, label_id, embedding,
+            prob=None, attributes=None, label_name=None, filename=None):
         """Add instance_id, label_id and embeddings.
-        TODO: Add one more argument: prob
+        TODO: Add attributes, label_name, filename and more.
           Args:
-            instance_id, int:
+            instance_id: int
                 Unique instance_id which can not be repeated in the container.
-            label_id, int:
+            label_id: int
                 Index of given class corresponds to the instance.
-            embedding, numpy array:
+            embedding: 1D numpy array:
                 One dimensional embedding vector with size less than self._embedding_size.
-            (optional) prob, numpy array:
+            prob: 1D numpy array:
                 One dimensional vector which records class-wise scores.
+            attributes: List of strings
+                List of attributes corresponding to the given instance_id
+            label_name: String
+                Human-realizable content of given label_id
+            filename: String
+                The filename or filepath to the given instance_id.
         """
+        # check type of label_id, instance_id, TODO: Use more elegant way
+        try:
+            label_id = int(label_id)
+            instance_id = int(instance_id)
+        except:
+            raise TypeError("The label id or instance id has wrong type")
 
         # assertions: embedding size, 
         assert embedding.shape[0] <= self._embedding_size, "Size of embedding vector is greater than the default."
@@ -111,15 +149,20 @@ class EmbeddingContainer(object):
 
         self._embeddings[self._current, ...] = embedding
 
-        if not prob is None:
+        if prob is not None:
             self._probs[self._current, ...] = prob
 
-        # check type of label_id, instance_id
-        try:
-            label_id = int(label_id)
-            instance_id = int(instance_id)
-        except:
-            raise TypeError("The label id or instance id has wrong type")
+        if attributes is not None:
+            if isinstance(attributes, str):
+                attributes = [attributes]
+            if not all(isinstance(_attr, str) for _attr in attributes):
+                raise ValueError('attributes type should be str or list of str.')
+            self._attribute_by_instance[instance_id] = attributes
+            for _attr in attributes:
+                if _attr in self._instance_by_attribute:
+                    self._instance_by_attribute[_attr].append(instance_id)
+                else:
+                    self._instance_by_attribute[_attr] = [instance_id]
 
         # NOTE: same instance_id maps to many embedding!?
         self._index_by_instance_id[instance_id] = self._current
@@ -127,6 +170,8 @@ class EmbeddingContainer(object):
         self._instance_id_by_label[label_id].append(instance_id)
         self._instance_ids.append(instance_id)
         self._label_ids.append(label_id)
+        self._label_names.append(label_name)
+        self._filename_strings.append(filename)
 
         self._current += 1
 
@@ -266,16 +311,121 @@ class EmbeddingContainer(object):
 
     def clear(self):
         # clear dictionaries
-        self._index_by_instance_id = {}
-        self._label_by_instance_id = {}
-        self._instance_ids = []
-        
+        self._init_internals()
         # reset the current index, rewrite array instead of clear elements.
         self._current = 0
         print ('Clear embedding container.')
 
     def save(self, path):
+        # Save as feature_object
         pass
 
     def load(self, path):
         pass
+
+    # Add new functions
+    def get_instance_id_by_attribute(self, attribute_name):
+        """
+          Args:
+            attribute_name: string
+          Return:
+            instance_ids: list, empty if query can not be found
+        """
+        if attribute_name in self._instance_by_attribute:
+            return self._instance_by_attribute[attribute_name]
+        else:
+            return []
+
+    def get_instance_id_by_group_command(self, command):
+        """
+          Args:
+            command: string of query command in defined format
+                command = 'A+B-C'
+                where A, B, C are attribute_name
+          Return:
+            results: list of integer
+          NOtE: Special commands:
+            - all
+            (TODO)- all_class
+            (TODO)- all_attribute
+        """
+        # Special Cases
+        if command == attr_field.All:
+            return self.instance_ids
+
+        # General Case
+        executable_codes = self._translate_command_to_executable(command)
+        self._interpreter.run_code(executable_codes)
+        results = self._interpreter.fetch()
+        self._interpreter.clear()
+        return results
+
+    def get_instance_id_by_cross_reference_command(self, command):
+        """Parse one more line than group command
+          Args:
+            command: string of query command in defined format
+                command = '(A+B)->C+D' where A, B, C, D are attribute_name
+          Returns:
+            source: list of integer
+            target: list of integer
+        """
+        def _split_cross_reference_command(command):
+            m = re.match(r'(.+)->(.+)', command)
+            source = m.group(1)
+            target = m.group(2)
+            return source, target
+
+        source_command, target_command = _split_cross_reference_command(command)
+        source_result = self.get_instance_id_by_group_command(source_command)
+        target_result = self.get_instance_id_by_group_command(target_command)
+
+        return source_result, target_result
+
+    def _translate_command_to_executable(self, single_line_command):
+        executable_command = {
+            interpreter_field.instructions: [],
+            interpreter_field.values: [],
+            interpreter_field.names: [],
+        }
+        def _translate_command(operation):
+            """Two operators are legal: +, -"""
+            operation = operation.replace(' ', '')
+            operation = re.sub(r'[(){}]', '', operation)
+            op_list = re.split(r'\w', operation)
+            operands = re.split(r'\+|\-', operation)
+            op_list = [op for op in op_list if op in ['+', '-']]
+            return operands, op_list
+        def _put_variable_in_stack(name, a_list):
+            nonlocal stack_pointer
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.LOAD_LIST, stack_pointer))
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.STORE_NAME, stack_pointer))
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.LOAD_NAME, stack_pointer))
+            executable_command[interpreter_field.names].append(name)
+            executable_command[interpreter_field.values].append(a_list)
+            stack_pointer += 1
+        def _put_command_in_stack(operator):
+            executable_command[interpreter_field.instructions].append(
+                (operator, None))
+
+        stack_pointer = 0
+        operand_names, op_list = _translate_command(single_line_command)
+        # push first variable
+
+        attr_name = operand_names.pop()
+        instance_ids = self.get_instance_id_by_attribute(attr_name)
+        _put_variable_in_stack(attr_name, instance_ids)
+
+        if len(op_list) == len(operand_names):
+            for attr_name, op_symbol in zip(operand_names, op_list):
+                ###
+                instance_ids = self.get_instance_id_by_attribute(attr_name)
+                _put_variable_in_stack(attr_name, instance_ids)
+                instruction = InstructionSymbolTable[op_symbol]
+                _put_command_in_stack(instruction)
+        else:
+            # seem to be error case
+            pass
+        return executable_command
