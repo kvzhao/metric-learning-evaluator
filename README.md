@@ -7,6 +7,23 @@
 ![](figures/tf-metric-evaluator_v0.3.png)
 
 
+## Quick Start
+
+### Installation
+
+### Usage
+
+Extract features
+```
+ml-inference -c configs/ -dd <path_to_dataset_backbone> -od <path_to_feature_object>
+```
+
+Evaluate performance
+
+```
+ml-evaluation -c configs/eval_config.yml -dd <path_to_feature_object>
+```
+
 ### Modules & Components
 - `application`: Command-line applications
 - `analysis`: Analysis tools

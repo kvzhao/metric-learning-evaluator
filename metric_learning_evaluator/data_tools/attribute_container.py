@@ -1,10 +1,14 @@
 """
+  NOTICE:
+    The AttributeContainer is DEPRECATED, all functionalities are fully supported
+    by EmbeddingContainer instead.
+    
     Define data containers for the metric learning evaluator.
 
     Brief intro:
 
         AttributeContainer:
-            Data object for maintaining attribute table in each EvaluationObejct.
+            Data object for maintaining attribute table in each EvaluationObject.
 
     @bird, dennis, kv
 """
@@ -19,44 +23,91 @@ import collections
 from collections import defaultdict
 
 import numpy as np
+import re
+
+from metric_learning_evaluator.query.general_database import QueryInterface
+
+from metric_learning_evaluator.utils.switcher import switch
+
+from metric_learning_evaluator.utils.interpreter import Interpreter
+from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
+from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_field
+
 
 class AttributeContainer(object):
-    """The Data Container for Attributes (Grouping table).
+    """The Data Container for Attributes (domain & property)
 
       Usage:
-        User would add instance_id & corresponding attributes into container
+        User would add instance_id & corresponding attributes (domain & property) into container
         then, the managed structure can be returned.
 
-      case 1:
-        Groups: {
-            "Shape.Cup": [<instance_id:1>, <instance_id:2>, <instance_id:3>],
-            "Color.Red": [<instance_id:1>, <instance_id:3>, <instance_id:5>, ...],
-        }
+        Attribute is devidded into two types:
+          - Property:
+                Property acts as filtering condition like tag
+          - Domain:
+                Domain serves as grouping condition in evaluation
+        Both types will be `flatten` as attribute_name in the container.
 
-      case 2:
-        ImageAttributes: {
-            instance_id: ["Shape.Bottle", "Color.Blue", ...],
-        }
+        General query interface will turn structure attributes into tag
+
+        Example:
+            instance_id:1
+                domain: database
+                property:
+                    - color: red
+                    - shape: square
+
+            instance_id:2
+                domain: database
+                property:
+                    - color: yellow
+                    - shape: round
+
+            instance_id:3
+                domain: query
+                property:
+                    - color: blue
+                    - shape: square
+
+            * `domain` is used for crossing evaluation: `query` to `database`
+            * `property` is used as filter:
+                - evaluate only `color`
+                - evaluate only `shape`
+                - evaluate `shape` == square
 
       Operations:
         - add: put one datum into container
 
+      Special Group Commands:
+        - all
+        - per_attribute
+        - per_category
+      Special Cross Reference Commands:
     """
 
     def __init__(self):
         """
-          Internal data structure:
-            groups:
-                The map of attribute_name to instance_ids.
-                e.g. group[attribute_name] = [list of instance_ids] (whose attribute is the same.)
-            instance2attr:
-                The map of instance_id to attributes.
-                e.g. instance2attr[instance_id] = [list of attributes in string].
+            Two kinds of attribute structures both kinds of attributes will be flatten
         """
-
         # attribute-id mapping, shallow key-value pair
-        self._groups = defaultdict(list)
         self._instance2attr = defaultdict(list)
+        # instance_ids with same tag
+        self._groups = {}
+        self._interpreter = Interpreter()
+
+    @property
+    def attribute_names(self):
+        _attr_names = list(sorted(self._groups.keys()))
+        return _attr_names
+
+    @property
+    def instance_to_attribute(self):
+        return self._instance2attr
+
+    @property
+    def attribute_to_instance(self):
+        return self._groups
 
     # TODO @kv: modify to instance_id: attribute_names
     def add(self, instance_id, attributes):
@@ -73,7 +124,6 @@ class AttributeContainer(object):
             if attr not exist:
                 create new key and assign the given list.
             else:
-                
         """
         # type assertion
         if not type(instance_id) is int:
@@ -92,42 +142,107 @@ class AttributeContainer(object):
             else:
                 self._groups[_attr] = [instance_id]
 
-
-    @property
-    def groups(self):
-        """Return attribute to instance_ids
-            e.g. {'Color.Red': [0, 2, 5, ...], }
+    def get_instance_id_by_attribute(self, attribute_name):
         """
-        return self._groups
-
-    @property
-    def instance_attributes(self):
-        """Return instance_id to attributes
-            e.g. {'2': ['Color.Red', 'Shape.Bottle', ...], }
+          Args:
+            attribute_name: string
+          Return:
+            instance_ids: list, empty if query can not be found
         """
-        return self._instance2attr
+        if attribute_name in self._groups:
+            return self._groups[attribute_name]
+        else:
+            return []
 
-    @property
-    def attr_lookup(self):
-        # return instance_id to attributes
-        _attr_lookup = defaultdict(list)
-        for _attr, _img_ids in self._groups.items():
-            for _id in _img_ids:
-                _attr_lookup[_id].append(_attr)
-        return _attr_lookup
-
-    @property
-    def attr_name_lookup(self):
-        """Dynamically generate `attr_name` to `index` 
-            mapping for metric function.
-            NOTE: It will be risky if the function is called
-                  before the whole data added.
+    def get_instance_id_by_group_command(self, command):
         """
-        _attrs = sorted(self._groups.keys())
-        _attr_name_lookup = {}
-        for _id, _attr in enumerate(_attrs):
-            _attr_name_lookup[_attr] = _id
-        return _attr_name_lookup
+          Args:
+            command: string of query command in defined format
+                command = 'A+B-C'
+                where A, B, C are attribute_name
+          Return:
+            attribute_group:
+                dict = {
+                    attr_name: [instance_ids]
+                }
+        """
+        executable_codes = self._translate_command_to_executable(command)
+        self._interpreter.run_code(executable_codes)
+        results = self._interpreter.fetch()
+        self._interpreter.clear()
+        return {
+            command: results
+        }
+
+    def get_instance_id_by_cross_reference_command(self, command):
+        """Parse one more line than group command
+          Args:
+            command: string of query command in defined format
+                command = '(A+B)->C+D' where A, B, C, D are attribute_name
+          Returns:
+            source: dict
+            target: dict of {attr_name: [instance_ids]}
+        """
+        def _split_cross_reference_command(command):
+            m = re.match(r'(.+)->(.+)', command)
+            source = m.group(1)
+            target = m.group(2)
+            return source, target
+
+        source_command, target_command = _split_cross_reference_command(command)
+        source_result = self.get_instance_id_by_group_command(source_command)
+        target_result = self.get_instance_id_by_group_command(target_command)
+
+        return source_result, target_result
+
+    def _translate_command_to_executable(self, single_line_command):
+        executable_command = {
+            interpreter_field.instructions: [],
+            interpreter_field.values: [],
+            interpreter_field.names: [],
+        }
+        def _translate_command(operation):
+            """Two operators are legal: +, -"""
+            operation = operation.replace(' ', '')
+            operation = re.sub(r'[(){}]', '', operation)
+            op_list = re.split(r'\w', operation)
+            operands = re.split(r'\+|\-', operation)
+            op_list = [op for op in op_list if op in ['+', '-']]
+            return operands, op_list
+        def _put_variable_in_stack(name, a_list):
+            nonlocal stack_pointer
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.LOAD_LIST, stack_pointer))
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.STORE_NAME, stack_pointer))
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.LOAD_NAME, stack_pointer))
+            executable_command[interpreter_field.names].append(name)
+            executable_command[interpreter_field.values].append(a_list)
+            stack_pointer += 1
+        def _put_command_in_stack(operator):
+            executable_command[interpreter_field.instructions].append(
+                (operator, None))
+
+        stack_pointer = 0
+        operand_names, op_list = _translate_command(single_line_command)
+        # push first variable
+
+        attr_name = operand_names.pop()
+        instance_ids = self.get_instance_id_by_attribute(attr_name)
+        _put_variable_in_stack(attr_name, instance_ids)
+
+        if len(op_list) == len(operand_names):
+            for attr_name, op_symbol in zip(operand_names, op_list):
+                ###
+                instance_ids = self.get_instance_id_by_attribute(attr_name)
+                _put_variable_in_stack(attr_name, instance_ids)
+                instruction = InstructionSymbolTable[op_symbol]
+                _put_command_in_stack(instruction)
+        else:
+            # seem to be error case
+            pass
+        return executable_command
 
     def clear(self):
         # clear the internal dict.

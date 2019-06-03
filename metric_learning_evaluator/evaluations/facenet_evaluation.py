@@ -26,6 +26,9 @@ from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluati
 from metric_learning_evaluator.index.utils import euclidean_distance_filter
 from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
+from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
+from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
+
 from collections import defaultdict
 from collections import namedtuple
 from collections import Counter
@@ -39,6 +42,8 @@ class FacenetEvaluationStandardFields(object):
     """Define fields used only in Facenet evaluation
         which may assign in `option` section in config.
     """
+
+    ### NOTE @kv: Move these sampling option into sample_strategy
 
     # pair dict
     pairA = 'pairA'
@@ -72,7 +77,7 @@ facenet_fields = FacenetEvaluationStandardFields
 
 class FacenetEvaluation(MetricEvaluationBase):
 
-    def __init__(self, config):
+    def __init__(self, config, mode=None):
         """
           FaceNet evaluates accuracy with pair instances.
 
@@ -91,9 +96,9 @@ class FacenetEvaluation(MetricEvaluationBase):
             Equal Error Rate (EER): 0.004
           -------------------------------------------------
         """
-        super(FacenetEvaluation, self).__init__(config)
+        super(FacenetEvaluation, self).__init__(config, mode)
 
-        print('Create {}'.format(self._evaluation_name))
+        print('Create {}'.format(self.evaluation_name))
 
         # Preprocess Configurations and check legal
         self._must_have_config = [
@@ -117,16 +122,17 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         # Set default values for must-have configs
         for _config in self._must_have_config:
-            if _config not in self._configs:
+            if _config not in self.metrics:
                 if _config in self._default_values:
-                    self._configs[_config] = self._default_values[_config]
+                    pass
+                    #self.metrics[_config] = self._default_values[_config]
                 else:
                     print('WARNING: {} should be assigned'.format(_config))
             else:
-                print('Use assigned {}: {}'.format(_config, self._configs[_config]))
+                print('Use assigned {}: {}'.format(_config, self.metrics[_config]))
 
         # Set distance thresholds by config
-        distance_config = self._configs[eval_fields.distance_measure]
+        distance_config = self.distance_measure
         distance_thres = distance_config[eval_fields.threshold]
         dist_start = distance_thres[eval_fields.start]
         dist_end = distance_thres[eval_fields.end]
@@ -135,12 +141,12 @@ class FacenetEvaluation(MetricEvaluationBase):
         self._distance_thresholds = np.arange(dist_start, dist_end, dist_step)
 
         # Attributes
-        if len(self._attributes) == 0:
+        if len(self.attributes) == 0:
             self._has_attribute = False
-        elif len(self._attributes) == 1:
-            if attribute_fields.all_classes in self._attributes:
+        elif len(self.attributes) == 1:
+            if attribute_fields.all_classes in self.attributes:
                 self._has_attribute = False
-            elif attribute_fields.all_attributes in self._attributes:
+            elif attribute_fields.all_attributes in self.attributes:
                 self._has_attribute = True
         else:
             self._has_attribute = True
@@ -150,196 +156,92 @@ class FacenetEvaluation(MetricEvaluationBase):
     @property
     def metric_names(self):
         _metric_names = []
-        for _metric_name, _content in self._metrics.items():
+        for _metric_name, _content in self.metrics.items():
             if _content is None:
                 continue
-            for _attr_name in self._attributes:
+            for _attr_name in self.attributes:
                 for threshold in self._distance_thresholds:
                     _name = '{}/{}@thres={}'.format(
                         _attr_name, _metric_name, threshold)
                     _metric_names.append(_name)
         return _metric_names
 
-    def compute(self, embedding_container, attribute_container=None):
+
+    def compute(self, embedding_container):
         """Procedure:
             - prepare the pair list for eval set
             - compute distance
             - calculate accuracy
-
-          NOTE: Attributes are NOT supported yet.
         """
+        self.result_container = ResultContainer()
 
-        # numpy array
-        img_ids = embedding_container.instance_ids
+        for group_cmd in self.group_commands:
+            instance_ids = embedding_container.get_instance_id_by_group_command(group_cmd)
+            if len(instance_ids) == 0:
+                continue
 
-        # configs
-        sampling_config = self._configs[eval_fields.sampling]
-        num_of_pairs = sampling_config[facenet_fields.num_of_pairs]
-        ratio_of_class = sampling_config[facenet_fields.ratio_of_class]
-        num_of_instance_per_class = sampling_config[facenet_fields.num_of_instance_per_class]
-        class_sample_method = sampling_config[facenet_fields.class_sample_method]
+            self._pair_measure(
+                group_cmd, instance_ids, embedding_container)
 
-        assert len(img_ids) == embedding_container.embeddings.shape[0]
+        return self.result_container
 
-        result_container = ResultContainer()
+    def _pair_measure(self,
+        attr_name,
+        instance_ids,
+        embedding_container,
+        ):
 
-        if not self._has_attribute:
-            # NOTE: Assume attribute == `all_classes`
-            attribute = attribute_fields.all_classes
-            # @kv: load pair list from file or generate automatically
-            pairs = self._generate_pairs(embedding_container,
-                                         num_of_pairs,
-                                         ratio_of_class,
-                                         num_of_instance_per_class,
-                                         class_sample_method)
+        sampling_config = self.sampling
 
-            # fetch instance ids and compute distances at once.
-            pair_a_embeddings = embedding_container.get_embedding_by_instance_ids(
-                pairs[facenet_fields.pairA])
-            pair_b_embeddings = embedding_container.get_embedding_by_instance_ids(
-                pairs[facenet_fields.pairB])
-            ground_truth_is_same = np.asarray(pairs[facenet_fields.is_same])
-
-            # TODO @kv: choose distance function
-            predicted_is_same = euclidean_distance_filter(pair_a_embeddings,
-                                                          pair_b_embeddings,
-                                                          self._distance_thresholds)
-
-            for threshold in self._distance_thresholds:
-                classification_metrics = ClassificationMetrics()
-                classification_metrics.add_inputs(
-                    predicted_is_same[threshold], ground_truth_is_same)
-                result_container.add(
-                    attribute,
-                    metric_fields.accuracy,
-                    classification_metrics.accuracy,
-                    condition={'thres': threshold})
-                result_container.add(
-                    attribute,
-                    metric_fields.validation_rate,
-                    classification_metrics.validation_rate,
-                    condition={'thres': threshold})
-                result_container.add(
-                    attribute,
-                    metric_fields.false_accept_rate,
-                    classification_metrics.false_accept_rate,
-                    condition={'thres': threshold})
-                result_container.add(
-                    attribute,
-                    metric_fields.true_positive_rate,
-                    classification_metrics.true_positive_rate,
-                    condition={'thres': threshold})
-                result_container.add(
-                    attribute,
-                    metric_fields.false_positive_rate,
-                    classification_metrics.false_positive_rate,
-                    condition={'thres': threshold})
-                classification_metrics.clear()
-
-        else:
-            # Has attributes
-            pass
-
-        # Fetch results
-        print('{} compute done.'.format(self.evaluation_name))
-
-        return result_container
-
-    @staticmethod
-    def _generate_pairs(embedding_container,
-                        num_of_pairs,
-                        ratio_of_class,
-                        num_of_instance_per_class,
-                        class_sample_method
-                        ):
-        """Image Pair & Sampling Strategy
-
-          Args:
-
-          Return:
-            pairs, dict of list:
-
-          A: {a1, a2, ..., aN} N instances in class A
-          B: {b1, b2, ..., bM} M instances in class B
-        """
-        pairs = defaultdict(list)
-        instance_ids = embedding_container.instance_ids
         label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
-        num_instance_ids = len(instance_ids)
-        num_label_ids = len(label_ids)
-        class_distribution = Counter(label_ids)
-        classes = list(class_distribution.keys())
-        num_classes = len(classes)
 
-        assert num_label_ids == num_instance_ids
+        sampler = SampleStrategy(instance_ids, label_ids)
+        sampled_pairs = sampler.sample_pairs(
+            class_sample_method=sampling_config[sample_fields.class_sample_method],
+            instance_sample_method=sampling_config[sample_fields.instance_sample_method],
+            num_of_pairs=sampling_config[sample_fields.num_of_pairs],)
 
-        # Randomly sample several data
-        instance_ids = np.asarray(instance_ids)
-        label_ids = np.asarray(label_ids)
+        # fetch instance ids and compute distances at once.
+        pair_a_embeddings = embedding_container.get_embedding_by_instance_ids(
+            sampled_pairs[sample_fields.pair_A])
+        pair_b_embeddings = embedding_container.get_embedding_by_instance_ids(
+            sampled_pairs[sample_fields.pair_B])
+        ground_truth_is_same = np.asarray(sampled_pairs[sample_fields.is_same])
 
-        num_sampled_classes = math.ceil(ratio_of_class * num_classes)
-        print(num_sampled_classes)
-        if ratio_of_class == 1.0:
-            sampled_classes = classes
-        else:
-            if class_sample_method == facenet_fields.random_sample:
-                sampled_classes = np.random.choice(classes, num_sampled_classes)
-            elif class_sample_method == facenet_fields.amount_weighted:
-                raise NotImplementedError
-            elif class_sample_method == facenet_fields.amount_inverse_weighted:
-                raise NotImplementedError
-        num_sampled_classes = len(sampled_classes)
+        predicted_is_same = euclidean_distance_filter(pair_a_embeddings,
+                                                     pair_b_embeddings,
+                                                     self._distance_thresholds)
 
-        num_of_pair_counter = 0
-        all_combinations = list(itertools.combinations_with_replacement(sampled_classes, 2))
-        shuffle(all_combinations)
-        print('num of all comb. {}'.format(len(all_combinations)))
-        print('num of sampled classes {}'.format(num_sampled_classes))
-
-        # TODO @kv: Stack to record  seen class, for per_instance and has instance shown
-        class_histogram = {}
-        for _class in sampled_classes:
-            class_histogram[_class] = 0
-
-        sufficient_sample = False
-        for class_a, class_b in all_combinations:
-            num_img_class_a = class_distribution[class_a]
-            num_img_class_b = class_distribution[class_b]
-            num_sampled_img_per_class = min(num_img_class_a, num_img_class_b, num_of_instance_per_class)
-
-            # statistics
-            class_histogram[class_a] += num_sampled_img_per_class
-            class_histogram[class_b] += num_sampled_img_per_class
-
-            sampled_img_id_class_a = np.random.choice(
-                embedding_container.get_instance_ids_by_label(class_a), num_sampled_img_per_class)
-            sampled_img_id_class_b = np.random.choice(
-                embedding_container.get_instance_ids_by_label(class_b), num_sampled_img_per_class)
-
-            # Add instances in pair
-            for img_class_a, img_class_b in zip(sampled_img_id_class_a, sampled_img_id_class_b):
-                is_same = class_a == class_b
-                pairs[facenet_fields.pairA].append(img_class_a)
-                pairs[facenet_fields.pairB].append(img_class_b)
-                pairs[facenet_fields.is_same].append(is_same)
-                num_of_pair_counter += 1
-
-            # check the strategic stop criteria
-            if num_of_pair_counter > num_of_pairs:
-                sufficient_sample = True
-                """Find out which classes are less than requirements and sample them directly.
-                """
-                for _class, _counts in class_histogram.items():
-                    total_num_of_instance = len(embedding_container.get_instance_ids_by_label(_class))
-
-                    if _counts <= num_of_instance_per_class < total_num_of_instance:
-                        sufficient_sample = False
-                        break
-            if sufficient_sample:
-                break
-
-        print('{} pairs are generated.'.format(num_of_pair_counter))
-        return pairs
+        for threshold in self._distance_thresholds:
+            classification_metrics = ClassificationMetrics()
+            classification_metrics.add_inputs(
+                predicted_is_same[threshold], ground_truth_is_same)
+            self.result_container.add(
+                attr_name,
+                metric_fields.accuracy,
+                classification_metrics.accuracy,
+                condition={'thres': threshold})
+            self.result_container.add(
+                attr_name,
+                metric_fields.validation_rate,
+                classification_metrics.validation_rate,
+                condition={'thres': threshold})
+            self.result_container.add(
+                attr_name,
+                metric_fields.false_accept_rate,
+                classification_metrics.false_accept_rate,
+                condition={'thres': threshold})
+            self.result_container.add(
+                attr_name,
+                metric_fields.true_positive_rate,
+                classification_metrics.true_positive_rate,
+                condition={'thres': threshold})
+            self.result_container.add(
+                attr_name,
+                metric_fields.false_positive_rate,
+                classification_metrics.false_positive_rate,
+                condition={'thres': threshold})
+            classification_metrics.clear()
 
     def _compute_roc(self):
         """ROC Curve

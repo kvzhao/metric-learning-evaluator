@@ -149,4 +149,4 @@ def extraction_application(configs, args):
             feature_exporter.label_ids = np.asarray(category_ids)
 
     feature_exporter.save(out_dir)
-    print("Save all extracted features at {}.".format(out_dir))
+    print("Save all extracted features at {}".format(out_dir))

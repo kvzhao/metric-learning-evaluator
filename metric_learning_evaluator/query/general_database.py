@@ -8,11 +8,10 @@ from metric_learning_evaluator.config_parser.standard_fields import ConfigStanda
 from metric_learning_evaluator.query.datasetbackbone_wrapper import DatasetBackboneWrapper
 from metric_learning_evaluator.query.zeus_wrapper import ZeusWrapper
 from metric_learning_evaluator.query.json_wrapper import JsonWrapper
+from metric_learning_evaluator.query.native_wrapper import NativeWrapper
 
 DATABASE_DICT = {
-    config_fields.datasetbackbone: DatasetBackboneWrapper,
-    config_fields.zeus: ZeusWrapper,
-    config_fields.json: JsonWrapper,
+    config_fields.native: NativeWrapper,
 }
 
 
@@ -30,14 +29,15 @@ class QueryInterface(object):
         self.database_type = database_type
 
         # create wrapper
-        db_object = DATABASE_DICT[database_type]
-        self.db = db_object(database_config)
+        database_object = DATABASE_DICT[database_type]
+        self.database = database_object(database_config)
+        print('Initialize Query Interface with {} backend.'.format(database_type))
 
-    def query(self, image_id, required_attribute_names=None):
+    def query(self, instance_id, required_attribute_names=None):
         """Query function:
 
             Args:
-                image_id, int:
+                instance_id, int:
                     Unique index describing given image.
 
                 required_attribute_names, list of strings:
@@ -45,14 +45,14 @@ class QueryInterface(object):
             
             Return:
                 attributes: list of strings:
-                    Attributes for given image_id.
+                    Attributes for given instance_id.
 
             Usage examples:
 
             Database:
-                image_id: 12, with three attributes: Color.Red, Shape.Bottle, Pose.isFront
+                instance_id: 12, with three attributes: Color.Red, Shape.Bottle, Pose.isFront
 
-            Query example with image_id = 12:
+            Query example with instance_id = 12:
                 attribute_names: Color
                 return: attribute_values: Color.Red
 
@@ -69,7 +69,7 @@ class QueryInterface(object):
                 return: attribute_values: "Color.Red" (list of str)
         """
 
-        all_attr_names = self.db.query_attributes_by_instance_id(image_id)
+        all_attr_names = self.database.query_attributes_by_instance_id(instance_id)
 
         if required_attribute_names is None:
             return all_attr_names

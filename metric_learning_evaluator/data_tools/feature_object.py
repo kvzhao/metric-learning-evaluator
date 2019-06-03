@@ -14,6 +14,7 @@ from abc import abstractmethod
 
 class FeatureObjectStandardFields:
     embeddings = 'embeddings'
+    probabilities = 'probabilities'
     label_ids = 'label_ids'
     label_names = 'label_names'
     instance_ids = 'instance_ids'
@@ -32,12 +33,14 @@ class FeatureObjectBase(object):
 
         self._array_names = [
             fields.embeddings,
+            fields.probabilities,
             fields.label_ids,
             fields.instance_ids,
             fields.filename_strings,
             fields.super_labels]
         self._array_name_map = {
             fields.embeddings: None,
+            fields.probabilities: None,
             fields.label_ids: None,
             fields.label_names: None,
             fields.instance_ids: None,
@@ -59,6 +62,7 @@ class FeatureObjectBase(object):
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
             print ('WARNING: Get the empty embeddings array')
+            return np.empty(0)
         if len(self._array_name_map[fields.embeddings].shape) >= 3:
             print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.embeddings].shape))
@@ -75,6 +79,26 @@ class FeatureObjectBase(object):
         self._array_name_map[fields.embeddings] = _embeddings
 
     @property
+    def probabilities(self):
+        if self._array_name_map[fields.probabilities] is None:
+            print ('WARNING: Get the empty probabilities array')
+            return np.empty(0)
+        if len(self._array_name_map[fields.probabilities].shape) >= 3:
+            print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
+                self._array_name_map[fields.probabilities].shape))
+            _probabilities = np.squeeze(probabilities)
+        return self._array_name_map[fields.probabilities]
+
+    @probabilities.setter
+    def probabilities(self, _probabilities):
+        self._check_numpy_arrlike(_probabilities)
+        if len(_probabilities.shape) >= 3:
+            print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
+                _probabilities.shape))
+            _probabilities = np.squeeze(_probabilities)
+        self._array_name_map[fields.probabilities] = _probabilities
+
+    @property
     def label_ids(self):
         if self._array_name_map[fields.label_ids] is None:
             print ('WARNING: Get the empty label_ids array')
@@ -83,6 +107,7 @@ class FeatureObjectBase(object):
     @label_ids.setter
     def label_ids(self, _label_ids):
         self._check_numpy_arrlike(_label_ids)
+        _label_ids = np.squeeze(_label_ids)
         self._array_name_map[fields.label_ids] = _label_ids
 
     @property
@@ -94,6 +119,7 @@ class FeatureObjectBase(object):
     @label_names.setter
     def label_names(self, _label_names):
         self._check_numpy_arrlike(_label_names)
+        _label_names = np.squeeze(_label_names)
         self._array_name_map[fields.label_names] = _label_names
 
     @property
@@ -105,6 +131,7 @@ class FeatureObjectBase(object):
     @instance_ids.setter
     def instance_ids(self, _instance_ids):
         self._check_numpy_arrlike(_instance_ids)
+        _instance_ids = np.squeeze(_instance_ids)
         self._array_name_map[fields.instance_ids] = _instance_ids
 
     @property
@@ -156,3 +183,6 @@ class FeatureObject(FeatureObjectBase):
             if not _arr is None:
                 dst_path = '/'.join([data_dir, _name])
                 np.save(dst_path, _arr)
+
+    def merge(self, another):
+        pass
