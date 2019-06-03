@@ -56,7 +56,6 @@ class ConfigParser(object):
         # Make sure self._config is legal dict before parsing.
         self._parse()
 
-
     def _parse(self):
 
         # Fetch valid evaluation names
@@ -117,7 +116,6 @@ class ConfigParser(object):
         else:
             return True
 
-
     @property
     def container_size(self):
         # return: an integer
@@ -148,14 +146,13 @@ class ConfigParser(object):
         else:
             return None
 
-    # try to deprecate this
-    def has_attribute(self, eval_name):
+    # TODO @kv: Deprecate this function
+    def has_attribute(self, eval_name=None):
         # Rule: If no database is given, no attribute can be obtained
         if not self.has_query_interface:
             return False
         _attrs = self.get_attributes(eval_name)
-        # TODO @kv: all_classes -> All
-        if not _attrs or attr_fields.All in _attrs:
+        if not _attrs:
             return False
         else:
             return True
@@ -201,7 +198,7 @@ class ConfigParser(object):
         elif eval_name in self.evaluations:
             return self.evaluations[eval_name].attribute_group_commands
         else:
-            return []
+            return [attr_fields.All]
 
     def get_attribute_items(self, eval_name=None):
         """
@@ -283,6 +280,13 @@ class EvaluationConfigParser(object):
             return {}
 
     @property
+    def distance_measure(self):
+        if config_fields.distance_measure in self._eval_config:
+            return self._eval_config[config_fields.distance_measure]
+        else:
+            return {}
+
+    @property
     def metric_section(self):
         if config_fields.metric in self._eval_config:
             return self._eval_config[config_fields.metric]
@@ -326,12 +330,14 @@ class EvaluationConfigParser(object):
     def attribute_cross_reference_commands(self):
         # return: List of commands
         attr_section = self.attribute_section
-        if config_fields.cross_reference in attr_section:
+        if config_fields.cross_reference in attr_section and attr_section[config_fields.cross_reference]:
             # parse string respectively
             cross_reference_commands = attr_section[config_fields.cross_reference]
-            cross_reference_commands = [self._remove_blanks(cmd) for cmd in cross_reference_commands]
+            cross_reference_commands = [self._remove_blanks(cmd)
+                for cmd in cross_reference_commands if cmd is not None]
             return list(set(cross_reference_commands))
         else:
+            # NOTE: Figure out what will happen when empty
             return []
 
     @property
@@ -345,19 +351,20 @@ class EvaluationConfigParser(object):
                     self._parse_single_attribute_command(cmd))
             return list(set(attr_items))
         else:
-            return []
+            return [attr_fields.All]
 
     @property
     def attribute_group_commands(self):
         # return: List of commands
         attr_section = self.attribute_section
-        if config_fields.group in attr_section:
+        if config_fields.group in attr_section and attr_section[config_fields.group]:
             # parse string respectively
             group_commands = attr_section[config_fields.group]
-            group_commands = [self._remove_blanks(cmd) for cmd in group_commands]
+            group_commands = [self._remove_blanks(cmd) for cmd in group_commands if cmd is not None]
             return list(set(group_commands))
         else:
-            return []
+            # NOTE: Consider not provide empty but all
+            return [attr_fields.All]
 
     @property
     def attribute_cross_reference_items(self):

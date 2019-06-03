@@ -14,7 +14,7 @@ from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluati
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
-from metric_learning_evaluator.evaluations.ranking_with_attributes_evaluation import RankingWithAttributesEvaluation
+from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
 
 
 # ===========  Index Agents =============
@@ -35,13 +35,14 @@ REGISTERED_EVALUATION_OBJECTS = {
     eval_fields.ranking: RankingEvaluation,
     eval_fields.facenet: FacenetEvaluation,
     eval_fields.checkout: CheckoutEvaluation,
-    eval_fields.ranking_with_attrs: RankingWithAttributesEvaluation,
+    eval_fields.classification: ClassificationEvaluation,
 }
 # NOTE: `CheckoutEvaluation` & `RankingWithAttributesEvaluation` will soon be deprecated.
 
 EVALUATION_DISPLAY_NAMES = {
     eval_fields.ranking: 'rank',
     eval_fields.facenet: 'pair',
+    eval_fields.classification: 'cls',
     eval_fields.checkout: 'checkout',
     eval_fields.ranking_with_attrs: 'rank_attrs',
 }

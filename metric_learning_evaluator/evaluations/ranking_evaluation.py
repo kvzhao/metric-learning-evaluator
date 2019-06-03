@@ -14,23 +14,17 @@ from random import shuffle
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
-from metric_learning_evaluator.data_tools.attribute_container  import AttributeContainer
 
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
-
 from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
-from metric_learning_evaluator.index.utils import euclidean_distance
-from metric_learning_evaluator.index.utils import indexing_array
-
-from metric_learning_evaluator.index.np_agent import NumpyAgent
-from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
+from metric_learning_evaluator.index.agent import IndexAgent
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 
 class RankingEvaluationStandardFields(object):
     # Some keys only used in ranking evaluation
@@ -45,14 +39,14 @@ ranking_fields = RankingEvaluationStandardFields
 
 class RankingEvaluation(MetricEvaluationBase):
 
-    def __init__(self, config):
+    def __init__(self, config, mode=None):
         """Ranking Evaluation 
             TODO with Attributes
           Two kinds of attribute
             - grouping 
             - cross reference
         """
-        super(RankingEvaluation, self).__init__(config)
+        super(RankingEvaluation, self).__init__(config, mode)
 
         self._must_have_metrics = []
         self._default_values = {
@@ -95,108 +89,141 @@ class RankingEvaluation(MetricEvaluationBase):
                             _metric_names.append(_name)
         return _metric_names
 
-    def new_compute(self, embedding_container, attribute_container=None):
-        result_container = ResultContainer()
+    def compute(self, embedding_container):
+        """Compute function
+          Args:
+            embedding_container: EmbeddingContainer
+          Return:
+            result_container: ResultContainer
+        """
 
-        has_database = self.configs.has_database
-        # Two types of query attributes
-        print (self.configs.agent_type)
-        instance_ids = embedding_container.instance_ids
-        label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
-        print(len(instance_ids), len(label_ids))
+        # NOTE: Set result container as internal object
+        self.result_container = ResultContainer()
 
+        # ===== Groupings =====
+        # should we go through items?
+        group_items = self.configs.attribute_group_items
+        cref_items = self.configs.attribute_cross_reference_items
 
-        if not(attribute_container is None and has_database):
-            # With attribute container & database
-            print(attribute_container.attribute_names)
-            print(attribute_container.instance_to_attribute)
-            print(attribute_container.attribute_to_instance)
-            print(self.configs.has_database)
-            print(self.attributes)
-            print(self.attribute_items)
-        else:
-            # Without attribute container
-            print('No attribute container')
-            print(self.configs.has_database)
-            print(self.attributes)
-            print(self.attribute_items)
+        for group_cmd in self.group_commands:
+            instance_ids_given_attribute = \
+                embedding_container.get_instance_id_by_group_command(group_cmd)
+            if len(instance_ids_given_attribute) == 0:
+                continue
+            label_ids_given_attribute = \
+                embedding_container.get_label_by_instance_ids(instance_ids_given_attribute)
 
-    def compute(self, embedding_container, attribute_container=None):
-        result_container = ResultContainer()
+            self._sample_and_rank(group_cmd, instance_ids_given_attribute,
+                label_ids_given_attribute, embedding_container)
 
-        # Check whether attribute_container is given or not.
-        if True:
-            instance_ids = embedding_container.instance_ids
-            label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
+        # ====== Cross References =====
+        # NOTE: How to handle db & query here?
+        # Command: A->B. Sample on both A & B, then retrieve A from B.
+        for cref_cmd in self.cross_reference_commands:
+            query_instance_ids, database_instance_ids = \
+                embedding_container.get_instance_id_by_cross_reference_command(cref_cmd)
+            if len(query_instance_ids) == 0 or len(database_instance_ids) == 0:
+                continue
+            query_embeddings = embedding_container.get_embedding_by_instance_ids(query_instance_ids)
+            query_label_ids = embedding_container.get_label_by_instance_ids(query_instance_ids)
+            database_embeddings = embedding_container.get_embedding_by_instance_ids(database_instance_ids)
+            database_label_ids = embedding_container.get_label_by_instance_ids(database_instance_ids)
 
-            ranking_config = self.metrics
-            sample_config = self.sampling
+            self._rank(cref_cmd, embedding_container,
+                query_label_ids, query_label_ids, query_embeddings,
+                database_instance_ids, database_label_ids, database_embeddings,)
 
-            # sampling configs
-            class_sample_method = sample_config[sample_fields.class_sample_method]
-            instance_sample_method = sample_config[sample_fields.instance_sample_method]
-            num_of_db_instance = sample_config[sample_fields.num_of_db_instance]
-            num_of_query_instance_per_class = sample_config[sample_fields.num_of_query_instance_per_class]
-            num_of_query_class = sample_config[sample_fields.num_of_query_class]
-            maximum_of_sampled_data = sample_config[sample_fields.maximum_of_sampled_data]
+        return self.result_container
 
-            # Online sample mode:
-            sampler = SampleStrategy(instance_ids, label_ids)
-            sampled = sampler.sample_query_and_database(
-                class_sample_method=class_sample_method,
-                instance_sample_method=instance_sample_method,
-                num_of_db_instance=num_of_db_instance,
-                num_of_query_class=num_of_query_class,
-                num_of_query_instance_per_class=num_of_query_instance_per_class,
-                maximum_of_sampled_data=maximum_of_sampled_data
-            )
-            # TODO @kv: Offline sample mode: use given db features
+    def _rank(self,
+              attr_name,
+              embedding_container,
+              query_instance_ids,
+              query_label_ids,
+              query_embeddings,
+              database_instance_ids,
+              database_label_ids,
+              database_embeddings,):
 
-            query_embeddings = embedding_container.get_embedding_by_instance_ids(
-                sampled[sample_fields.query_instance_ids])
-            query_label_ids = sampled[sample_fields.query_label_ids]
+        agent_type = self.configs.agent_type
+        agent = IndexAgent(agent_type, database_instance_ids, database_embeddings)
 
-            db_embeddings = embedding_container.get_embedding_by_instance_ids(
-                sampled[sample_fields.db_instance_ids])
-            db_label_ids = sampled[sample_fields.db_label_ids]
+        ranking_config = self.metrics
+        # Search in batch
+        top_k_list = ranking_config[metric_fields.top_k_hit_accuracy]
+        max_k = max(top_k_list)
 
-            # TODO @kv: type conversion at proper moment.
-            query_label_ids = np.asarray(query_label_ids)
-            db_label_ids = np.asarray(db_label_ids)
+        # shape (N, max_K)
+        retrieved_database_instance_ids, retrieved_database_distances = agent.search(query_embeddings, top_k=max_k)
 
-            # ranking configs
-            top_k_list = ranking_config[metric_fields.top_k_hit_accuracy]
+        for top_k in top_k_list:
+            if top_k == 1:
+                continue
+            ranking_metrics = RankingMetrics(top_k)
+            hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
+            for _idx, query_label_id in enumerate(query_label_ids):
+                retrived_instances = retrieved_database_instance_ids[_idx]
+                retrived_labels = embedding_container.get_label_by_instance_ids(retrived_instances)
+                hits = retrived_labels[:top_k] == query_label_id
+                hit_arrays[_idx, ...] = hits
 
-            # TODO @kv: check the list and default logic
+            ranking_metrics.add_inputs(hit_arrays)
+            self.result_container.add(attr_name, ranking_fields.top_k_hit_accuracy,
+                                    ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
+        # top 1 and mAP
+        self.result_container.add(attr_name, ranking_fields.top_k_hit_accuracy,
+                                ranking_metrics.top1_hit_accuracy, condition={'k': 1})
+        self.result_container.add(attr_name, ranking_fields.mAP,
+                                ranking_metrics.mean_average_precision)
 
-            for top_k in top_k_list:
+    def _sample_and_rank(self,
+                        attr_name,
+                        instance_ids,
+                        label_ids,
+                        embedding_container,
+                        ):
+        """
+          Args:
+            instance_ids: List of integers
+            label_ids: List of integers
+            embedding_container:
+                The EmbeddingContainer object
+            attr_name:
+                A string, as the command used for attribute container
+            sample_config:
+                Dict, obtain from self.sampling or self.config.sampling_section
+            ranking_config:
+                Dict, obtain from self.metrics, or self.configs.metric_section
+            agent_type:
+                A string, obtain from self.configs.agent_type
+          Returns: None.
+            This function will directly push the result in member result container object.
+        """
+        sampling_config = self.sampling
 
-                if top_k == 1:
-                    continue
+        sampler = SampleStrategy(instance_ids, label_ids)
+        sampled = sampler.sample_query_and_database(
+            class_sample_method=sampling_config[sample_fields.class_sample_method],
+            instance_sample_method=sampling_config[sample_fields.instance_sample_method],
+            num_of_db_instance_per_class=sampling_config[sample_fields.num_of_db_instance_per_class],
+            num_of_query_class=sampling_config[sample_fields.num_of_query_class],
+            num_of_query_instance_per_class=sampling_config[sample_fields.num_of_query_instance_per_class],
+            maximum_of_sampled_data=sampling_config[sample_fields.maximum_of_sampled_data],)
 
-                ranking_metrics = RankingMetrics(top_k)
-                hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
+        sampled_query_instance_ids = sampled[sample_fields.query_instance_ids]
+        sampled_query_label_ids = sampled[sample_fields.query_label_ids]
+        sampled_database_instance_ids = sampled[sample_fields.database_instance_ids]
+        sampled_database_label_ids = sampled[sample_fields.database_label_ids]
 
-                for _idx, (_query_embed, _query_label) in enumerate(zip(query_embeddings, query_label_ids)):
+        query_embeddings = embedding_container.get_embedding_by_instance_ids(sampled_query_instance_ids)
+        database_embeddings = embedding_container.get_embedding_by_instance_ids(sampled_database_instance_ids)
 
-                    distances = euclidean_distance(_query_embed, db_embeddings)
+        sampled_query_instance_ids = np.asarray(sampled_query_instance_ids)
+        sampled_query_label_ids = np.asarray(sampled_query_label_ids)
+        sampled_database_instance_ids = np.asarray(sampled_database_instance_ids)
+        sampled_database_label_ids = np.asarray(sampled_database_label_ids)
 
-                    indexed_query_label = indexing_array(distances, db_label_ids)
-
-                    hits = indexed_query_label[:top_k] == _query_label
-
-                    hit_arrays[_idx, ...] = hits
-
-                ranking_metrics.add_inputs(hit_arrays)
-                result_container.add(attribute_fields.All, ranking_fields.top_k_hit_accuracy,
-                                     ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
-
-            result_container.add(attribute_fields.All, ranking_fields.top_k_hit_accuracy,
-                                 ranking_metrics.top1_hit_accuracy, condition={'k': 1})
-            result_container.add(attribute_fields.All, ranking_fields.mAP,
-                                 ranking_metrics.mean_average_precision)
-
-            return result_container
-        else:
-            # with attribute filter
-            raise NotImplementedError
+        self._rank(attr_name,
+            embedding_container,
+            sampled_query_instance_ids, sampled_query_label_ids, query_embeddings,
+            sampled_database_instance_ids, sampled_database_label_ids, database_embeddings,)

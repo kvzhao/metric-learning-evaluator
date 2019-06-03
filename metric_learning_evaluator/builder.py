@@ -29,7 +29,6 @@ import yaml
 import numpy as np
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 from metric_learning_evaluator.query.general_database import QueryInterface
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
@@ -43,6 +42,7 @@ from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluati
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
 from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
+from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
@@ -52,8 +52,7 @@ class EvaluatorBuilder(object):
     """Evaluator Builder & Interface.
     """
 
-    #TODO @kv: logit_size -> prob_size
-    def __init__(self, embedding_size, logit_size, config_dict, mode='online'):
+    def __init__(self, embedding_size, prob_size, config_dict, mode='online'):
         """Evaluator Builder.
 
           The object builds evaluation functions according to the given configuration 
@@ -61,8 +60,7 @@ class EvaluatorBuilder(object):
 
           Args:
             embedding_size: Integer describes 1d embedding size.
-            logit_size:
-            TODO @kv: logit_size -> prob_size
+            prob_size: Integer describes size of the logits.
             config_dict: Dict, loaded yaml foramt dict.
             mode: String, `online` or `offline`.
 
@@ -73,6 +71,8 @@ class EvaluatorBuilder(object):
             * add datum
             * run evaluate
             * (optional) get update_ops
+        TODO:
+            - deprecate attribute container
         """
 
         # TODO @kv: Change config_path to parsed dictionary
@@ -81,11 +81,9 @@ class EvaluatorBuilder(object):
         # allocate shared embedding containers
         container_size = self.configs.container_size
         self.embedding_size = embedding_size
-        # TODO @kv: logit_size -> prob_size
-        self.logit_size = logit_size
+        self.prob_size = prob_size
 
-        self.embedding_container = EmbeddingContainer(embedding_size, logit_size, container_size)
-        self.attribute_container = AttributeContainer()
+        self.embedding_container = EmbeddingContainer(embedding_size, prob_size, container_size)
 
         self.mode = mode
         if self.mode not in ['online', 'offline']:
@@ -112,8 +110,13 @@ class EvaluatorBuilder(object):
         # Allocate evaluation object with corresponding configuration
         self.evaluations = {} # evaluations -> evaluation_objects
         for eval_name in self.configs.chosen_evaluation_names:
+            if eval_name == eval_fields.classification and self.prob_size == 0:
+                print('{} is assigned, but prob_size == 0, remove from the chosen list.'.format(eval_name))
+                # remove the chosen name in the list
+                self.configs.chosen_evaluation_names.remove(eval_name)
+                continue
             eval_config = self.configs.get_eval_config(eval_name)
-            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](eval_config)
+            self.evaluations[eval_name] = REGISTERED_EVALUATION_OBJECTS[eval_name](eval_config, self.mode)
 
     @property
     def evaluation_names(self):
@@ -134,13 +137,11 @@ class EvaluatorBuilder(object):
                 _metric_names.append(_metric_name)
         return _metric_names
 
-    def add_instance_id_and_embedding(self, instance_id, label_id, embedding, logit=None):
+    def add_instance_id_and_embedding(self, instance_id, label_id, embedding, probability=None):
         """Add embedding and label for a sample to be used for evaluation.
 
            If the query attribute names are given in config, this function will
            search them on database automatically.
-        
-        #TODO: Consider `filename`, `probability` (<- logit)
 
         Args:
             instance_id, integer:
@@ -150,37 +151,32 @@ class EvaluatorBuilder(object):
                 Embedding, feature vector
         """
 
-        # NOTE: If we call classification, then add logit.
+        # NOTE: If we call classification, then add probability.
         # TODO @kv: If instance_id is None, use index as default.
         if instance_id is None or instance_id == -1:
             instance_id = self._instance_counter
-        self.embedding_container.add(instance_id, label_id, embedding, logit)
-        # verbose for developing stage.
-        if self.embedding_container.counts % 1000 == 0:
-            print ('{} embeddings are added.'.format(self.embedding_container.counts))
-        
-        # TODO: consider move `add_instance_id_and_query_attribute` here.
-        # Collect all `attribute_name`
-        # if not evaluations_need_query: no queries are needed.
 
         if self.query_interface:
-            # TODO @dennis.liu : use grouping rules instead required_attributes
-            # if not self.configs.required_attributes:
-            #     print ('WARNING: No required attributes are pre-defined.')
-            # TODO @kv: refactoring
             queried_attributes = self.query_interface.query(instance_id)
-            # TODO @kv: Should we check the quired attribute contains in required?
-            self.attribute_container.add(int(instance_id), queried_attributes)
+            self.embedding_container.add(instance_id, label_id,
+                embedding, probability, attributes=queried_attributes)
+        else:
+            self.embedding_container.add(instance_id, label_id, embedding, probability)
+
+        # verbose for developing stage.
+        if self.embedding_container.counts % 1000 == 0:
+            if probability is None:
+                print ('{} embeddings are added.'.format(self.embedding_container.counts))
+            else:
+                print ('{} embeddings and probabilities are added.'.format(self.embedding_container.counts))
 
         self._instance_counter += 1
 
-    def add_container(self, embedding_container=None, attribute_container=None):
-        """Add filled containers
-           Both embedding & attribute should be provided previously.
+    def add_container(self, embedding_container=None):
+        """Add filled containers which should be provided previously.
 
           Args:
             embedding_container: EmbeddingContainer, default is None.
-            attribute_container: AttributeContainer, default is None.
           Notice:
             Sanity check:
         """
@@ -193,13 +189,6 @@ class EvaluatorBuilder(object):
             self.embedding_container = embedding_container
             print('Update embedding container.')
 
-        if attribute_container is not None:
-            if not isinstance(attribute_container, AttributeContainer):
-                return
-            self.attribute_container.clear()
-            self.attribute_container = attribute_container
-            print('Update attribute container.')
-    
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
         
@@ -211,8 +200,8 @@ class EvaluatorBuilder(object):
         #TODO @kv: Consider with metric_names together
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
-            res_container = _evaluation.compute(self.embedding_container,
-                                                   self.attribute_container)
+            res_container = _evaluation.compute(self.embedding_container)
+
             # TODO: flatten results and return
             if _eval_name in EVALUATION_DISPLAY_NAMES:
                 _display_name = EVALUATION_DISPLAY_NAMES[_eval_name]
@@ -241,7 +230,6 @@ class EvaluatorBuilder(object):
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""
         self.embedding_container.clear()
-        self.attribute_container.clear()
 
         for _, _container in self._total_metrics.items():
             _container.clear()

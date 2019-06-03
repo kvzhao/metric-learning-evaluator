@@ -26,7 +26,6 @@ from collections import OrderedDict
 from collections import defaultdict
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 import logging
 import numpy as np
@@ -39,7 +38,7 @@ class MetricEvaluationBase(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, eval_config):
+    def __init__(self, eval_config, mode=None):
         """Base Object for Evaluation.
           <Customized>Evaluation is the functional object which 
                       executes computation with metric functions.
@@ -62,10 +61,13 @@ class MetricEvaluationBase(object):
         # Fetch all information from eval_config, If not None:
         # preprocessing eval config in each customized evaluation
         self.metrics = self.configs.metric_section
+        self.distance_measure = self.configs.distance_measure
         self.attributes = self.configs.attributes
         self.attribute_items = self.configs.attribute_items
         self.sampling = self.configs.sampling_section
         self.option = self.configs.option_section
+        # mode: online | offline | None
+        self.mode = mode
 
         self.cross_reference_commands = self.configs.attribute_cross_reference_commands
         self.group_commands = self.configs.attribute_group_commands
@@ -83,14 +85,11 @@ class MetricEvaluationBase(object):
             self.evaluation_name, ', '.join(self.metrics.keys()), ', '.join(self.configs.attribute_items)))
 
     @abstractmethod
-    def compute(self, embedding_container, attribute_container=None):
+    def compute(self, embedding_container):
         """Compute metrics.
           Args:
             embedding_container, EmbeddingContainer:
                 The embedding container is necessary.
-
-            attribute_container, AttributeContrainer:
-                The attribute container is optional, it can be `None` for some evaluation.
 
           Return:
             metrics, dict:

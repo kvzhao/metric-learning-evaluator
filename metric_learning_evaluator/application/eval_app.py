@@ -41,8 +41,10 @@ from metric_learning_evaluator.utils.switcher import switch
 
 # should cooperate add_container
 from metric_learning_evaluator.utils.io_utils import create_embedding_container_from_featobj
+from metric_learning_evaluator.utils.io_utils import check_instance_id
 
 from metric_learning_evaluator.application.standard_fields import ApplicationStatusStandardFields as status_fields
+from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as metric_fields
 
 import argparse
 
@@ -118,6 +120,13 @@ def main():
         instance_ids = feature_importer.instance_ids
         # TODO @kv: check instance_ids size, if empty, use filenames instead
         #           or generate pseudo instance ids
+        probabilities = feature_importer.probabilities
+        push_prob_to_evaluator = False
+        # also check the configuration
+        if probabilities.size != 0 and args.prob_size:
+            push_prob_to_evaluator = True
+            print('feature_object contains probabilities, activate {}'.format(
+                metric_fields.classification))
 
     print('evaluator metric names: {}'.format(evaluator.metric_names))
 
@@ -126,16 +135,27 @@ def main():
 
         if case(status_fields.evaluate_single_container):
             # Add datum through loop
-            for inst_id, feat, label in zip(instance_ids, embeddings, labels):
-                # TODO @kv: Do not confuse `filename` with `instance_id`.
-                #if isinstance(fn, str):
-                #    fn = fn.replace('.jpg','')
-                #    fn = fn.replace('.png','')
-                #instance_id = int(fn)
-                inst_id = int(inst_id)
-                evaluator.add_instance_id_and_embedding(inst_id, label, feat)
+            if instance_ids is None:
+                if filenames is None:
+                    raise ValueError('instance_ids and filenames should not be empty!')
+                unique_ids = filenames
+            else:
+                unique_ids = instance_ids
+
+            if not push_prob_to_evaluator:
+                for inst_id, feat, label in zip(unique_ids, embeddings, labels):
+                    # TODO @kv: Do not confuse `filename` with `instance_id`.
+                    inst_id = check_instance_id(inst_id)
+                    evaluator.add_instance_id_and_embedding(inst_id, label, feat)
+            else:
+                for inst_id, feat, label, prob in zip(unique_ids, embeddings, labels, probabilities):
+                    # TODO @kv: Do not confuse `filename` with `instance_id`.
+                    inst_id = check_instance_id(inst_id)
+                    evaluator.add_instance_id_and_embedding(inst_id, label, feat, prob)
+
             total_results = evaluator.evaluate()
 
+            print('----- evaluation results -----')
             for metric_name in evaluator.metric_names:
                 if metric_name in total_results:
                     print('{}: {}'.format(metric_name, total_results[metric_name]))
