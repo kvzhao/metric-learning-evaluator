@@ -280,6 +280,13 @@ class EvaluationConfigParser(object):
             return {}
 
     @property
+    def distance_measure(self):
+        if config_fields.distance_measure in self._eval_config:
+            return self._eval_config[config_fields.distance_measure]
+        else:
+            return {}
+
+    @property
     def metric_section(self):
         if config_fields.metric in self._eval_config:
             return self._eval_config[config_fields.metric]

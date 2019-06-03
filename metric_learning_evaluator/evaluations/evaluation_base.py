@@ -26,7 +26,6 @@ from collections import OrderedDict
 from collections import defaultdict
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 
 import logging
 import numpy as np
@@ -62,6 +61,7 @@ class MetricEvaluationBase(object):
         # Fetch all information from eval_config, If not None:
         # preprocessing eval config in each customized evaluation
         self.metrics = self.configs.metric_section
+        self.distance_measure = self.configs.distance_measure
         self.attributes = self.configs.attributes
         self.attribute_items = self.configs.attribute_items
         self.sampling = self.configs.sampling_section
@@ -85,14 +85,11 @@ class MetricEvaluationBase(object):
             self.evaluation_name, ', '.join(self.metrics.keys()), ', '.join(self.configs.attribute_items)))
 
     @abstractmethod
-    def compute(self, embedding_container, attribute_container=None):
+    def compute(self, embedding_container):
         """Compute metrics.
           Args:
             embedding_container, EmbeddingContainer:
                 The embedding container is necessary.
-
-            attribute_container, AttributeContrainer:
-                The attribute container is optional, it can be `None` for some evaluation.
 
           Return:
             metrics, dict:
