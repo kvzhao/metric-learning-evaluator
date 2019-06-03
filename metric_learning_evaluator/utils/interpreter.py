@@ -3,8 +3,8 @@
     Supported operations:
         +: Join
         -: Remove
-    TODO:
         &: And
+    TODO:
         ~: Exclusive
 """
 
@@ -31,6 +31,7 @@ field = InterpreterStandardField
 
 InstructionSymbolTable = {
     '+': 'JOIN',
+    '&': 'AND',
     '-': 'REMOVE',
     '#': 'PRINT',
 }
@@ -59,6 +60,13 @@ class Interpreter(object):
         arr_1 = self.stack.pop()
         arr_2 = self.stack.pop()
         result = arr_1 + list(set(arr_2) - set(arr_1))
+        self.stack.append(result)
+
+    def AND(self):
+        # logic and two list
+        arr_1 = self.stack.pop()
+        arr_2 = self.stack.pop()
+        result = list(set(arr_1) & set(arr_2))
         self.stack.append(result)
 
     def REMOVE(self):
