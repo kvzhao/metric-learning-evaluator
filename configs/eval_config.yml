@@ -7,12 +7,12 @@
 # TODO: Change name to `attribute_database`
 # database: Native | Json | Zeus
 database:
-    database_type: Native
+    database_type: # Native
     database_config:
         path: misc/sample_features/attr_table.db
 
 # index agent option: Numpy | HNSW
-#TODO: taking care about importing lib not installed
+# TODO: taking care about importing lib not installed
 index_agent: HNSW
 
 # upper-bound of the evaluation instances
@@ -28,13 +28,12 @@ evaluation_options:
     # Implemented Evaluations
     FacenetEvaluation:
         sampling:
-            # random_sample | amount_weighted | amount_inverse_weighted
+            # uniform | amount_weighted | amount_inverse_weighted
             class_sample_method: uniform
             instance_sample_method: uniform
             num_of_pairs: 1000
             ratio_of_positive_pair: 0.2
 
-        # these will be checked in FacenetEvaluation
         metric:
             accuracy:            true
             validation_rate:     true
@@ -49,11 +48,8 @@ evaluation_options:
                 start: 1.0
                 end: 1.5
                 step: 0.25
-        attribute: # not support
+        attribute:
             group:
-                - shape.bar + shape.bag
-                - shape.bottle
-                - shape.box
         option:
 
     ClassificationEvaluation:
@@ -74,10 +70,6 @@ evaluation_options:
         attribute:
             group:
                 - all
-                - appearance.bright
-                - shape.bar + shape.bag
-                - shape.bottle
-                - shape.box
         option:
 
     RankingEvaluation:
@@ -105,28 +97,10 @@ evaluation_options:
             # if `query` & `database` are not defined, sampling instead
             cross_reference:
                 - query->database
-                - seen+query->unseen+database # seen to unseen
-                - (seen+query)->(seen-unseen+database) # seen to total
-                - seen + query -> (seen-unseen+database) # seen to total
             # e.g attribute_name `color` with values `red`, `blue` or 'yellow'.
             group:
                 - all
-                - per_category
-                - color.red
-                - color.yellow
-                - color.red+color.blue
-                - color.red + color.blue
-                - appearance.bright
-                - appearance.dark
-                - shape.bar + shape.bag
-                - shape.bottle
-                - shape.box
-                #- color.* # have to implement string parser handling *
-                # color.red, color.yellow
 
         option:
-            path_database: # not done
-            seen_dataset: # not done
-            unseen_dataset: # not done
 
 # OPTIONS OF EACH ITEMS
