@@ -1,26 +1,25 @@
 
-# NOTE: `embedding_size` and `logit_size` are external parameters
+# NOTE: `embedding_size` and `prob_size` are external parameters
 
 # NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
 #       and with the key: `evaluator`.
 
 # TODO: Change name to `attribute_database`
-# database: Zeus | DatasetBackbone | Native
+# database: Native | Json | Zeus
 database:
     database_type: Native
     database_config:
-        # path to attributes_table.json
         path: misc/sample_features/attr_table.db
 
 # index agent option: Numpy | HNSW
 #TODO: taking care about importing lib not installed
 index_agent: HNSW
-#index_agent: Numpy
 
 # upper-bound of the evaluation instances
 container_size: 100000
 
 chosen_evaluations:
+    - FacenetEvaluation
     - RankingEvaluation
     - ClassificationEvaluation
 
@@ -30,18 +29,18 @@ evaluation_options:
     FacenetEvaluation:
         sampling:
             # random_sample | amount_weighted | amount_inverse_weighted
-            class_sample_method: random_sample
+            class_sample_method: uniform
+            instance_sample_method: uniform
             num_of_pairs: 1000
-            num_of_instance_per_class: 1
-            ratio_of_class: 0.1
+            ratio_of_positive_pair: 0.2
 
         # these will be checked in FacenetEvaluation
         metric:
             accuracy:            true
             validation_rate:     true
-            false_accept_rate:   false
+            false_accept_rate:   true
             true_positive_rate:  true
-            false_positive_rate: false
+            false_positive_rate: true
 
         distance_measure:
             function:
@@ -56,7 +55,6 @@ evaluation_options:
                 - shape.bottle
                 - shape.box
         option:
-            path_pairlist: # not done
 
     ClassificationEvaluation:
         sampling:
@@ -75,6 +73,7 @@ evaluation_options:
 
         attribute:
             group:
+                - all
                 - appearance.bright
                 - shape.bar + shape.bag
                 - shape.bottle
@@ -85,16 +84,12 @@ evaluation_options:
         sampling:
             class_sample_method: uniform
             instance_sample_method: uniform
-            # num_of_class: <int> or `all_class`
-            # [MUST] num_of_db_class: all_class
-            # num_of_instance: <int> or `all_instance`
-            num_of_db_instance_per_class: 30
+            num_of_db_instance_per_class: 10
             num_of_query_class: all_class
-            num_of_query_instance_per_class: 1
+            num_of_query_instance_per_class: 20
             maximum_of_sampled_data: 10000
 
         metric:
-            # top_1_hit is defaults
             top_k_hit_accuracy:
                 - 1
                 - 5
@@ -113,10 +108,10 @@ evaluation_options:
                 - seen+query->unseen+database # seen to unseen
                 - (seen+query)->(seen-unseen+database) # seen to total
                 - seen + query -> (seen-unseen+database) # seen to total
-                - seen -> unseen
-                - seen -> Taiwan
             # e.g attribute_name `color` with values `red`, `blue` or 'yellow'.
             group:
+                - all
+                - per_category
                 - color.red
                 - color.yellow
                 - color.red+color.blue
@@ -133,37 +128,5 @@ evaluation_options:
             path_database: # not done
             seen_dataset: # not done
             unseen_dataset: # not done
-
-    # The evaluation supports only offline
-    CheckoutEvaluation:
-        sampling:
-            class_sample_method: all_class
-            instance_sample_method: uniform
-
-        metric:
-            # top_1_hit is defaults
-            top_k_hit_accuracy:
-                - 1
-                - 5
-            mAP: true
-
-        attribute:
-            cross_reference:
-                - seen+query->seen+database
-                - unseen->unseen
-            group:
-                - color
-
-        option:
-            num_of_seen_query_class: 100
-            num_of_seen_db_instance: 10
-            num_of_seen_query_instance_per_class: 1
-            num_of_unseen_query_class: 100
-            num_of_unseen_db_instance: 10
-            num_of_unseen_query_instance_per_class: 1
-            seen_unique_ids: misc/seen_unique_ids_gp1444.json
-            unseen_unique_ids: misc/unseen_unique_ids_gp1444.json
-            label_map: misc/labelmap_1933.json
-            save_report:
 
 # OPTIONS OF EACH ITEMS
