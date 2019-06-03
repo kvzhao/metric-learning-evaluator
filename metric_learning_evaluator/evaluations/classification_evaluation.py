@@ -134,7 +134,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
         sampled_instance_ids = sampled[sample_fields.sampled_instance_ids]
         sampled_label_ids = sampled[sample_fields.sampled_label_ids]
-        sampled_probabilities = embedding_container.get_probability_by_instance_ids(instance_ids)
+        sampled_probabilities = embedding_container.get_probability_by_instance_ids(sampled_instance_ids)
 
         top_k_list = cls_config[metric_fields.top_k_hit_accuracy]
 
