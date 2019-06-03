@@ -47,6 +47,7 @@ class SampleStrategyStandardFields:
 
     # pair
     is_same = 'is_same'
+    num_of_pairs = 'num_of_pairs'
     pair_A = 'pair_A'
     pair_B = 'pair_B'
 
@@ -256,6 +257,7 @@ class SampleStrategy(object):
             sampled_label_ids.extend([_class] * _num_sampled_instance_per_class)
             #self._class_histogram[_class] += _num_sampled_instance_per_class
 
+        print('sampler: #of sampled={}'.format(len(sampled_instance_ids)))
         return {sample_fields.sampled_instance_ids: sampled_instance_ids,
                 sample_fields.sampled_label_ids: sampled_label_ids}
 
@@ -292,15 +294,102 @@ class SampleStrategy(object):
             num_of_sampled_instance_per_class=num_of_sampled_instance_per_class,
             maximum_of_sampled_data=maximum_of_sampled_data)
 
+    # TEMPORAL IMPLEMENTATION
     def sample_pairs(self,
                      class_sample_method,
                      instance_sample_method,
-                     maximum_of_sampled_data):
-        """
+                     num_of_pairs,
+                     ):
+        """Image Pair & Sampling Strategy
+
+          Args:
+
+          Return:
+            pairs, dict of list:
+
+            A: {a1, a2, ..., aN} N instances in class A
+            B: {b1, b2, ..., bM} M instances in class B
+
           Returns:
             A dict of pairs and label
         """
-        pass
+        pairs = defaultdict(list)
+        num_instance_ids = len(self._instance_ids)
+        num_label_ids = len(self._label_ids)
+        num_classes = len(self._classes)
+
+        assert num_label_ids == num_instance_ids
+
+        # Randomly sample several data
+        instance_ids = np.asarray(self._instance_ids)
+        label_ids = np.asarray(self._label_ids)
+
+        # NOTE: Hard-coded for current app
+        # TODO: REMOVE THIS
+        ratio_of_class = 1.0
+        num_of_instance_per_class = 2
+        num_sampled_classes = math.ceil(ratio_of_class * num_classes)
+        if ratio_of_class == 1.0:
+            sampled_classes = self._classes
+        else:
+            if class_sample_method == sample_fields.random_sample:
+                sampled_classes = np.random.choice(self._classes, num_sampled_classes)
+            elif class_sample_method == sample_fields.amount_weighted:
+                raise NotImplementedError
+            elif class_sample_method == sample_fields.amount_inverse_weighted:
+                raise NotImplementedError
+        num_sampled_classes = len(sampled_classes)
+
+        num_of_pair_counter = 0
+        all_combinations = list(itertools.combinations_with_replacement(sampled_classes, 2))
+        shuffle(all_combinations)
+
+        print('num of all comb. {}'.format(len(all_combinations)))
+        print('num of sampled classes {}'.format(num_sampled_classes))
+
+        # TODO @kv: Stack to record  seen class, for per_instance and has instance shown
+        class_histogram = {}
+        for _class in sampled_classes:
+            class_histogram[_class] = 0
+
+        sufficient_sample = False
+        for class_a, class_b in all_combinations:
+            num_img_class_a = self._class_distribution[class_a]
+            num_img_class_b = self._class_distribution[class_b]
+            num_sampled_img_per_class = min(num_img_class_a, num_img_class_b, num_of_instance_per_class)
+
+            # statistics
+            class_histogram[class_a] += num_sampled_img_per_class
+            class_histogram[class_b] += num_sampled_img_per_class
+
+            sampled_img_id_class_a = np.random.choice(
+                self._instance_group[class_a], num_sampled_img_per_class)
+            sampled_img_id_class_b = np.random.choice(
+                self._instance_group[class_b], num_sampled_img_per_class)
+
+            # Add instances in pair
+            for img_class_a, img_class_b in zip(sampled_img_id_class_a, sampled_img_id_class_b):
+                is_same = class_a == class_b
+                pairs[sample_fields.pair_A].append(img_class_a)
+                pairs[sample_fields.pair_B].append(img_class_b)
+                pairs[sample_fields.is_same].append(is_same)
+                num_of_pair_counter += 1
+
+            # check the strategic stop criteria
+            if num_of_pair_counter > num_of_pairs:
+                sufficient_sample = True
+                """Find out which classes are less than requirements and sample them directly.
+                """
+                for _class, _counts in class_histogram.items():
+                    total_num_of_instance = len(self._instance_group[_class])
+                    if _count <= num_of_instance_per_class < total_num_of_instance:
+                        sufficient_sample = False
+                        break
+            if sufficient_sample:
+                break
+
+        print('{} pairs are generated.'.format(num_of_pair_counter))
+        return pairs
 
     def sample_query_and_database(self,
                                   class_sample_method,
@@ -422,6 +511,8 @@ class SampleStrategy(object):
                     sampled_query_label_ids.extend([_class] * num_of_query_instance_per_class)
 
         # Pass candidates into _sample function
+        print('sampler: #of query={}, #of database={}'.format(
+            len(sampled_query_instance_ids), len(sampled_database_instance_ids)))
         return {
             sample_fields.database_instance_ids: sampled_database_instance_ids,
             sample_fields.database_label_ids: sampled_database_label_ids,
