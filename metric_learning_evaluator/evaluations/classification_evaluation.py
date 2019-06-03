@@ -146,7 +146,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
             for _idx, gt_label_id in enumerate(sampled_label_ids):
                 prob = sampled_probabilities[_idx]
-                top_k_hit_ids = np.argsort(prob)[:top_k]
+                top_k_hit_ids = np.argsort(-prob)[:top_k]
                 top_k_hit_ids = top_k_hit_ids == gt_label_id
                 hit_arrays[_idx, ...] = top_k_hit_ids
             cls_metrics.add_inputs(hit_arrays)
