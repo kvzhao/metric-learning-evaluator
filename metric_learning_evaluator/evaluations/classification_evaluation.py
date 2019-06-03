@@ -134,7 +134,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
         sampled_instance_ids = sampled[sample_fields.sampled_instance_ids]
         sampled_label_ids = sampled[sample_fields.sampled_label_ids]
-        sampled_probabilities = embedding_container.get_probability_by_instance_ids(instance_ids)
+        sampled_probabilities = embedding_container.get_probability_by_instance_ids(sampled_instance_ids)
 
         top_k_list = cls_config[metric_fields.top_k_hit_accuracy]
 
@@ -146,7 +146,7 @@ class ClassificationEvaluation(MetricEvaluationBase):
 
             for _idx, gt_label_id in enumerate(sampled_label_ids):
                 prob = sampled_probabilities[_idx]
-                top_k_hit_ids = np.argsort(prob)[:top_k]
+                top_k_hit_ids = np.argsort(-prob)[:top_k]
                 top_k_hit_ids = top_k_hit_ids == gt_label_id
                 hit_arrays[_idx, ...] = top_k_hit_ids
             cls_metrics.add_inputs(hit_arrays)

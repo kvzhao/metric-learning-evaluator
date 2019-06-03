@@ -382,7 +382,7 @@ class SampleStrategy(object):
                 """
                 for _class, _counts in class_histogram.items():
                     total_num_of_instance = len(self._instance_group[_class])
-                    if _count <= num_of_instance_per_class < total_num_of_instance:
+                    if _counts <= num_of_instance_per_class < total_num_of_instance:
                         sufficient_sample = False
                         break
             if sufficient_sample:

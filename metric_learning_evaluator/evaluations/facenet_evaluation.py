@@ -124,7 +124,8 @@ class FacenetEvaluation(MetricEvaluationBase):
         for _config in self._must_have_config:
             if _config not in self.metrics:
                 if _config in self._default_values:
-                    self.metrics[_config] = self._default_values[_config]
+                    pass
+                    #self.metrics[_config] = self._default_values[_config]
                 else:
                     print('WARNING: {} should be assigned'.format(_config))
             else:
