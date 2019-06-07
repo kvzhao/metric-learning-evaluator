@@ -157,6 +157,7 @@ class EmbeddingContainer(object):
                 attributes = [attributes]
             if not all(isinstance(_attr, str) for _attr in attributes):
                 raise ValueError('attributes type should be str or list of str.')
+            #TODO: add one more attributes `all` into the container! (also works for attributes is None case)
             self._attribute_by_instance[instance_id] = attributes
             for _attr in attributes:
                 if _attr in self._instance_by_attribute:

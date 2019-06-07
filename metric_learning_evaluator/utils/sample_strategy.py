@@ -48,8 +48,12 @@ class SampleStrategyStandardFields:
     # pair
     is_same = 'is_same'
     num_of_pairs = 'num_of_pairs'
+    ratio_of_positive_pair = 'ratio_of_positive_pair'
+    ratio_of_negative_pair = 'ratio_of_negative_pair'
     pair_A = 'pair_A'
     pair_B = 'pair_B'
+    pair_A_label = 'pair_A_label'
+    pair_B_label = 'pair_B_label'
 
     # ranking
     sampled_instance_ids = 'sampled_instance_ids'
@@ -299,6 +303,73 @@ class SampleStrategy(object):
                      class_sample_method,
                      instance_sample_method,
                      num_of_pairs,
+                     ratio_of_positive_pair,
+                     ):
+        """Image Pair & Sampling Strategy
+
+          Args:
+
+          Returns:
+            A dict of pairs and label
+        """
+
+        if 2*num_of_pairs > self._num_of_total_instances:
+            # reduce to the maximum
+            num_of_pairs = self._num_of_total_instances // 2
+
+        ratio_of_positive_pair = min(ratio_of_positive_pair, 1.0)
+
+        num_of_same_pairs = math.floor(ratio_of_positive_pair * num_of_pairs)
+        num_of_not_same_pairs = num_of_pairs - num_of_same_pairs
+        num_of_class_coverage = num_of_same_pairs + 2 * num_of_not_same_pairs
+
+        pairs = defaultdict(list)
+        if self._num_of_total_classes < num_of_class_coverage:
+            # standard sampling procedure
+            num_of_class_for_same_pair = num_of_same_pairs #min(num_of_same_pairs, len(self._classes))
+            num_of_class_for_not_same_pair = num_of_not_same_pairs #min(num_of_not_same_pairs, len(self._classes))
+            sampled_class_for_same_pair = np.random.choice(
+                self._classes, num_of_class_for_same_pair)
+            sampled_class_for_not_same_pair_A = np.random.choice(
+                self._classes, num_of_class_for_not_same_pair)
+            sampled_class_for_not_same_pair_B = np.random.choice(
+                self._classes, num_of_class_for_not_same_pair)
+        else:
+            # Nc is large, hard to cover by sampling
+            sampled_class = np.random.choice(
+                self._classes, num_of_class_coverage, replace=False)
+            _1st_section_idx = num_of_same_pairs
+            _2nd_section_idx = num_of_same_pairs + num_of_not_same_pairs
+            sampled_class_for_same_pair = sampled_class[:_1st_section_idx]
+            sampled_class_for_not_same_pair_A = sampled_class[_1st_section_idx:_2nd_section_idx]
+            sampled_class_for_not_same_pair_B = sampled_class[_2nd_section_idx:]
+        # push same pairs
+        for _class in sampled_class_for_same_pair:
+            if len(self._instance_group[_class]) < 2:
+                continue
+            inst_a, inst_b = np.random.choice(self._instance_group[_class], 2, replace=False)
+            pairs[sample_fields.pair_A].append(inst_a)
+            pairs[sample_fields.pair_B].append(inst_b)
+            pairs[sample_fields.is_same].append(True)
+        # push diff pairs
+        for _class_a, _class_b in zip(
+            sampled_class_for_not_same_pair_A, sampled_class_for_not_same_pair_B):
+            inst_a = np.random.choice(self._instance_group[_class_a], 1, replace=False)[0]
+            inst_b = np.random.choice(self._instance_group[_class_b], 1, replace=False)[0]
+            is_same = _class_a == _class_b
+            pairs[sample_fields.pair_A].append(inst_a)
+            pairs[sample_fields.pair_B].append(inst_b)
+            pairs[sample_fields.is_same].append(is_same)
+        num_sampled_same_pair = sum(pairs[sample_fields.is_same])
+        print('sampler: {} pairs are sampled with {} same pairs'.format(
+            len(pairs[sample_fields.is_same]), num_sampled_same_pair))
+        return pairs
+
+    def _deprecated_sample_pairs(self,
+                     class_sample_method,
+                     instance_sample_method,
+                     num_of_pairs,
+                     ratio_of_positive_pair,
                      ):
         """Image Pair & Sampling Strategy
 
@@ -329,15 +400,9 @@ class SampleStrategy(object):
         ratio_of_class = 1.0
         num_of_instance_per_class = 2
         num_sampled_classes = math.ceil(ratio_of_class * num_classes)
-        if ratio_of_class == 1.0:
-            sampled_classes = self._classes
-        else:
-            if class_sample_method == sample_fields.random_sample:
-                sampled_classes = np.random.choice(self._classes, num_sampled_classes)
-            elif class_sample_method == sample_fields.amount_weighted:
-                raise NotImplementedError
-            elif class_sample_method == sample_fields.amount_inverse_weighted:
-                raise NotImplementedError
+
+        sampled_classes = self._classes
+
         num_sampled_classes = len(sampled_classes)
 
         num_of_pair_counter = 0
@@ -421,19 +486,16 @@ class SampleStrategy(object):
         if num_of_query_class > self._num_of_total_classes:
             num_of_query_class = self._num_of_total_classes
 
-        # Sanity Check of Numbers
+        # Sanity Check: Nt >= Ndb + Nq, but not really useful
         num_of_total_database_required = self._num_of_total_classes * num_of_db_instance_per_class
         num_of_total_query_required = num_of_query_class * num_of_query_instance_per_class
 
+        """
         # If summed more than total, squeeze number of query (instances per class)
         if (num_of_total_database_required + num_of_total_query_required) > self._num_of_total_instances:
             rest_num_of_instances = self._num_of_total_instances - num_of_total_database_required
-            if rest_num_of_instances < 0:
-                # DAMN!
-                pass
-            else:
-                reduced_num_of_query_instance_per_class = math.floor(rest_num_of_instances/num_of_query_class)
-                num_of_query_instance_per_class = reduced_num_of_query_instance_per_class
+            pass
+        """
 
         # Split instance group into database & query candidates
         sampled_query_instance_ids, sampled_query_label_ids = [], []

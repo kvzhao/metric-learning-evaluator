@@ -130,7 +130,7 @@ class RankingEvaluation(MetricEvaluationBase):
             database_label_ids = embedding_container.get_label_by_instance_ids(database_instance_ids)
 
             self._rank(cref_cmd, embedding_container,
-                query_label_ids, query_label_ids, query_embeddings,
+                query_instance_ids, query_label_ids, query_embeddings,
                 database_instance_ids, database_label_ids, database_embeddings,)
 
         return self.result_container
