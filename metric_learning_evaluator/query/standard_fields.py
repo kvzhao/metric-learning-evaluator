@@ -22,6 +22,8 @@ class AttributeStandardFields(object):
     # none attributes are given, use class instead.
     none = 'none' 
     All = 'all'
+    # TODO @kv:
+    per_category = 'per_category'
 
     # General attribute types:
     category = 'category'

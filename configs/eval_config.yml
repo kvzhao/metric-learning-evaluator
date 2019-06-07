@@ -45,7 +45,7 @@ evaluation_options:
             function:
                 - euclidean
             threshold:
-                start: 1.0
+                start: 0.25
                 end: 1.5
                 step: 0.25
         attribute:
@@ -78,7 +78,7 @@ evaluation_options:
             instance_sample_method: uniform
             num_of_db_instance_per_class: 10
             num_of_query_class: all_class
-            num_of_query_instance_per_class: 20
+            num_of_query_instance_per_class: 1000 # TODO: all_instance
             maximum_of_sampled_data: 10000
 
         metric:

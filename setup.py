@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 # ml, short for `metric learning`
 EVAL_APP_NAME = 'ml-evaluation'
 INFERENCE_APP_NAME = 'ml-inference'
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 ROOT_FOLDER = 'metric_learning_evaluator'
 APP_FOLDER = 'application'
