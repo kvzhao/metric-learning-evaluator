@@ -199,7 +199,8 @@ class FacenetEvaluation(MetricEvaluationBase):
         sampled_pairs = sampler.sample_pairs(
             class_sample_method=sampling_config[sample_fields.class_sample_method],
             instance_sample_method=sampling_config[sample_fields.instance_sample_method],
-            num_of_pairs=sampling_config[sample_fields.num_of_pairs],)
+            num_of_pairs=sampling_config[sample_fields.num_of_pairs],
+            ratio_of_positive_pair=sampling_config[sample_fields.ratio_of_positive_pair],)
 
         # fetch instance ids and compute distances at once.
         pair_a_embeddings = embedding_container.get_embedding_by_instance_ids(
