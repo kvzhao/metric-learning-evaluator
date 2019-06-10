@@ -527,8 +527,9 @@ class SampleStrategy(object):
                         sampled_database_instance_ids.extend(instance_ids_of_given_class)
                         sampled_database_label_ids.extend([_class] * num_instance_given_class)
                     else:
+                        _num_instance_used_for_db = min(num_instance_given_class, required_num_of_instance_per_class)
                         _sampled_instance_ids = np.random.choice(
-                            instance_ids_of_given_class, required_num_of_instance_per_class, replace=False)
+                            instance_ids_of_given_class, _num_instance_used_for_db, replace=False)
                         sampled_database_instance_ids.extend(_sampled_instance_ids[:num_of_db_instance_per_class])
                         sampled_database_label_ids.extend([_class] * num_of_db_instance_per_class)
                 else:
