@@ -156,6 +156,11 @@ class EvaluatorBuilder(object):
         if instance_id is None or instance_id == -1:
             instance_id = self._instance_counter
 
+        if not isinstance(instance_id, int):
+            instance_id = int(instance_id)
+        if not isinstance(label_id, int):
+            label_id = int(label_id)
+
         if self.query_interface:
             queried_attributes = self.query_interface.query(instance_id)
             self.embedding_container.add(instance_id, label_id,
