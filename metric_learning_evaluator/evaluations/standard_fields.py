@@ -29,6 +29,9 @@ class EvaluationStandardFields(object):
     classification = 'ClassificationEvaluation'
 
 
+    geometric = 'GeometricEvaluation'
+
+
     # ===== Inner items =====
     sampling = 'sampling'
     metric = 'metric'

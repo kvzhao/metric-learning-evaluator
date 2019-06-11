@@ -12,7 +12,6 @@ class ConfigStandardFields(object):
 
     # Types of warpper
     database_type = 'database_type'
-    datasetbackbone = 'DatasetBackbone'
     zeus = 'Zeus'
     json = 'Json'
     none = 'None'
