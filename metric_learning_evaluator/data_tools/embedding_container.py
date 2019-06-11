@@ -258,7 +258,7 @@ class EmbeddingContainer(object):
         """Fetch instance_ids except given label_id."""
         if not np.issubdtype(type(label_id), np.integer):
             raise ValueError('Query label id should be integer.')
-        exclusive_label_ids = [_id for _id in self._label_ids if _id != label_id]
+        exclusive_label_ids = [_id for _id in set(self._label_ids) if _id != label_id]
         return self.get_instance_ids_by_label_ids(exclusive_label_ids)
 
     def get_instance_ids_by_label_ids(self, label_ids):
