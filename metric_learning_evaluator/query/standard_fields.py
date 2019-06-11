@@ -6,7 +6,6 @@ sys.path.insert(0, os.path.abspath(
 
 
 class QueryDatabaseStandardFields:
-    datasetbackbone = 'DatasetBackbone'
     zeus = 'Zeus'
     json = 'Json'
     # built-in sqlite3 attribute table

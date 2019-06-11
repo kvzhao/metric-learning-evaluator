@@ -44,6 +44,8 @@ from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEval
 from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
 from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
 
+from metric_learning_evaluator.evaluations.geometric_evaluation import GeometricEvaluation
+
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
 
