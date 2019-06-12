@@ -164,7 +164,7 @@ class RankingEvaluation(MetricEvaluationBase):
             for _idx, query_label_id in enumerate(query_label_ids):
                 retrived_instances = retrieved_database_instance_ids[_idx]
                 retrived_labels = embedding_container.get_label_by_instance_ids(retrived_instances)
-                hits = retrived_labels[:top_k] == query_label_id
+                hits = retrived_labels[:top_k] == np.asarray(query_label_id)
                 hit_arrays[_idx, ...] = hits
 
             ranking_metrics.add_inputs(hit_arrays)
