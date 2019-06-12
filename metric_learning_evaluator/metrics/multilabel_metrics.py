@@ -56,7 +56,7 @@ class MultilabelMetrics(MetricBase):
             preds: an ndarray, of dtype np.bool, shape (N, C)
             labels: an ndarray, of dtype np.bool, shape (N, C)
         """
-        if len(preds.shape) != 2 or len(labels) != 2:
+        if len(preds.shape) != 2 or len(labels.shape) != 2:
             raise ValueError(
                 'shape must be (N, C), but get {preds} (preds), {labels} (labels)'.format(
                     preds=preds.shape,
