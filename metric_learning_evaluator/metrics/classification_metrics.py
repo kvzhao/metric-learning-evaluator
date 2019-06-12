@@ -22,6 +22,7 @@ class ClassificationMetrics(MetricBase):
     epsilon = 1e-7
 
     def __init__(self):
+        self._is_empty = True
         self.clear()
 
     @property

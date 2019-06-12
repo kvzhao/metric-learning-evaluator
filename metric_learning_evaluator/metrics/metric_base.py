@@ -13,7 +13,7 @@ class MetricBase(object):
 
     __metaclass__ = ABCMeta
 
-    #@property
+    # @property
     @abstractmethod
     def is_empty(self):
         pass
