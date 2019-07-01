@@ -42,9 +42,13 @@ from metric_learning_evaluator.utils.switcher import switch
 # should cooperate add_container
 from metric_learning_evaluator.utils.io_utils import create_embedding_container_from_featobj
 from metric_learning_evaluator.utils.io_utils import check_instance_id
+from metric_learning_evaluator.utils.report_writer import ReportWriter
+from metric_learning_evaluator.utils.result_saver import ResultSaver
 
 from metric_learning_evaluator.application.standard_fields import ApplicationStatusStandardFields as status_fields
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as metric_fields
+
+from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES as display_namemap
 
 import argparse
 
@@ -70,6 +74,8 @@ parser.add_argument('--embedding_size', '-es', type=int, default=2048,
 parser.add_argument('--prob_size', '-ps', type=int, default=0,
         help='Size of the output probability size used in container, set 0 to disable')
 
+parser.add_argument('--verbose', '-v', action='store_true')
+
 
 APP_SIGNATURE = '[EVAL]'
 
@@ -78,6 +84,7 @@ def main():
     config_path = args.config
     data_type = args.data_type
     data_dir = args.data_dir
+    out_dir = args.out_dir
     database_dir = args.database
 
     status = status_fields.not_determined
@@ -156,8 +163,30 @@ def main():
             total_results = evaluator.evaluate()
 
             print('----- evaluation results -----')
+            # remove this
             for metric_name in evaluator.metric_names:
                 if metric_name in total_results:
                     print('{}: {}'.format(metric_name, total_results[metric_name]))
 
+            if out_dir is not None:
+                if not os.path.exists(out_dir):
+                    os.makedirs(out_dir)
+
+            for eval_name, container in evaluator.results.items():
+                print(eval_name)
+                display_name = display_namemap[eval_name] if eval_name in display_namemap else eval_name
+                reporter = ReportWriter(container)
+                overall_report = reporter.overall_report
+                print(overall_report)
+                if args.verbose:
+                    event_report = reporter.event_report
+                    print(event_report)
+                if out_dir:
+                    saver = ResultSaver(container)
+                    path = '/'.join([out_dir, 'overall_{}'.format(display_name)])
+                    saver.save_overall(path)
+                    path = '/'.join([out_dir, 'event_{}'.format(display_name)])
+                    saver.save_event(path)
+
+            # end of switch case
             break

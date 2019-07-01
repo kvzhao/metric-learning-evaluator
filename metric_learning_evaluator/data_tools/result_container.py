@@ -6,15 +6,18 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-
-class ResultContainerStandardFields:
-    pass
+from collections import defaultdict
 
 
 class ResultContainer(object):
     """
       The evaluation result container handles the computation outcomes
       and save them into the unified data structure.
+
+      1. add
+      2. add_event
+
+      TODO @kv: I want to refactor this.
 
       NOTE:
         Structure of the result_container:
@@ -36,6 +39,9 @@ class ResultContainer(object):
 
         """
         self._results = {}
+        # A buffer for storing intermediate results,
+        # only show when off-line mode is used.
+        self._event_buffer = defaultdict(list)
 
     def add(self, attribute, metric, value, condition=None):
         """Add one result
@@ -58,6 +64,23 @@ class ResultContainer(object):
         elif isinstance(condition, str):
             _cond_key = condition
             self._results[attribute][metric][_cond_key] = value
+
+    def add_event(self, attribute, content):
+        """
+          Args:
+            attribute: String, key for describing the level of events
+            content: A dictionary
+          Note:
+        """
+        self._event_buffer[attribute].append(content)
+
+    @property
+    def events(self):
+        return self._event_buffer
+
+    @events.setter
+    def events(self, dict_event):
+        self._event_buffer.update(dict_event)
 
     @property
     def results(self):
@@ -84,8 +107,11 @@ class ResultContainer(object):
                     else:
                         _name = '{}/{}{}'.format(_attr_name, _metric_name, _cond_key)
                     dict_flatten[_name] = _value
-
         return dict_flatten
+
+    @flatten.setter
+    def flatten(self, fict_flatten):
+        pass
 
     def clear(self):
         self._results = {}
