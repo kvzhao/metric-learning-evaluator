@@ -92,6 +92,7 @@ class EmbeddingContainer(object):
     def __repr__(self):
         _content = '===== {} =====\n'.format(self._name)
         _content += 'embeddings: {}'.format(self._embeddings.shape)
+        return _content
 
     def _init_internals(self):
         # maps index used in numpy array and instance_id list
@@ -286,9 +287,38 @@ class EmbeddingContainer(object):
     def instance_ids(self):
         # get all instance_ids in container
         return self._instance_ids
+
     @property
     def label_ids(self):
         return self._label_ids
+
+    @property
+    def label_id_set(self):
+        return list(set(self.label_ids))
+
+    @property
+    def label_names(self):
+        return self._label_names
+
+    @property
+    def label_name_set(self):
+        return list(set(self.label_names))
+
+    @property
+    def labelmap(self):
+        # id to name
+        if self.label_names and self.label_ids:
+            labelmap = {}
+            for _name, _id in zip(self.label_names, self.label_ids):
+                if _name not in labelmap:
+                    labelmap[_id] = _name
+                else:
+                    if labelmap[_id] != _name:
+                        # or just print
+                        raise ValueError('label name:{} (!={}) is not consistent for id:{}!'.format(
+                            _name, labelmap[_name], _id))
+            return labelmap
+        return {}
 
     @property
     def instance_id_groups(self):
