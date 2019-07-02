@@ -286,9 +286,18 @@ class EmbeddingContainer(object):
     def instance_ids(self):
         # get all instance_ids in container
         return self._instance_ids
+
     @property
     def label_ids(self):
         return self._label_ids
+
+    @property
+    def label_names(self):
+        return self._label_names
+
+    @property
+    def filename_strings(self):
+        return self._filename_strings
 
     @property
     def instance_id_groups(self):
@@ -334,6 +343,18 @@ class EmbeddingContainer(object):
         """
         if attribute_name in self._instance_by_attribute:
             return self._instance_by_attribute[attribute_name]
+        else:
+            return []
+
+    def get_attribute_by_instance_id(self, instance_id):
+        """
+          Args:
+            instance_id: int
+          Return:
+            attributes: list, empty if query can not be found
+        """
+        if instance_id in self._attribute_by_instance:
+            return self._attribute_by_instance[instance_id]
         else:
             return []
 
