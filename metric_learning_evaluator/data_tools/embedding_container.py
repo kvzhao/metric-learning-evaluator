@@ -26,6 +26,7 @@ from abc import abstractmethod
 import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 
 
 from metric_learning_evaluator.utils.switcher import switch
@@ -328,7 +329,39 @@ class EmbeddingContainer(object):
 
     def save(self, path):
         # Save as feature_object
-        pass
+        feature_exporter = FeatureObject()
+        if self.instance_ids:
+            feature_exporter.instance_ids = np.asarray(self.instance_ids)
+
+        if self.filename_strings:
+            feature_exporter.filename_strings = np.asarray(self.filename_strings)
+
+        if self.label_ids:
+            feature_exporter.label_ids = np.asarray(self.label_ids)
+
+        if self.label_names:
+            feature_exporter.label_names = np.asarray(self.label_names)
+
+        if self._current > 0:
+            feature_exporter.embeddings = self.embeddings
+        print('Export embedding with shape: {}'.format(self.embeddings.shape))
+
+        feature_exporter.save(path)
+        print("Save all extracted features at \'{}\'".format(path))
+
+        # Save attributes
+        if self._attribute_by_instance:
+            db_path = os.path.join(path, 'attribute.db')
+            attribute_table = AttributeTable(db_path)
+            for instance_id, attributes in self._attribute_by_instance.items():
+                for attribute in attributes:
+                    if '.' in attribute: # attribute
+                        splited_attribute = attribute.split('.', 1)
+                        attribute_table.insert_property(instance_id, splited_attribute[0], splited_attribute[1])
+                    else: # tag
+                        attribute_table.insert_domain(instance_id, attribute)
+            attribute_table.commit()
+            print("Save all attributes into \'{}\'".format(db_path))
 
     def load(self, path):
         pass
