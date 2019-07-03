@@ -328,6 +328,7 @@ class EmbeddingContainer(object):
         print ('Clear embedding container.')
 
     def save(self, path):
+        """Save embedding to disk"""
         # Save as feature_object
         feature_exporter = FeatureObject()
         if self.instance_ids:
@@ -356,8 +357,8 @@ class EmbeddingContainer(object):
             for instance_id, attributes in self._attribute_by_instance.items():
                 for attribute in attributes:
                     if '.' in attribute: # attribute
-                        splited_attribute = attribute.split('.', 1)
-                        attribute_table.insert_property(instance_id, splited_attribute[0], splited_attribute[1])
+                        name, content = attribute.split('.', 1)
+                        attribute_table.insert_property(instance_id, name, content)
                     else: # tag
                         attribute_table.insert_domain(instance_id, attribute)
             attribute_table.commit()
