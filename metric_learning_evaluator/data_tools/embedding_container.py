@@ -26,6 +26,7 @@ from abc import abstractmethod
 import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 
 
 from metric_learning_evaluator.utils.switcher import switch
@@ -301,6 +302,10 @@ class EmbeddingContainer(object):
         return self._label_names
 
     @property
+    def filename_strings(self):
+        return self._filename_strings
+
+    @property
     def label_name_set(self):
         return list(set(self.label_names))
 
@@ -348,11 +353,91 @@ class EmbeddingContainer(object):
         print ('Clear embedding container.')
 
     def save(self, path):
+        """Save embedding to disk"""
         # Save as feature_object
-        pass
+        feature_exporter = FeatureObject()
+        if self.instance_ids:
+            feature_exporter.instance_ids = np.asarray(self.instance_ids)
+
+        if self.filename_strings:
+            feature_exporter.filename_strings = np.asarray(self.filename_strings)
+
+        if self.label_ids:
+            feature_exporter.label_ids = np.asarray(self.label_ids)
+
+        if self.label_names:
+            feature_exporter.label_names = np.asarray(self.label_names)
+
+        if self._current > 0:
+            feature_exporter.embeddings = self.embeddings
+        print('Export embedding with shape: {}'.format(self.embeddings.shape))
+
+        feature_exporter.save(path)
+        print("Save all extracted features at \'{}\'".format(path))
+
+        # Save attributes
+        if self._attribute_by_instance:
+            db_path = os.path.join(path, 'attribute.db')
+            attribute_table = AttributeTable(db_path)
+            for instance_id, attributes in self._attribute_by_instance.items():
+                for attribute in attributes:
+                    if '.' in attribute: # attribute
+                        name, content = attribute.split('.', 1)
+                        attribute_table.insert_property(instance_id, name, content)
+                    else: # tag
+                        attribute_table.insert_domain(instance_id, attribute)
+            attribute_table.commit()
+            print("Save all attributes into \'{}\'".format(db_path))
 
     def load(self, path):
-        pass
+        """Load embedding from disk"""
+        # Create FeatureObject
+        feature_importer = FeatureObject()
+        feature_importer.load(path)
+
+        # Check
+        assert feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
+        assert feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
+        assert len(feature_importer.embeddings) == len(feature_importer.label_ids)
+
+        n_instances = len(feature_importer.label_ids)
+
+        # Give sequential instance_ids if not specified
+        if feature_importer.instance_ids.size == 0:
+            instance_ids = np.arange(n_instances)
+        else:
+            assert len(feature_importer.instance_ids) == n_instances
+            instance_ids = feature_importer.instance_ids
+
+        # Create AttributeTable
+        db_path = os.path.join(path, 'attribute.db')
+        attribute_table = AttributeTable(db_path)
+
+        for idx, instance_id in enumerate(instance_ids):
+            label_id = feature_importer.label_ids[idx]
+            embedding = feature_importer.embeddings[idx]
+
+            label_name = None
+            if feature_importer.label_names.size > 0:
+                label_name = feature_importer.label_names[idx]
+
+            filename = None
+            if feature_importer.filename_strings.size > 0:
+                filename = feature_importer.filename_strings[idx]
+
+            properties = attribute_table.query_property_by_instance_ids(int(instance_id))
+            domains = attribute_table.query_domain_by_instance_ids(int(instance_id))
+
+            if properties or domains:
+                attributes = ['{}.{}'.format(name, content) for property_ in properties \
+                              for name, content in property_.items()] + domains
+
+            self.add(instance_id=instance_id,
+                     label_id=label_id,
+                     label_name=label_name,
+                     embedding=embedding,
+                     attributes=attributes,
+                     filename=filename)
 
     # Add new functions
     def get_instance_id_by_attribute(self, attribute_name):
@@ -364,8 +449,18 @@ class EmbeddingContainer(object):
         """
         if attribute_name in self._instance_by_attribute:
             return self._instance_by_attribute[attribute_name]
-        else:
-            return []
+        return []
+
+    def get_attribute_by_instance_id(self, instance_id):
+        """
+          Args:
+            instance_id: int
+          Return:
+            attributes: list, empty if query can not be found
+        """
+        if instance_id in self._attribute_by_instance:
+            return self._attribute_by_instance[instance_id]
+        return []
 
     def get_instance_id_by_group_command(self, command):
         """
