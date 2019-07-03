@@ -364,7 +364,54 @@ class EmbeddingContainer(object):
             print("Save all attributes into \'{}\'".format(db_path))
 
     def load(self, path):
-        pass
+        """Load embedding from disk"""
+        # Create FeatureObject
+        feature_importer = FeatureObject()
+        feature_importer.load(path)
+
+        # Check
+        assert feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
+        assert feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
+        assert len(feature_importer.embeddings) == len(feature_importer.label_ids)
+
+        n_instances = len(feature_importer.label_ids)
+
+        # Give sequential instance_ids if not specified
+        if feature_importer.instance_ids.size == 0:
+            instance_ids = np.arange(n_instances)
+        else:
+            assert len(feature_importer.instance_ids) == n_instances
+            instance_ids = feature_importer.instance_ids
+
+        # Create AttributeTable
+        db_path = os.path.join(path, 'attribute.db')
+        attribute_table = AttributeTable(db_path)
+
+        for idx, instance_id in enumerate(instance_ids):
+            label_id = feature_importer.label_ids[idx]
+            embedding = feature_importer.embeddings[idx]
+
+            label_name = None
+            if feature_importer.label_names.size > 0:
+                label_name = feature_importer.label_names[idx]
+
+            filename = None
+            if feature_importer.filename_strings.size > 0:
+                filename = feature_importer.filename_strings[idx]
+
+            properties = attribute_table.query_property_by_instance_ids(int(instance_id))
+            domains = attribute_table.query_domain_by_instance_ids(int(instance_id))
+
+            if properties or domains:
+                attributes = ['{}.{}'.format(name, content) for property_ in properties \
+                              for name, content in property_.items()] + domains
+
+            self.add(instance_id=instance_id,
+                     label_id=label_id,
+                     label_name=label_name,
+                     embedding=embedding,
+                     attributes=attributes,
+                     filename=filename)
 
     # Add new functions
     def get_instance_id_by_attribute(self, attribute_name):
