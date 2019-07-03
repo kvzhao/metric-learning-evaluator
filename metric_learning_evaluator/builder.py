@@ -95,6 +95,7 @@ class EvaluatorBuilder(object):
 
         self._instance_counter = 0
         self._total_metrics = {}
+        self._results = {}
 
         # Allocate general query interface
         if not self.configs.database[config_fields.database_type]:
@@ -186,6 +187,7 @@ class EvaluatorBuilder(object):
             embedding_container: EmbeddingContainer, default is None.
           Notice:
             Sanity check:
+          TODO @kv: Think about how to cooperate with attributes
         """
         # replace container
         if embedding_container is not None:
@@ -208,6 +210,7 @@ class EvaluatorBuilder(object):
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
             res_container = _evaluation.compute(self.embedding_container)
+            self._results[_eval_name] = res_container
 
             # TODO: flatten results and return
             if _eval_name in EVALUATION_DISPLAY_NAMES:
@@ -231,9 +234,12 @@ class EvaluatorBuilder(object):
                 _combined_name = '{}/{}'.format(
                     _eval_name, _metric)
                 flatten[_combined_name] = _value
-        
         return flatten
-        
+
+    @property
+    def results(self):
+        return self._results
+
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""
         self.embedding_container.clear()

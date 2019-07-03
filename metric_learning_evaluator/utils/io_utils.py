@@ -39,6 +39,11 @@ def create_embedding_container_from_featobj(folder_path, verbose=True):
     instance_ids = feature_importer.instance_ids
 
     labels = feature_importer.label_ids
+    label_names = feature_importer.label_names
+    probabilities = feature_importer.probabilities
+    has_label_name = True if label_names is not None else False
+    # TODO
+    has_prob = True if probabilities is not None else False
 
     # pseudo instance_ids
     pseudo_instance_ids = np.arange(embeddings.shape[0])
@@ -54,11 +59,17 @@ def create_embedding_container_from_featobj(folder_path, verbose=True):
 
     container = EmbeddingContainer(embedding_size=dim_feature, 
         prob_size=0, container_size=num_feature)
-    for inst_id, feat, label in zip(instance_ids, embeddings, labels):
-        # use filename_string as instance_id, convert to integer
-        #for postfix in ['.png', '.jpg', '.jpeg', '.JPG']:
-        #    fn = fn.replace(postfix, '')
-        #pseudo_instance_id = int(fn)
-        inst_id = int(inst_id)
-        container.add(inst_id, label, feat)
+    if not has_label_name:
+        for inst_id, feat, label in zip(instance_ids, embeddings, labels):
+            # use filename_string as instance_id, convert to integer
+            #for postfix in ['.png', '.jpg', '.jpeg', '.JPG']:
+            #    fn = fn.replace(postfix, '')
+            #pseudo_instance_id = int(fn)
+            inst_id = int(inst_id)
+            container.add(inst_id, label, feat)
+    else:
+        for inst_id, feat, label, name in zip(instance_ids, embeddings, labels, label_names):
+            inst_id = int(inst_id)
+            container.add(inst_id, label, feat, label_name=name)
+
     return container

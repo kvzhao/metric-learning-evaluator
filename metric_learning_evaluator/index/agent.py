@@ -39,11 +39,14 @@ class IndexAgent:
     def search(self, query_embeddings, top_k=10):
         return self.agent_engine.search(query_embeddings, top_k)
 
-    @property
-    def distance_matrix(self):
+    def distance_matrix(self, target=None):
         # Notice: This function is time and space consuming.
+        if target is None:
+            target_embeddings = self.agent_engine._embeddings
+        else:
+            target_embeddings = target
         indices, distances = self.agent_engine.search(
-            self.agent_engine._embeddings, self.agent_engine._num_embedding)
+            target_embeddings, self.agent_engine._num_embedding)
         for i, (idx, dist) in enumerate(zip(indices, distances)):
             distances[i, ...] = distances[i, np.argsort(idx)]
         return distances

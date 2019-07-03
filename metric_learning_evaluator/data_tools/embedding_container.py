@@ -93,6 +93,7 @@ class EmbeddingContainer(object):
     def __repr__(self):
         _content = '===== {} =====\n'.format(self._name)
         _content += 'embeddings: {}'.format(self._embeddings.shape)
+        return _content
 
     def _init_internals(self):
         # maps index used in numpy array and instance_id list
@@ -293,12 +294,36 @@ class EmbeddingContainer(object):
         return self._label_ids
 
     @property
+    def label_id_set(self):
+        return list(set(self.label_ids))
+
+    @property
     def label_names(self):
         return self._label_names
 
     @property
     def filename_strings(self):
         return self._filename_strings
+
+    @property
+    def label_name_set(self):
+        return list(set(self.label_names))
+
+    @property
+    def labelmap(self):
+        # id to name
+        if self.label_names and self.label_ids:
+            labelmap = {}
+            for _name, _id in zip(self.label_names, self.label_ids):
+                if _name not in labelmap:
+                    labelmap[_id] = _name
+                else:
+                    if labelmap[_id] != _name:
+                        # or just print
+                        raise ValueError('label name:{} (!={}) is not consistent for id:{}!'.format(
+                            _name, labelmap[_name], _id))
+            return labelmap
+        return {}
 
     @property
     def instance_id_groups(self):
@@ -424,8 +449,7 @@ class EmbeddingContainer(object):
         """
         if attribute_name in self._instance_by_attribute:
             return self._instance_by_attribute[attribute_name]
-        else:
-            return []
+        return []
 
     def get_attribute_by_instance_id(self, instance_id):
         """
@@ -436,8 +460,7 @@ class EmbeddingContainer(object):
         """
         if instance_id in self._attribute_by_instance:
             return self._attribute_by_instance[instance_id]
-        else:
-            return []
+        return []
 
     def get_instance_id_by_group_command(self, command):
         """
