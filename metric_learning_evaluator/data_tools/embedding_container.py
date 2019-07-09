@@ -98,6 +98,7 @@ class EmbeddingContainer(object):
     def _init_internals(self):
         # maps index used in numpy array and instance_id list
         self._label_by_instance_id = {}
+        self._label_name_by_instance_id = {}
         self._index_by_instance_id = {}
         # orderness should be maintained in _instance_ids
         self._instance_ids = []
@@ -170,6 +171,7 @@ class EmbeddingContainer(object):
         # NOTE: same instance_id maps to many embedding!?
         self._index_by_instance_id[instance_id] = self._current
         self._label_by_instance_id[instance_id] = label_id
+        self._label_name_by_instance_id[instance_id] = label_name
         self._instance_id_by_label[label_id].append(instance_id)
         self._instance_ids.append(instance_id)
         self._label_ids.append(label_id)
@@ -247,6 +249,17 @@ class EmbeddingContainer(object):
             return self._label_by_instance_id[instance_ids]
         elif isinstance(instance_ids, (np.ndarray, np.generic)):
             return [self._label_by_instance_id[img_id] for img_id in instance_ids.tolist()]
+        else:
+            raise TypeError('instance_ids should be int, list or array.')
+
+    def get_label_name_by_instance_ids(self, instance_ids):
+        """Fetch the label names from given instance_ids."""
+        if isinstance(instance_ids, list):
+            return [self._label_name_by_instance_id[img_id] for img_id in instance_ids]
+        elif isinstance(instance_ids, int):
+            return self._label_name_by_instance_id[instance_ids]
+        elif isinstance(instance_ids, (np.ndarray, np.generic)):
+            return [self._label_name_by_instance_id[img_id] for img_id in instance_ids.tolist()]
         else:
             raise TypeError('instance_ids should be int, list or array.')
 
