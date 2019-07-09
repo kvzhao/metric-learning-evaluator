@@ -17,6 +17,10 @@ from metric_learning_evaluator.builder import EvaluatorBuilder
 from metric_learning_evaluator.config_parser.parser import ConfigParser
 
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
+from metric_learning_evaluator.utils.report_writer import ReportWriter
+from metric_learning_evaluator.utils.result_saver import ResultSaver
+
+from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES as display_namemap
 
 class FeatureObjectMerger(object):
     """Merge two objects into single embedding container with attributes.
@@ -189,13 +193,31 @@ def main(args):
         }
     }
 
-    evaluator = EvaluatorBuilder(embedding_size, 0, config_dict)
+    evaluator = EvaluatorBuilder(embedding_size, 0, config_dict, mode='offline')
     evaluator.add_container(merger.container)
 
+    """
     results = evaluator.evaluate()
     for metric_name in evaluator.metric_names:
         if metric_name in results:
             print('{}: {}'.format(metric_name, results[metric_name]))
+    """
+    evaluator.evaluate()
+    out_dir = args.out_dir if args.out_dir is not None else '/tmp/eval_logs'
+    for eval_name, container in evaluator.results.items():
+        print(eval_name)
+        display_name = display_namemap[eval_name] if eval_name in display_namemap else eval_name
+        reporter = ReportWriter(container)
+        overall_report = reporter.overall_report
+        print(overall_report)
+        event_report = reporter.event_report
+        print(event_report)
+        if out_dir:
+            saver = ResultSaver(container)
+            path = '/'.join([out_dir, 'overall_{}'.format(display_name)])
+            saver.save_overall(path)
+            path = '/'.join([out_dir, 'event_{}'.format(display_name)])
+            saver.save_event(path)
 
 if __name__ == '__main__':
     import argparse
