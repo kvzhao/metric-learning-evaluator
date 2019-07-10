@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from collections import defaultdict
+import pandas as pd
 
 
 class ResultContainer(object):
@@ -41,8 +41,8 @@ class ResultContainer(object):
         self._results = {}
         # A buffer for storing intermediate results,
         # only show when off-line mode is used.
-        self._event_buffer = defaultdict(list)
-
+        self._event_buffer = pd.DataFrame()
+        
     def add(self, attribute, metric, value, condition=None):
         """Add one result
             * create dict if key does not exist
@@ -65,22 +65,21 @@ class ResultContainer(object):
             _cond_key = condition
             self._results[attribute][metric][_cond_key] = value
 
-    def add_event(self, attribute, content):
+    def add_event(self, content):
         """
           Args:
-            attribute: String, key for describing the level of events
             content: A dictionary
           Note:
         """
-        self._event_buffer[attribute].append(content)
+        self._event_buffer = self._event_buffer.append(content, ignore_index=True)
 
     @property
     def events(self):
         return self._event_buffer
 
     @events.setter
-    def events(self, dict_event):
-        self._event_buffer.update(dict_event)
+    def events(self, events):
+        self._event_buffer = pd.DataFrame(events)
 
     @property
     def results(self):
