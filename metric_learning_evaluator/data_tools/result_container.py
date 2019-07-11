@@ -70,6 +70,19 @@ class ResultContainer(object):
         """
         self._event_buffer = self._event_buffer.append(content, ignore_index=True)
 
+    def save(self, path):
+        """Save result and events to disk"""
+        os.makedirs(path, exist_ok=True)
+        self._results.to_pickle(os.path.join(path, 'results.pickle'))
+        self._event_buffer.to_pickle(os.path.join(path, 'events.pickle'))
+        print('Save results and events into \'{}\''.format(path))
+
+    def load(self, path):
+        """load result and events from disk"""
+        self._results = pd.read_pickle(os.path.join(path, 'results.pickle'))
+        self._event_buffer = pd.read_pickle(os.path.join(path, 'events.pickle'))
+        print('Load results and events from \'{}\''.format(path))
+
     @property
     def events(self):
         return self._event_buffer
