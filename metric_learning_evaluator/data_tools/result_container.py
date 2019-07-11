@@ -12,20 +12,12 @@ import pandas as pd
 class ResultContainer(object):
     """
       The evaluation result container handles the computation outcomes
-      and save them into the unified data structure.
+      and save them into pandas.DataFrame.
 
       1. add
       2. add_event
 
       TODO @kv: I want to refactor this.
-
-      NOTE:
-        Structure of the result_container:
-          - evaluation_name (outer structure)
-            - attribute_name: string
-              - metric_name: string
-                  - value: float
-                    - condition: dict (e.g @distance=0.5)
     """
 
     def __init__(self):
@@ -94,14 +86,7 @@ class ResultContainer(object):
     @property
     def results(self):
         # TODO: Do not return empty dict
-        dict_outcome = {}
-        for _attr_name, _metric in self._results.items():
-            dict_outcome[_attr_name] = {}
-            for _metric_name, _content in _metric.items():
-                if not _content:
-                    continue
-                dict_outcome[_attr_name][_metric_name] = _content
-        return dict_outcome
+        return self._results
 
     @property
     def flatten(self):
