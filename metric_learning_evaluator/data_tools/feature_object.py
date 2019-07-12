@@ -177,9 +177,8 @@ class FeatureObject(FeatureObjectBase):
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         else:
-            print('WARNING: {} is already exists, still export numpy arrays to it.'.format(
-                data_dir))
+            print('WARNING: {} is already exists, still export numpy arrays to it.'.format(data_dir))
         for _name, _arr in self._array_name_map.items():
-            if not _arr is None:
+            if _arr is not None:
                 dst_path = '/'.join([data_dir, _name])
                 np.save(dst_path, _arr)
