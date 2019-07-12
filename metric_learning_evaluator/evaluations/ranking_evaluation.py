@@ -26,6 +26,7 @@ from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStanda
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 
+
 class RankingEvaluationStandardFields(object):
     # Some keys only used in ranking evaluation
     start = 'start'
@@ -36,6 +37,7 @@ class RankingEvaluationStandardFields(object):
     sampling = 'sampling'
 
 ranking_fields = RankingEvaluationStandardFields
+
 
 class RankingEvaluation(MetricEvaluationBase):
 
@@ -50,10 +52,12 @@ class RankingEvaluation(MetricEvaluationBase):
 
         self._must_have_metrics = []
         self._default_values = {
-            metric_fields.distance_threshold: {
-               ranking_fields.start: 0.5,
-               ranking_fields.end: 1.5,
-               ranking_fields.step: 0.2},
+            metric_fields.distance_threshold:
+            {
+                ranking_fields.start: 0.5,
+                ranking_fields.end: 1.5,
+                ranking_fields.step: 0.2
+            },
         }
 
         # metrics with condition
@@ -65,7 +69,7 @@ class RankingEvaluation(MetricEvaluationBase):
             metric_fields.mAP,
         ]
 
-        print ('Create {}'.format(self.evaluation_name))
+        print('Create {}'.format(self.evaluation_name))
         self.show_configs()
 
     # metric_names
@@ -114,7 +118,7 @@ class RankingEvaluation(MetricEvaluationBase):
                 embedding_container.get_label_by_instance_ids(instance_ids_given_attribute)
 
             self._sample_and_rank(group_cmd, instance_ids_given_attribute,
-                label_ids_given_attribute, embedding_container)
+                                  label_ids_given_attribute, embedding_container)
 
         # ====== Cross References =====
         # NOTE: How to handle db & query here?
@@ -128,10 +132,17 @@ class RankingEvaluation(MetricEvaluationBase):
             query_label_ids = embedding_container.get_label_by_instance_ids(query_instance_ids)
             database_embeddings = embedding_container.get_embedding_by_instance_ids(database_instance_ids)
             database_label_ids = embedding_container.get_label_by_instance_ids(database_instance_ids)
+            print('cross reference: {} with {} queries & {} databases'.format(
+                cref_cmd, query_embeddings.shape[0], database_embeddings.shape[0]))
 
-            self._rank(cref_cmd, embedding_container,
-                query_instance_ids, query_label_ids, query_embeddings,
-                database_instance_ids, database_label_ids, database_embeddings,)
+            self._rank(cref_cmd,
+                       embedding_container,
+                       query_instance_ids,
+                       query_label_ids,
+                       query_embeddings,
+                       database_instance_ids,
+                       database_label_ids,
+                       database_embeddings,)
 
         return self.result_container
 
@@ -161,27 +172,38 @@ class RankingEvaluation(MetricEvaluationBase):
                 continue
             ranking_metrics = RankingMetrics(top_k)
             hit_arrays = np.empty((query_embeddings.shape[0], top_k), dtype=np.bool)
-            for _idx, query_label_id in enumerate(query_label_ids):
-                retrived_instances = retrieved_database_instance_ids[_idx]
-                retrived_labels = embedding_container.get_label_by_instance_ids(retrived_instances)
-                hits = retrived_labels[:top_k] == np.asarray(query_label_id)
+            for _idx, (query_label_id, query_inst_id) in enumerate(zip(query_label_ids, query_instance_ids)):
+                retrieved_instances = retrieved_database_instance_ids[_idx]
+                retrieved_labels = embedding_container.get_label_by_instance_ids(retrieved_instances)
+                hits = retrieved_labels[:top_k] == np.asarray(query_label_id)
                 hit_arrays[_idx, ...] = hits
 
+                # Hard-coded: print failure cases
+                if self.mode == 'offline':
+                    # record failure case
+                    if not hits[0]:
+                        retrieved_distances = retrieved_database_distances[_idx]
+                        _event = {
+                            'query_label': int(query_label_id),
+                            'query_instance': int(query_inst_id),
+                            'retrieved_labels': retrieved_labels[:top_k],
+                            'retrieved_instances': retrieved_instances[:top_k].tolist(),
+                            'retrieved_distances': retrieved_distances[:top_k].tolist(),}
+                        self.result_container.add_event(attr_name, _event)
             ranking_metrics.add_inputs(hit_arrays)
             self.result_container.add(attr_name, ranking_fields.top_k_hit_accuracy,
-                                    ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
+                                      ranking_metrics.topk_hit_accuracy, condition={'k': top_k})
         # top 1 and mAP
         self.result_container.add(attr_name, ranking_fields.top_k_hit_accuracy,
-                                ranking_metrics.top1_hit_accuracy, condition={'k': 1})
+                                  ranking_metrics.top1_hit_accuracy, condition={'k': 1})
         self.result_container.add(attr_name, ranking_fields.mAP,
-                                ranking_metrics.mean_average_precision)
+                                  ranking_metrics.mean_average_precision)
 
     def _sample_and_rank(self,
-                        attr_name,
-                        instance_ids,
-                        label_ids,
-                        embedding_container,
-                        ):
+                         attr_name,
+                         instance_ids,
+                         label_ids,
+                         embedding_container,):
         """
           Args:
             instance_ids: List of integers
@@ -224,6 +246,10 @@ class RankingEvaluation(MetricEvaluationBase):
         sampled_database_label_ids = np.asarray(sampled_database_label_ids)
 
         self._rank(attr_name,
-            embedding_container,
-            sampled_query_instance_ids, sampled_query_label_ids, query_embeddings,
-            sampled_database_instance_ids, sampled_database_label_ids, database_embeddings,)
+                   embedding_container,
+                   sampled_query_instance_ids,
+                   sampled_query_label_ids,
+                   query_embeddings,
+                   sampled_database_instance_ids,
+                   sampled_database_label_ids,
+                   database_embeddings,)

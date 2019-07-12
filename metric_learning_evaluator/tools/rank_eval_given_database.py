@@ -76,7 +76,7 @@ def main(args):
                 print('{} features are computed'.format(_idx))
 
         result_container.add(attribute_fields.all_classes, 'top_k_hit_accuracy',
-                                 ranking_metrics.topk_hit_accuracy, condition={'k': 1})
+                                 ranking_metrics.top1_hit_accuracy, condition={'k': 1})
         result_container.add(attribute_fields.all_classes, 'mAP',
                                  ranking_metrics.mean_average_precision)
     print(result_container.results)

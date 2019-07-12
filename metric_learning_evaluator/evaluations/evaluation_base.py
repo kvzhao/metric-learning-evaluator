@@ -30,6 +30,7 @@ from metric_learning_evaluator.data_tools.embedding_container import EmbeddingCo
 import logging
 import numpy as np
 
+
 class MetricEvaluationBase(object):    
     """Interface for Evaluation Object which serves as the functional building block.
 
@@ -42,16 +43,11 @@ class MetricEvaluationBase(object):
         """Base Object for Evaluation.
           <Customized>Evaluation is the functional object which 
                       executes computation with metric functions.
-
           Args:
             config_parse, EvaluationConfigParser:
                 Configuration used for the EvaluationObject.
                 (which is provided by calling parser.get_eval_config)
         """
-
-        #if config_parser and not isinstance(config_parser, ConfigParser):
-        #    raise ValueError('Evaluation requires the ConfigParser object.')
-
         # TODO @kv: remove dash line in variable names 
         self.configs = eval_config
 
@@ -99,10 +95,6 @@ class MetricEvaluationBase(object):
         # check the instance type.
         if not isinstance(embedding_container, EmbeddingContainer):
             raise ValueError('Embedded Container is Needed.')
-        if attribute_container and not isinstance(embedding_container, EmbeddingContainer):
-            raise ValueError('Attribute Container is Needed.')
-
-        ## Do the customized computation.
 
     @abstractmethod
     def save(self, path):

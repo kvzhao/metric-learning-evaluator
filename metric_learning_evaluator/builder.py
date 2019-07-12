@@ -76,8 +76,6 @@ class EvaluatorBuilder(object):
         TODO:
             - deprecate attribute container
         """
-
-        # TODO @kv: Change config_path to parsed dictionary
         self.configs = ConfigParser(config_dict)
 
         # allocate shared embedding containers
@@ -95,7 +93,7 @@ class EvaluatorBuilder(object):
 
         self._instance_counter = 0
         self._total_metrics = {}
-
+        self._results = {}
         # Allocate general query interface
         if not self.configs.database[config_fields.database_type]:
             # TODO @kv: consistent check with query condition
@@ -108,7 +106,6 @@ class EvaluatorBuilder(object):
           Build:
             Parse the config and create evaluators.
         """
-
         # Allocate evaluation object with corresponding configuration
         self.evaluations = {} # evaluations -> evaluation_objects
         for eval_name in self.configs.chosen_evaluation_names:
@@ -166,16 +163,16 @@ class EvaluatorBuilder(object):
         if self.query_interface:
             queried_attributes = self.query_interface.query(instance_id)
             self.embedding_container.add(instance_id, label_id,
-                embedding, probability, attributes=queried_attributes)
+                                         embedding, probability, attributes=queried_attributes)
         else:
             self.embedding_container.add(instance_id, label_id, embedding, probability)
 
         # verbose for developing stage.
         if self.embedding_container.counts % 1000 == 0:
             if probability is None:
-                print ('{} embeddings are added.'.format(self.embedding_container.counts))
+                print('{} embeddings are added.'.format(self.embedding_container.counts))
             else:
-                print ('{} embeddings and probabilities are added.'.format(self.embedding_container.counts))
+                print('{} embeddings and probabilities are added.'.format(self.embedding_container.counts))
 
         self._instance_counter += 1
 
@@ -186,6 +183,7 @@ class EvaluatorBuilder(object):
             embedding_container: EmbeddingContainer, default is None.
           Notice:
             Sanity check:
+          TODO @kv: Think about how to cooperate with attributes
         """
         # replace container
         if embedding_container is not None:
@@ -198,16 +196,13 @@ class EvaluatorBuilder(object):
 
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
-        
           Return:
             total_metrics, dict:
         """
-
-        #TODO: Pass containers when compute. (functional objects)
-        #TODO @kv: Consider with metric_names together
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.
             res_container = _evaluation.compute(self.embedding_container)
+            self._results[_eval_name] = res_container
 
             # TODO: flatten results and return
             if _eval_name in EVALUATION_DISPLAY_NAMES:
@@ -218,25 +213,20 @@ class EvaluatorBuilder(object):
                 self._total_metrics[_display_name] = res_container.flatten
             else:
                 self._total_metrics[_display_name] = {}
-
-        # Return example:
-        # dict = {'RankingEvaluation': {'all_classes': {'top_1_hit_accuracy': {1: 0.9929824561403509},
-        #                              'top_k_hit_accuracy': {5: 0.9976608187134502}}}}
-        # convert to
-        # {'ranking-all_classes-top_k_hit_accuracy@1': 0.9 ,}
-
         flatten = {}
         for _eval_name, _content in self._total_metrics.items():
             for _metric, _value in _content.items():
                 _combined_name = '{}/{}'.format(
                     _eval_name, _metric)
                 flatten[_combined_name] = _value
-        
         return flatten
-        
+
+    @property
+    def results(self):
+        return self._results
+
     def clear(self):
         """Clears the state to prepare for a fresh evaluation."""
         self.embedding_container.clear()
-
         for _, _container in self._total_metrics.items():
             _container.clear()

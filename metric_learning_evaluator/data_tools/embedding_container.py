@@ -3,7 +3,7 @@
 
     Brief intro:
 
-        EmbeddingContainer: 
+        EmbeddingContainer:
             Efficient object which handles the shared (globally) embedding vectors.
 
         AttributeContainer:
@@ -26,10 +26,8 @@ from abc import abstractmethod
 import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 
-
-from metric_learning_evaluator.utils.switcher import switch
-from metric_learning_evaluator.query.general_database import QueryInterface
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
 from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
@@ -45,16 +43,15 @@ class EmbeddingContainer(object):
         - get_embedding_by_instance_ids: query embeddings by instance_ids
         - get_label_by_instance_ids: query labels by instance_ids
         - clear: clear the internal buffer
-    
+
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
-      TODO @kv: implement save & load for data container.
+      TODO @kv: use pandas dataframe as internals
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO @kv: maybe we should add filename in container.
       TODO @kv: update or init container with blob of numpy array
-
     """
-    def __init__(self, embedding_size, prob_size,
+    def __init__(self, embedding_size, prob_size=0,
                  container_size=10000, name='embedding_container'):
         """Constructor of the Container.
 
@@ -69,7 +66,6 @@ class EmbeddingContainer(object):
                 Number of embedding vector that container can store.
             name, str:
                 The name string is used for version control.
-        
         """
         self._embedding_size = embedding_size
         self._prob_size = prob_size
@@ -91,11 +87,16 @@ class EmbeddingContainer(object):
 
     def __repr__(self):
         _content = '===== {} =====\n'.format(self._name)
-        _content += 'embeddings: {}'.format(self._embeddings.shape)
+        _content += 'embeddings: {}'.format(self.counts, self.embedding_size)
+        return _content
 
     def _init_internals(self):
+        """Internal Indexes
+          NOTE: these members would be replaced by pandas.DataFrame
+        """
         # maps index used in numpy array and instance_id list
         self._label_by_instance_id = {}
+        self._label_name_by_instance_id = {}
         self._index_by_instance_id = {}
         # orderness should be maintained in _instance_ids
         self._instance_ids = []
@@ -145,7 +146,7 @@ class EmbeddingContainer(object):
         assert self._current < self._container_size, "The embedding container is out of capacity!"
 
         if not isinstance(embedding, (np.ndarray, np.generic)):
-            raise TypeError ('Legal dtype of embedding is numpy array.')
+            raise TypeError('Legal dtype of embedding is numpy array.')
 
         self._embeddings[self._current, ...] = embedding
 
@@ -157,7 +158,7 @@ class EmbeddingContainer(object):
                 attributes = [attributes]
             if not all(isinstance(_attr, str) for _attr in attributes):
                 raise ValueError('attributes type should be str or list of str.')
-            #TODO: add one more attributes `all` into the container! (also works for attributes is None case)
+            # TODO: add one more attributes `all` into the container! (also works for attributes is None case)
             self._attribute_by_instance[instance_id] = attributes
             for _attr in attributes:
                 if _attr in self._instance_by_attribute:
@@ -168,6 +169,7 @@ class EmbeddingContainer(object):
         # NOTE: same instance_id maps to many embedding!?
         self._index_by_instance_id[instance_id] = self._current
         self._label_by_instance_id[instance_id] = label_id
+        self._label_name_by_instance_id[instance_id] = label_name
         self._instance_id_by_label[label_id].append(instance_id)
         self._instance_ids.append(instance_id)
         self._label_ids.append(label_id)
@@ -248,6 +250,17 @@ class EmbeddingContainer(object):
         else:
             raise TypeError('instance_ids should be int, list or array.')
 
+    def get_label_name_by_instance_ids(self, instance_ids):
+        """Fetch the label names from given instance_ids."""
+        if isinstance(instance_ids, list):
+            return [self._label_name_by_instance_id[img_id] for img_id in instance_ids]
+        elif isinstance(instance_ids, int):
+            return self._label_name_by_instance_id[instance_ids]
+        elif isinstance(instance_ids, (np.ndarray, np.generic)):
+            return [self._label_name_by_instance_id[img_id] for img_id in instance_ids.tolist()]
+        else:
+            raise TypeError('instance_ids should be int, list or array.')
+
     def get_instance_ids_by_label(self, label_id):
         """Fetch the instance_ids from given label_id."""
         if not np.issubdtype(type(label_id), np.integer):
@@ -286,9 +299,42 @@ class EmbeddingContainer(object):
     def instance_ids(self):
         # get all instance_ids in container
         return self._instance_ids
+
     @property
     def label_ids(self):
         return self._label_ids
+
+    @property
+    def label_id_set(self):
+        return list(set(self.label_ids))
+
+    @property
+    def label_names(self):
+        return self._label_names
+
+    @property
+    def filename_strings(self):
+        return self._filename_strings
+
+    @property
+    def label_name_set(self):
+        return list(set(self.label_names))
+
+    @property
+    def labelmap(self):
+        # id to name
+        if self.label_names and self.label_ids:
+            labelmap = {}
+            for _name, _id in zip(self.label_names, self.label_ids):
+                if _name not in labelmap:
+                    labelmap[_id] = _name
+                else:
+                    if labelmap[_id] != _name:
+                        # or just print
+                        raise ValueError('label name:{} (!={}) is not consistent for id:{}!'.format(
+                            _name, labelmap[_name], _id))
+            return labelmap
+        return {}
 
     @property
     def instance_id_groups(self):
@@ -301,6 +347,10 @@ class EmbeddingContainer(object):
     @property
     def embedding_size(self):
         return self._embedding_size
+
+    @property
+    def embedding_dimension(self):
+        return self.embeddings.shape[1]
 
     @property
     def prob_size(self):
@@ -318,11 +368,91 @@ class EmbeddingContainer(object):
         print ('Clear embedding container.')
 
     def save(self, path):
+        """Save embedding to disk"""
         # Save as feature_object
-        pass
+        feature_exporter = FeatureObject()
+        if self.instance_ids:
+            feature_exporter.instance_ids = np.asarray(self.instance_ids)
+
+        if self.filename_strings:
+            feature_exporter.filename_strings = np.asarray(self.filename_strings)
+
+        if self.label_ids:
+            feature_exporter.label_ids = np.asarray(self.label_ids)
+
+        if self.label_names:
+            feature_exporter.label_names = np.asarray(self.label_names)
+
+        if self._current > 0:
+            feature_exporter.embeddings = self.embeddings
+        print('Export embedding with shape: {}'.format(self.embeddings.shape))
+
+        feature_exporter.save(path)
+        print("Save all extracted features at \'{}\'".format(path))
+
+        # Save attributes
+        if self._attribute_by_instance:
+            db_path = os.path.join(path, 'attribute.db')
+            attribute_table = AttributeTable(db_path)
+            for instance_id, attributes in self._attribute_by_instance.items():
+                for attribute in attributes:
+                    if '.' in attribute: # attribute
+                        name, content = attribute.split('.', 1)
+                        attribute_table.insert_property(instance_id, name, content)
+                    else: # tag
+                        attribute_table.insert_domain(instance_id, attribute)
+            attribute_table.commit()
+            print("Save all attributes into \'{}\'".format(db_path))
 
     def load(self, path):
-        pass
+        """Load embedding from disk"""
+        # Create FeatureObject
+        feature_importer = FeatureObject()
+        feature_importer.load(path)
+
+        # type check
+        assert feature_importer.label_ids is None or feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
+        assert feature_importer.embeddings is None or feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
+        assert len(feature_importer.embeddings) == len(feature_importer.label_ids)
+
+        n_instances = len(feature_importer.label_ids)
+
+        # Give sequential instance_ids if not specified
+        if feature_importer.instance_ids is None or feature_importer.instance_ids.size == 0:
+            instance_ids = np.arange(n_instances)
+        else:
+            assert len(feature_importer.instance_ids) == n_instances
+            instance_ids = feature_importer.instance_ids
+
+        # Create AttributeTable
+        db_path = os.path.join(path, 'attribute.db')
+        attribute_table = AttributeTable(db_path)
+
+        for idx, instance_id in enumerate(instance_ids):
+            label_id = feature_importer.label_ids[idx]
+            embedding = feature_importer.embeddings[idx]
+
+            label_name = None
+            if feature_importer.label_names.size > 0:
+                label_name = feature_importer.label_names[idx]
+
+            filename = None
+            if feature_importer.filename_strings.size > 0:
+                filename = feature_importer.filename_strings[idx]
+
+            properties = attribute_table.query_property_by_instance_ids(int(instance_id))
+            domains = attribute_table.query_domain_by_instance_ids(int(instance_id))
+
+            attributes = []
+            if properties or domains:
+                attributes = ['{}.{}'.format(name, content) for property_ in properties
+                              for name, content in property_.items()] + domains
+            self.add(instance_id=instance_id,
+                     label_id=label_id,
+                     label_name=label_name,
+                     embedding=embedding,
+                     attributes=attributes,
+                     filename=filename)
 
     # Add new functions
     def get_instance_id_by_attribute(self, attribute_name):
@@ -334,8 +464,18 @@ class EmbeddingContainer(object):
         """
         if attribute_name in self._instance_by_attribute:
             return self._instance_by_attribute[attribute_name]
-        else:
-            return []
+        return []
+
+    def get_attribute_by_instance_id(self, instance_id):
+        """
+          Args:
+            instance_id: int
+          Return:
+            attributes: list, empty if query can not be found
+        """
+        if instance_id in self._attribute_by_instance:
+            return self._attribute_by_instance[instance_id]
+        return []
 
     def get_instance_id_by_group_command(self, command):
         """
@@ -388,6 +528,7 @@ class EmbeddingContainer(object):
             interpreter_field.values: [],
             interpreter_field.names: [],
         }
+
         def _translate_command(operation):
             """Two operators are legal: +, -"""
             operation = operation.replace(' ', '')
@@ -396,6 +537,7 @@ class EmbeddingContainer(object):
             operands = re.split(r'\+|\-', operation)
             op_list = [op for op in op_list if op in ['+', '-']]
             return operands, op_list
+
         def _put_variable_in_stack(name, a_list):
             nonlocal stack_pointer
             executable_command[interpreter_field.instructions].append(
@@ -407,6 +549,7 @@ class EmbeddingContainer(object):
             executable_command[interpreter_field.names].append(name)
             executable_command[interpreter_field.values].append(a_list)
             stack_pointer += 1
+
         def _put_command_in_stack(operator):
             executable_command[interpreter_field.instructions].append(
                 (operator, None))

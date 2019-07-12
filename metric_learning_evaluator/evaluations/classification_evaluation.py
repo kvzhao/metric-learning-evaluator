@@ -151,6 +151,6 @@ class ClassificationEvaluation(MetricEvaluationBase):
                 hit_arrays[_idx, ...] = top_k_hit_ids
             cls_metrics.add_inputs(hit_arrays)
             self.result_container.add(attr_name, cls_fields.top_k_hit_accuracy,
-                                    cls_metrics.topk_hit_accuracy, condition={'k': top_k})
+                                      cls_metrics.topk_hit_accuracy, condition={'k': top_k})
         self.result_container.add(attr_name, cls_fields.top_k_hit_accuracy,
-                                cls_metrics.top1_hit_accuracy, condition={'k': 1})
+                                  cls_metrics.top1_hit_accuracy, condition={'k': 1})
