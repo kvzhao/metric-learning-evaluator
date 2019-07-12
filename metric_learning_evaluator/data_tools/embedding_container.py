@@ -3,7 +3,7 @@
 
     Brief intro:
 
-        EmbeddingContainer: 
+        EmbeddingContainer:
             Efficient object which handles the shared (globally) embedding vectors.
 
         AttributeContainer:
@@ -28,9 +28,6 @@ from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 
-
-from metric_learning_evaluator.utils.switcher import switch
-from metric_learning_evaluator.query.general_database import QueryInterface
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
 from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
@@ -46,16 +43,15 @@ class EmbeddingContainer(object):
         - get_embedding_by_instance_ids: query embeddings by instance_ids
         - get_label_by_instance_ids: query labels by instance_ids
         - clear: clear the internal buffer
-    
+
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
-      TODO @kv: implement save & load for data container.
+      TODO @kv: use pandas dataframe as internals
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO @kv: maybe we should add filename in container.
       TODO @kv: update or init container with blob of numpy array
-
     """
-    def __init__(self, embedding_size, prob_size,
+    def __init__(self, embedding_size, prob_size=0,
                  container_size=10000, name='embedding_container'):
         """Constructor of the Container.
 
@@ -70,7 +66,6 @@ class EmbeddingContainer(object):
                 Number of embedding vector that container can store.
             name, str:
                 The name string is used for version control.
-        
         """
         self._embedding_size = embedding_size
         self._prob_size = prob_size
@@ -92,10 +87,13 @@ class EmbeddingContainer(object):
 
     def __repr__(self):
         _content = '===== {} =====\n'.format(self._name)
-        _content += 'embeddings: {}'.format(self._embeddings.shape)
+        _content += 'embeddings: {}'.format(self.counts, self.embedding_size)
         return _content
 
     def _init_internals(self):
+        """Internal Indexes
+          NOTE: these members would be replaced by pandas.DataFrame
+        """
         # maps index used in numpy array and instance_id list
         self._label_by_instance_id = {}
         self._label_name_by_instance_id = {}
@@ -148,7 +146,7 @@ class EmbeddingContainer(object):
         assert self._current < self._container_size, "The embedding container is out of capacity!"
 
         if not isinstance(embedding, (np.ndarray, np.generic)):
-            raise TypeError ('Legal dtype of embedding is numpy array.')
+            raise TypeError('Legal dtype of embedding is numpy array.')
 
         self._embeddings[self._current, ...] = embedding
 
@@ -160,7 +158,7 @@ class EmbeddingContainer(object):
                 attributes = [attributes]
             if not all(isinstance(_attr, str) for _attr in attributes):
                 raise ValueError('attributes type should be str or list of str.')
-            #TODO: add one more attributes `all` into the container! (also works for attributes is None case)
+            # TODO: add one more attributes `all` into the container! (also works for attributes is None case)
             self._attribute_by_instance[instance_id] = attributes
             for _attr in attributes:
                 if _attr in self._instance_by_attribute:
@@ -351,6 +349,10 @@ class EmbeddingContainer(object):
         return self._embedding_size
 
     @property
+    def embedding_dimension(self):
+        return self.embeddings.shape[1]
+
+    @property
     def prob_size(self):
         return self._prob_size
 
@@ -408,15 +410,15 @@ class EmbeddingContainer(object):
         feature_importer = FeatureObject()
         feature_importer.load(path)
 
-        # Check
-        assert feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
-        assert feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
+        # type check
+        assert feature_importer.label_ids is None or feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
+        assert feature_importer.embeddings is None or feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
         assert len(feature_importer.embeddings) == len(feature_importer.label_ids)
 
         n_instances = len(feature_importer.label_ids)
 
         # Give sequential instance_ids if not specified
-        if feature_importer.instance_ids.size == 0:
+        if feature_importer.instance_ids is None or feature_importer.instance_ids.size == 0:
             instance_ids = np.arange(n_instances)
         else:
             assert len(feature_importer.instance_ids) == n_instances
@@ -441,10 +443,10 @@ class EmbeddingContainer(object):
             properties = attribute_table.query_property_by_instance_ids(int(instance_id))
             domains = attribute_table.query_domain_by_instance_ids(int(instance_id))
 
+            attributes = []
             if properties or domains:
-                attributes = ['{}.{}'.format(name, content) for property_ in properties \
+                attributes = ['{}.{}'.format(name, content) for property_ in properties
                               for name, content in property_.items()] + domains
-
             self.add(instance_id=instance_id,
                      label_id=label_id,
                      label_name=label_name,
@@ -526,6 +528,7 @@ class EmbeddingContainer(object):
             interpreter_field.values: [],
             interpreter_field.names: [],
         }
+
         def _translate_command(operation):
             """Two operators are legal: +, -"""
             operation = operation.replace(' ', '')
@@ -534,6 +537,7 @@ class EmbeddingContainer(object):
             operands = re.split(r'\+|\-', operation)
             op_list = [op for op in op_list if op in ['+', '-']]
             return operands, op_list
+
         def _put_variable_in_stack(name, a_list):
             nonlocal stack_pointer
             executable_command[interpreter_field.instructions].append(
@@ -545,6 +549,7 @@ class EmbeddingContainer(object):
             executable_command[interpreter_field.names].append(name)
             executable_command[interpreter_field.values].append(a_list)
             stack_pointer += 1
+
         def _put_command_in_stack(operator):
             executable_command[interpreter_field.instructions].append(
                 (operator, None))
