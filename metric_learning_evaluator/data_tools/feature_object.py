@@ -24,9 +24,11 @@ class FeatureObjectStandardFields:
 
 fields = FeatureObjectStandardFields
 
+
 def get_var_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_locals.items()
     return [k for k, v in callers_local_vars if v is var][0]
+
 
 class FeatureObjectBase(object):
 
@@ -63,7 +65,7 @@ class FeatureObjectBase(object):
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
             print('WARNING: Get the empty embeddings array')
-            return np.empty(0)
+            return self._array_name_map[fields.embeddings]
         if len(self._array_name_map[fields.embeddings].shape) >= 3:
             print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.embeddings].shape))
@@ -83,7 +85,7 @@ class FeatureObjectBase(object):
     def probabilities(self):
         if self._array_name_map[fields.probabilities] is None:
             print('WARNING: Get the empty probabilities array')
-            return np.empty(0)
+            return self._array_name_map[fields.probabilities]
         if len(self._array_name_map[fields.probabilities].shape) >= 3:
             print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.probabilities].shape))
