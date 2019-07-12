@@ -30,28 +30,22 @@ parser = argparse.ArgumentParser('Command-line Metric Learning Inference Tool')
 
 # must-have argument
 parser.add_argument('--task', '-t', type=str, default=None,
-        help='Task options: extract | detect | two-stage |')
-
+                    help='Task options: extract | detect | two-stage |')
 parser.add_argument('--config', '-c', type=str, default=None,
-        help='Path to the inference configuration with yaml format.')
-
+                    help='Path to the inference configuration with yaml format.')
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
-        help='Path to the source (query) dataset.')
-
+                    help='Path to the source (query) dataset.')
 parser.add_argument('--database', '-db', type=str, default=None,
-        help='Path to the source dataset, with type folder')
-
+                    help='Path to the source dataset, with type folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
-        help='Path to the output dir for saving report.')
-
+                    help='Path to the output dir for saving report.')
 parser.add_argument('--data_type', '-dt', type=str, default='datasetbackbone',
-        help='Type of given `data_dir`: datasetbackbone | folder')
+                    help='Type of given `data_dir`: datasetbackbone | folder')
 
 APP_SIGNATURE = '[INFERENCE]'
+COMMAND_OPERATION_MAPPING = {}
 
-COMMAND_OPERATION_MAPPING = {
-}
 
 def main():
     args = parser.parse_args()

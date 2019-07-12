@@ -67,7 +67,7 @@ class FeatureObjectBase(object):
         if len(self._array_name_map[fields.embeddings].shape) >= 3:
             print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.embeddings].shape))
-            self._array_name_map[fields.embeddings]= np.squeeze(self._array_name_map[fields.embeddings])
+            self._array_name_map[fields.embeddings] = np.squeeze(self._array_name_map[fields.embeddings])
         return self._array_name_map[fields.embeddings]
 
     @embeddings.setter
@@ -82,12 +82,12 @@ class FeatureObjectBase(object):
     @property
     def probabilities(self):
         if self._array_name_map[fields.probabilities] is None:
-            print ('WARNING: Get the empty probabilities array')
+            print('WARNING: Get the empty probabilities array')
             return np.empty(0)
         if len(self._array_name_map[fields.probabilities].shape) >= 3:
             print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.probabilities].shape))
-            _probabilities = np.squeeze(probabilities)
+            _probabilities = np.squeeze(self._array_name_map[fields.probabilities])
         return self._array_name_map[fields.probabilities]
 
     @probabilities.setter
@@ -126,7 +126,7 @@ class FeatureObjectBase(object):
     @property
     def instance_ids(self):
         if self._array_name_map[fields.instance_ids] is None:
-            print ('WARNING: Get the empty instance ids')
+            print('WARNING: Get the empty instance ids')
         return self._array_name_map[fields.instance_ids]
 
     @instance_ids.setter
@@ -162,9 +162,7 @@ class FeatureObject(FeatureObjectBase):
         super(FeatureObject, self).__init__()
 
     def load(self, data_dir):
-
         _npy_in_data_dir = [each for each in os.listdir(data_dir) if each.endswith('.npy')]
-
         for _npy in _npy_in_data_dir:
             _npy_name = re.sub('.npy', '', _npy)
             if _npy_name in self._array_name_map:
@@ -174,13 +172,11 @@ class FeatureObject(FeatureObjectBase):
                 print('{} is loaded'.format(_npy_path))
 
     def save(self, data_dir):
-        
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         else:
             print('WARNING: {} is already exists, still export numpy arrays to it.'.format(
                 data_dir))
-
         for _name, _arr in self._array_name_map.items():
             if not _arr is None:
                 dst_path = '/'.join([data_dir, _name])

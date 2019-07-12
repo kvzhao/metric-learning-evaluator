@@ -14,6 +14,7 @@ from pathlib import Path
 # Need a prettier plotting styles
 import matplotlib.pyplot as plt
 
+
 class CurveReader(object):
 
     def __init__(self, filenames, legends=None):
@@ -79,6 +80,7 @@ def main(args):
 
     for name, content in curve_reader.curves.items():
         plt.plot(content['steps'], content['accuracy'], label=name, linewidth=.8)
+        print('Apex accuracy [{}] = {}'.format(name, max(content['accuracy'])))
     plt.title(args.plot_title)
     plt.legend()
     plt.savefig(args.output_file)
@@ -88,17 +90,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Plotting Training Curves from TensorBoard')
     parser.register('action', 'extend', ExtendAction)
-
-    parser.add_argument('-f','--json_files', nargs='+', action='extend',
-        help='Path to json files to be plotted.', required=True)
-
-    parser.add_argument('-l','--legends', nargs='+', action='extend',
-        help='Titles of each curves.', required=False)
-
+    parser.add_argument('-f', '--json_files', nargs='+', action='extend',
+                        help='Path to json files to be plotted.', required=True)
+    parser.add_argument('-l', '--legends', nargs='+', action='extend',
+                        help='Titles of each curves.', required=False)
     parser.add_argument('-of', '--output_file', type=str,
-        default='exported_curves.png', help='Path to exported folder.')
+                        default='exported_curves.png', help='Path to exported folder.')
     parser.add_argument('-t', '--plot_title', type=str,
-        default='Evaluation Curve', help='String of plot title.')
-
+                        default='Evaluation Curve', help='String of plot title.')
     args = parser.parse_args()
     main(args)

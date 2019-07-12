@@ -19,7 +19,6 @@ from metric_learning_evaluator.query.standard_fields import AttributeStandardFie
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.attribute_container import AttributeContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 
@@ -42,9 +41,7 @@ class FacenetEvaluationStandardFields(object):
     """Define fields used only in Facenet evaluation
         which may assign in `option` section in config.
     """
-
     ### NOTE @kv: Move these sampling option into sample_strategy
-
     # pair dict
     pairA = 'pairA'
     pairB = 'pairB'
@@ -52,19 +49,16 @@ class FacenetEvaluationStandardFields(object):
     path_pairlist = 'path_pairlist'
     num_maximum_pairs = 'num_maximum_pairs'
     num_of_pairs = 'num_of_pairs'
-
     # used for distance threshold
     start = 'start'
     end = 'end'
     step = 'step'
-
     # sampling options
     sample_method = 'sample_method'
     sample_ratio = 'sample_ratio'
     ratio_of_class = 'ratio_of_class'
     ratio_of_instance_per_class = 'ratio_of_instance_per_class'
     num_of_instance_per_class = 'num_of_instance_per_class'
-
     # sampling methods
     class_sample_method = 'class_sample_method'
     random_sample = 'random_sample'
@@ -125,7 +119,6 @@ class FacenetEvaluation(MetricEvaluationBase):
             if _config not in self.metrics:
                 if _config in self._default_values:
                     pass
-                    #self.metrics[_config] = self._default_values[_config]
                 else:
                     print('WARNING: {} should be assigned'.format(_config))
             else:
