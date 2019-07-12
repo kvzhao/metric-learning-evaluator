@@ -1,4 +1,5 @@
-"""
+"""ResultContainer
+  @kv, lotus
 """
 import os
 import sys
@@ -17,7 +18,6 @@ class ResultContainer(object):
       1. add
       2. add_event
 
-      TODO @kv: I want to refactor this.
     """
 
     def __init__(self):
@@ -45,14 +45,16 @@ class ResultContainer(object):
                                               'metric': metric,
                                               'value': value,
                                               'condition_name': None,
-                                              'condition_threshold': None}, ignore_index=True)
+                                              'condition_threshold': None},
+                                              ignore_index=True)
         if condition:
             for _cond_name, _threshold in condition.items():
                 self._results = self._results.append({'attribute': attribute,
-                                                    'metric': metric,
-                                                    'value': value,
-                                                    'condition_name': _cond_name,
-                                                    'condition_threshold': _threshold}, ignore_index=True)
+                                                      'metric': metric,
+                                                      'value': value,
+                                                      'condition_name': _cond_name,
+                                                      'condition_threshold': _threshold},
+                                                      ignore_index=True)
 
     def add_event(self, content):
         """
