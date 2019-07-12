@@ -12,6 +12,7 @@ import numpy as np
 from abc import ABCMeta
 from abc import abstractmethod
 
+
 class FeatureObjectStandardFields:
     embeddings = 'embeddings'
     probabilities = 'probabilities'
@@ -56,12 +57,12 @@ class FeatureObjectBase(object):
 
     def _check_numpy_arrlike(self, arr):
         if not isinstance(arr, (np.ndarray, np.generic)):
-            raise TypeError ('dtype:{}, must be numpy array-like.'.format(type(arr)))
+            raise TypeError('dtype:{}, must be numpy array-like.'.format(type(arr)))
 
     @property
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
-            print ('WARNING: Get the empty embeddings array')
+            print('WARNING: Get the empty embeddings array')
             return np.empty(0)
         if len(self._array_name_map[fields.embeddings].shape) >= 3:
             print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
@@ -101,7 +102,7 @@ class FeatureObjectBase(object):
     @property
     def label_ids(self):
         if self._array_name_map[fields.label_ids] is None:
-            print ('WARNING: Get the empty label_ids array')
+            print('WARNING: Get the empty label_ids array')
         return self._array_name_map[fields.label_ids]
 
     @label_ids.setter
@@ -113,7 +114,7 @@ class FeatureObjectBase(object):
     @property
     def label_names(self):
         if self._array_name_map[fields.label_names] is None:
-            print ('WARNING: Get the empty label_names array')
+            print('WARNING: Get the empty label_names array')
         return self._array_name_map[fields.label_names]
 
     @label_names.setter
@@ -137,7 +138,7 @@ class FeatureObjectBase(object):
     @property
     def filename_strings(self):
         if self._array_name_map[fields.filename_strings] is None:
-            print ('WARNING: Get the empty filename strings')
+            print('WARNING: Get the empty filename strings')
         return self._array_name_map[fields.filename_strings]
 
     @filename_strings.setter
@@ -154,6 +155,7 @@ class FeatureObjectBase(object):
         self._check_numpy_arrlike(_super_labels)
         self._super_labels = _super_labels
 
+
 class FeatureObject(FeatureObjectBase):
 
     def __init__(self):
@@ -169,20 +171,17 @@ class FeatureObject(FeatureObjectBase):
                 _npy_path = '/'.join([data_dir, _npy])
                 _npy_arr = np.load(_npy_path)
                 self._array_name_map[_npy_name] = _npy_arr
-                print ('{} is loaded'.format(_npy_path))
+                print('{} is loaded'.format(_npy_path))
 
     def save(self, data_dir):
         
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         else:
-            print ('WARNING: {} is already exists, still export numpy arrays to it.'.format(
+            print('WARNING: {} is already exists, still export numpy arrays to it.'.format(
                 data_dir))
 
         for _name, _arr in self._array_name_map.items():
             if not _arr is None:
                 dst_path = '/'.join([data_dir, _name])
                 np.save(dst_path, _arr)
-
-    def merge(self, another):
-        pass
