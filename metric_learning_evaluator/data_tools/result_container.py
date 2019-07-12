@@ -6,26 +6,18 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from collections import defaultdict
+import pandas as pd
 
 
 class ResultContainer(object):
     """
       The evaluation result container handles the computation outcomes
-      and save them into the unified data structure.
+      and save them into pandas.DataFrame.
 
       1. add
       2. add_event
 
       TODO @kv: I want to refactor this.
-
-      NOTE:
-        Structure of the result_container:
-          - evaluation_name (outer structure)
-            - attribute_name: string
-              - metric_name: string
-                  - value: float
-                    - condition: dict (e.g @distance=0.5)
     """
 
     def __init__(self):
@@ -38,75 +30,78 @@ class ResultContainer(object):
                 Generated from ConfigParser.get_attributes()
 
         """
-        self._results = {}
+        self._results = pd.DataFrame()
         # A buffer for storing intermediate results,
         # only show when off-line mode is used.
-        self._event_buffer = defaultdict(list)
-
+        self._event_buffer = pd.DataFrame()
+        
     def add(self, attribute, metric, value, condition=None):
         """Add one result
             * create dict if key does not exist
 
-            NOTE: threshold can be None
+            NOTE: threshold can not be None
         """
-        if attribute not in self._results:
-            self._results[attribute] = {}
-        if metric not in self._results[attribute]:
-            self._results[attribute][metric] = {}
-
-        if condition is None:
-            self._results[attribute][metric][''] = value
-        elif isinstance(condition, dict):
-            _cond_key = ''
+        self._results = self._results.append({'attribute': attribute,
+                                              'metric': metric,
+                                              'value': value,
+                                              'condition_name': None,
+                                              'condition_threshold': None}, ignore_index=True)
+        if condition:
             for _cond_name, _threshold in condition.items():
-                _cond_key += '@{}={}'.format(_cond_name, _threshold)
-            self._results[attribute][metric][_cond_key] = value
-        elif isinstance(condition, str):
-            _cond_key = condition
-            self._results[attribute][metric][_cond_key] = value
+                self._results = self._results.append({'attribute': attribute,
+                                                    'metric': metric,
+                                                    'value': value,
+                                                    'condition_name': _cond_name,
+                                                    'condition_threshold': _threshold}, ignore_index=True)
 
-    def add_event(self, attribute, content):
+    def add_event(self, content):
         """
           Args:
-            attribute: String, key for describing the level of events
             content: A dictionary
           Note:
         """
-        self._event_buffer[attribute].append(content)
+        self._event_buffer = self._event_buffer.append(content, ignore_index=True)
+
+    def save(self, path):
+        """Save result and events to disk"""
+        os.makedirs(path, exist_ok=True)
+        self._results.to_pickle(os.path.join(path, 'results.pickle'))
+        self._event_buffer.to_pickle(os.path.join(path, 'events.pickle'))
+        print('Save results and events into \'{}\''.format(path))
+
+    def load(self, path):
+        """load result and events from disk"""
+        self._results = pd.read_pickle(os.path.join(path, 'results.pickle'))
+        self._event_buffer = pd.read_pickle(os.path.join(path, 'events.pickle'))
+        print('Load results and events from \'{}\''.format(path))
 
     @property
     def events(self):
         return self._event_buffer
 
     @events.setter
-    def events(self, dict_event):
-        self._event_buffer.update(dict_event)
+    def events(self, events):
+        self._event_buffer = pd.DataFrame(events)
 
     @property
     def results(self):
         # TODO: Do not return empty dict
-        dict_outcome = {}
-        for _attr_name, _metric in self._results.items():
-            dict_outcome[_attr_name] = {}
-            for _metric_name, _content in _metric.items():
-                if not _content:
-                    continue
-                dict_outcome[_attr_name][_metric_name] = _content
-        return dict_outcome
+        return self._results
 
     @property
     def flatten(self):
         dict_flatten = {}
-        for _attr_name, _metric in self._results.items():
-            for _metric_name, _content in _metric.items():
-                if not _content:
-                    continue
-                for _cond_key, _value in _content.items():
-                    if _cond_key == '':
-                        _name = '{}/{}'.format(_attr_name, _metric_name)
-                    else:
-                        _name = '{}/{}{}'.format(_attr_name, _metric_name, _cond_key)
-                    dict_flatten[_name] = _value
+        for row in self._results.itertuples(index=False):
+            attribute           = row.__getattribute__('attribute')
+            metric              = row.__getattribute__('metric')
+            value               = row.__getattribute__('value')
+            condition_name      = row.__getattribute__('condition_name')
+            condition_threshold = row.__getattribute__('condition_threshold')
+            
+            name = '{}/{}'.format(attribute, metric)
+            if condition_name and condition_threshold:
+                name += '@{}={}'.format(condition_name, condition_threshold)
+            dict_flatten[name] = value
         return dict_flatten
 
     @flatten.setter
