@@ -19,7 +19,9 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 import re
+import pickle
 import numpy as np
+import pandas as pd
 
 from abc import ABCMeta
 from abc import abstractmethod
@@ -33,6 +35,7 @@ from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
 from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_field
 
+from metric_learning_evaluator.core.standard_fields import EmbeddingContainerStandardFields as container_fields
 
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Probabilities
@@ -81,7 +84,7 @@ class EmbeddingContainer(object):
         self._container_size = container_size
         self._embeddings = None
         self._probabilities = None
-        self._dataframe = None
+        self._index_df = None
         self._name = name
 
         self._init_internals()
@@ -111,26 +114,49 @@ class EmbeddingContainer(object):
         return _content
 
     def _init_internals(self):
-        """Internal Indexes
+        """Internals & Indexes
+          Internal data
+            - instance ids, label ids, label names, filename strings
+            - Would be exported to .npy (feature_object) or .pkl (cradle EmbeddingDB)
+          Indexing relations
         """
+        # orderness should be maintained in _instance_ids
+        self._instance_ids = []
+        self._label_ids = []
+        self._label_names = []
+        self._filename_strings = []
+        # init member data for indexing relations
+        self._init_index_buffer()
+
+    def _init_index_buffer(self):
+        """Initialize Indexes"""
         # maps index used in numpy array and instance_id list
         self._index_by_instance_id = {}
         self._label_by_instance_id = {}
         self._label_name_by_instance_id = {}
-        # orderness should be maintained in _instance_ids
-        self._instance_ids = []
-        self._label_ids = []
-        self._filename_strings = []
-        self._label_names = []
+        # instance_ids with same attribute
+        self._instance_by_attribute = {}
         # attribute-id mapping, shallow key-value pair
         self._instance_id_by_label = defaultdict(list)
         self._attribute_by_instance = defaultdict(list)
-        # instance_ids with same attribute
-        self._instance_by_attribute = {}
+
+    def _fetch_internals(self):
+        """Fetch the dictionary of internal lists"""
+        _internal_dict = {
+            container_fields.instance_ids: self._instance_ids,
+            container_fields.label_ids: self._label_ids,
+            container_fields.label_names: self._label_names,
+            container_fields.filename_strings: self._filename_strings}
+        return _internal_dict
+
+    def _fetch_attributes(self):
+        """Fetch the dictionary of attribute lists
+        TODO: @kv Wait for attribute refactoring
+        """
+        pass
 
     def _init_arrays(self, container_size, embedding_size, probability_size):
         """Internal numpy arrays and array_index"""
-        # TODO: Check the dimensionality of size
         if container_size != self._container_size:
             self._container_size = max(self._container_size, container_size)
         if embedding_size != self._embedding_size:
@@ -163,6 +189,9 @@ class EmbeddingContainer(object):
                 Human-realizable content of given label_id
             filename: String
                 The filename or filepath to the given instance_id.
+          NOTICE:
+            This should be the only interface data are added into container.
+          TODO: @kv Modify the attributes format
         """
         # check type of label_id, instance_id,
         # TODO: Use more elegant way
@@ -173,7 +202,7 @@ class EmbeddingContainer(object):
         except:
             raise TypeError("The label id or instance id has wrong type")
 
-        # assertions: embedding size, 
+        # assertions: embedding size
         assert embedding.shape[0] <= self._embedding_size, "Size of embedding vector is greater than the default."
         # TODO @kv: Also check the prob size, and if it exists.
         if probability is not None:
@@ -212,8 +241,16 @@ class EmbeddingContainer(object):
         self._label_ids.append(label_id)
         self._label_names.append(label_name)
         self._filename_strings.append(filename)
-
         self._current += 1
+
+    def create_index(self, recreate=False):
+        """Create pandas.DataFrame index table from index buffer
+        """
+        if self.has_index and recreate:
+            print('NOTICE: internal pandas DataFrame is created already')
+        else:
+            internals = self._fetch_internals()
+            self._index_df = pd.DataFrame(internals)
 
     def get_embedding_by_instance_ids(self, instance_ids):
         """Fetch batch of embedding vectors by given instance ids."""
@@ -323,10 +360,6 @@ class EmbeddingContainer(object):
             _instance_ids.extend(self._instance_id_by_label[label_id])
         return _instance_ids
 
-    def commit(self):
-        """Convert internals to pandas.DataFrame"""
-        pass
-
     @property
     def embeddings(self):
         # get embeddings up to current index
@@ -335,7 +368,9 @@ class EmbeddingContainer(object):
     @property
     def probabilities(self):
         # get logits up to current index
-        return self._probabilities[:self._current]
+        if self._probabilities is not None:
+            return self._probabilities[:self._current]
+        return np.array([])
 
     @property
     def instance_ids(self):
@@ -383,6 +418,29 @@ class EmbeddingContainer(object):
         return {}
 
     @property
+    def has_index(self):
+        if self._index_df is None:
+            return False
+        return True
+
+    @property
+    def meta_dict(self):
+        """Fetch meta_dict used for Cradle.
+        """
+        internals = self._fetch_internals()
+        # TODO @kv: Also attributes are needed.
+        _meta_dict = {
+            container_fields.instance_ids:
+                np.expand_dims(np.asarray(internals[container_fields.instance_ids], np.int32), axis=1),
+            container_fields.label_ids:
+                np.expand_dims(np.asarray(internals[container_fields.label_ids], np.int32), axis=1),
+            container_fields.label_names:
+                np.expand_dims(np.asarray(internals[container_fields.label_names]), axis=1),
+            container_fields.filename_strings:
+                np.expand_dims(np.asarray(internals[container_fields.filename_strings]), axis=1)}
+        return _meta_dict
+
+    @property
     def instance_id_groups(self):
         return self._instance_id_by_label
 
@@ -408,6 +466,9 @@ class EmbeddingContainer(object):
         self._init_arrays(self._container_size,
                           self._embedding_size,
                           self._probability_size)
+        self._embeddings = None
+        self._probabilities = None
+        self._index_df = None
         print('Clear {}'.format(self._name))
 
     def save(self, path):
@@ -428,11 +489,11 @@ class EmbeddingContainer(object):
 
         if self.counts > 0:
             feature_exporter.embeddings = self.embeddings
-        print('Export embedding with shape: {}'.format(self.embeddings.shape))
+            print('Export embedding with shape: {}'.format(self.embeddings.shape))
 
         if self.counts > 0 and self._probabilities is not None:
             feature_exporter.probabilities = self.probabilities
-        print('Export probabilities with shape: {}'.format(self.probabilities.shape))
+            print('Export probabilities with shape: {}'.format(self.probabilities.shape))
 
         feature_exporter.save(path)
         print("Save all extracted features at \'{}\'".format(path))
@@ -446,7 +507,7 @@ class EmbeddingContainer(object):
                     if '.' in attribute: # attribute
                         name, content = attribute.split('.', 1)
                         attribute_table.insert_property(instance_id, name, content)
-                    else: # tag
+                    else:
                         attribute_table.insert_domain(instance_id, attribute)
             attribute_table.commit()
             print("Save all attributes into \'{}\'".format(db_path))
@@ -465,7 +526,11 @@ class EmbeddingContainer(object):
         container_size = n_instances = len(feature_importer.label_ids)
         embedding_size = feature_importer.embeddings.shape[1]
         probability_size = feature_importer.probabilities.shape[1] if feature_importer.probabilities is not None else 0
-        self._init_arrays(container_size, embedding_size, probability_size)
+
+        self._init_internals()
+        self._init_arrays(container_size,
+                          embedding_size,
+                          probability_size)
 
         # Give sequential instance_ids if not specified
         if feature_importer.instance_ids is None or feature_importer.instance_ids.size == 0:
@@ -514,6 +579,73 @@ class EmbeddingContainer(object):
                      probability=probability,
                      attributes=attributes,
                      filename=filename)
+        print('Container initialized.')
+
+    def load_pkl(self, pkl_path):
+        """Load embeddings & internals from cradle EmbeddingDB format
+          NOTE: This function would not verify md5 hash code.
+          Args:
+            pkl_path: A string, path to the pickle file
+        """
+        with open(pkl_path, 'rb') as pkl_file:
+            db_data = pickle.load(pkl_file)
+
+        embeddings = None
+        if container_fields.embeddings not in db_data:
+            raise KeyError('missing {required} in {db_keys}'.format(
+                required=container_fields.embeddings,
+                db_keys=list(db_data.keys())))
+        embeddings = db_data[container_fields.embeddings]
+        if not isinstance(embeddings, (np.ndarray, np.generic)):
+            embeddings = np.asarray(embeddings, np.float32)
+        assert len(embeddings.shape) == 2, 'Embeddings should be 2D np array'
+        container_size, embedding_size = embeddings.shape
+        probability_size = 0
+        self._init_internals()
+        self._init_arrays(container_size,
+                          embedding_size,
+                          probability_size)
+
+        meta_dict = None
+        if container_fields.meta in db_data:
+            meta_dict = db_data[container_fields.meta]
+        assert meta_dict is not None, '{} contains no meta data'.format(pkl_path)
+        assert container_fields.label_ids in meta_dict, 'Label ids cannot found in meta_dict'
+
+        if container_fields.instance_ids in meta_dict:
+            instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
+        else:
+            instance_ids = np.arange(container_size)
+        label_ids = meta_dict[container_fields.label_ids]
+        filename_strings, label_names = None, None
+        if container_fields.label_names in meta_dict:
+            label_names = meta_dict[container_fields.label_names]
+        if container_fields.filename_strings in meta_dict:
+            filename_strings = meta_dict[container_fields.filename_strings]
+
+        for idx, instance_id in enumerate(instance_ids):
+            label_id = label_ids[idx]
+            embedding = embeddings[idx]
+
+            label_name = None
+            if label_names is not None:
+                label_name = label_names[idx]
+
+            filename = None
+            if filename_strings is not None:
+                filename = filename_strings[idx]
+
+            probability = None
+            # TODO: Implement attributes as refactoring
+            attributes = []
+            self.add(instance_id=instance_id,
+                     label_id=label_id,
+                     label_name=label_name,
+                     embedding=embedding,
+                     probability=probability,
+                     attributes=attributes,
+                     filename=filename)
+        print('Container initialized.')
 
     # Add new functions
     def get_instance_id_by_attribute(self, attribute_name):
