@@ -1,15 +1,16 @@
-"""
-  Collection of standard fields
+"""Standard Fields
+  Standard fields define all keys would be used in the evaluator system.
+
   Naming convention:
     - ObjectName + StandardFields
     - FolderName + StandardFields
     (Q: which is better?)
+  @kv
 """
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
-
 
 
 class EvaluationStandardFields:
@@ -79,10 +80,7 @@ class ConfigStandardFields:
 
     # Types of warpper
     database_type = 'database_type'
-    zeus = 'Zeus'
-    json = 'Json'
-    none = 'None'
-    native = 'Native'
+    csv = 'CSV'
 
     # Config of wrapper
     database_config = 'database_config'
@@ -159,6 +157,10 @@ class EmbeddingContainerStandardFields:
     meta = 'meta'
 
 
+class AttributeTableStandardFields:
+    instance_id = 'instance_ids'
+
+
 class IndexAgentStandardFields:
     numpy_agent = 'Numpy'
     hnsw_agent = 'HNSW'
@@ -192,7 +194,7 @@ class MetricStandardFields:
     # Top k accuracy
     top_k_accuracy = 'top_k_accuracy'
     top_k_hit_accuracy = 'top_k_hit_accuracy'
-    
+
     pair_sampling = 'pair_sampling'
     ranking = 'ranking'
 
@@ -215,13 +217,9 @@ class MetricStandardFields:
     false_positive_rate = 'false_positive_rate'
 
 
-
 class QueryDatabaseStandardFields:
-    datasetbackbone = 'DatasetBackbone'
-    zeus = 'Zeus'
-    json = 'Json'
-    # built-in sqlite3 attribute table
-    native = 'Native'
+    # Support only csv
+    csv = 'CSV'
 
 
 class AttributeStandardFields(object):

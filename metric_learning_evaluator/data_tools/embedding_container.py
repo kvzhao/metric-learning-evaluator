@@ -1,17 +1,12 @@
-"""
+"""EmbeddingContainer
+
     Define data containers for the metric learning evaluator.
 
     Brief intro:
-
         EmbeddingContainer:
             Efficient object which handles the shared (globally) embedding vectors.
 
-        AttributeContainer:
-            Data object for maintaining attribute table in each EvaluationObject.
-
-    NOTE: The container is the stack,
-
-    @bird, dennis, kv
+    @bird, dennis, kv, lotus
 """
 import os
 import sys
@@ -28,26 +23,27 @@ from abc import abstractmethod
 import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
-from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
+from metric_learning_evaluator.data_tools.attribute_table_csv import AttributeTable
+from metric_learning_evaluator.query.csv_wrapper import CsvWrapper
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
 from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
 from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_field
-
 from metric_learning_evaluator.core.standard_fields import EmbeddingContainerStandardFields as container_fields
+
 
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Probabilities
 
-      Operations:
-        - add: put one datum in the container
-        - embeddings: get all embedding vectors exist in the container
-        - get_embedding_by_instance_ids: query embeddings by instance_ids
-        - get_label_by_instance_ids: query labels by instance_ids
+      Container operanios:
+        - add: an unique interface for adding datum into container
         - clear: clear the internal buffer
+        - save:
+        - load:
+        - load_pkl:
 
-      Query interfaces:
+      Query methods:
 
       = NOTE =======================================================================================
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
@@ -55,7 +51,8 @@ class EmbeddingContainer(object):
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO @kv: maybe we should add filename in container.
-      TODO @kv: update or init container with blob of numpy array
+      TODO @kv: ~~update or init container with blob of numpy array~~
+      TODO @kv: Join two dataframes from AttributeTable & Internal
       NOTE @kv: Change the interface this commit!
       ==============================================================================================
     """
@@ -92,6 +89,7 @@ class EmbeddingContainer(object):
                           self._embedding_size,
                           self._probability_size)
 
+        self._attribute_table = AttributeTable()
         # used for parsing commands
         self._interpreter = Interpreter()
 
@@ -135,9 +133,9 @@ class EmbeddingContainer(object):
         self._label_by_instance_id = {}
         self._label_name_by_instance_id = {}
         # instance_ids with same attribute
-        self._instance_by_attribute = {}
         # attribute-id mapping, shallow key-value pair
         self._instance_id_by_label = defaultdict(list)
+        self._instance_by_attribute = {}
         self._attribute_by_instance = defaultdict(list)
 
     def _fetch_internals(self):
@@ -148,12 +146,6 @@ class EmbeddingContainer(object):
             container_fields.label_names: self._label_names,
             container_fields.filename_strings: self._filename_strings}
         return _internal_dict
-
-    def _fetch_attributes(self):
-        """Fetch the dictionary of attribute lists
-        TODO: @kv Wait for attribute refactoring
-        """
-        pass
 
     def _init_arrays(self, container_size, embedding_size, probability_size):
         """Internal numpy arrays and array_index"""
@@ -179,12 +171,12 @@ class EmbeddingContainer(object):
                 Unique instance_id which can not be repeated in the container.
             label_id: int
                 Index of given class corresponds to the instance.
-            embedding: 1D numpy array:
+            embedding: 1D numpy array,
                 One dimensional embedding vector with size less than self._embedding_size.
-            probability: 1D numpy array:
+            probability: 1D numpy array,
                 One dimensional vector which records class-wise scores.
-            attributes: List of strings
-                List of attributes corresponding to the given instance_id
+            attributes: A dictionary,
+
             label_name: String
                 Human-realizable content of given label_id
             filename: String
@@ -219,18 +211,17 @@ class EmbeddingContainer(object):
         if probability is not None:
             self._probabilities[self._current, ...] = probability
 
+        # TODO: Change attributes type to dict
+        # TODO: add another dict to store attr_name
         if attributes is not None:
-            if isinstance(attributes, str):
-                attributes = [attributes]
-            if not all(isinstance(_attr, str) for _attr in attributes):
-                raise ValueError('attributes type should be str or list of str.')
-            # TODO: add one more attributes `all` into the container! (also works for attributes is None case)
             self._attribute_by_instance[instance_id] = attributes
-            for _attr in attributes:
-                if _attr in self._instance_by_attribute:
-                    self._instance_by_attribute[_attr].append(instance_id)
-                else:
-                    self._instance_by_attribute[_attr] = [instance_id]
+            if not isinstance(attributes, dict):
+                print('WARNING: given attributes must be a dictionary.')
+            self._attribute_table.add(instance_id, attributes)
+            for attr_name, attr_value in attributes.items():
+                if attr_value not in self._instance_by_attribute:
+                    self._instance_by_attribute[attr_value] = []
+                self._instance_by_attribute[attr_value].append(instance_id)
 
         # NOTE: same instance_id maps to many embedding!?
         self._index_by_instance_id[instance_id] = self._current
@@ -243,14 +234,16 @@ class EmbeddingContainer(object):
         self._filename_strings.append(filename)
         self._current += 1
 
-    def create_index(self, recreate=False):
+    def createIndex(self, recreate=False):
         """Create pandas.DataFrame index table from index buffer
         """
         if self.has_index and recreate:
             print('NOTICE: internal pandas DataFrame is created already')
-        else:
-            internals = self._fetch_internals()
-            self._index_df = pd.DataFrame(internals)
+            return
+        internals = self._fetch_internals()
+        self._index_df = pd.DataFrame(internals)
+        attr_df = self._attribute_table.DataFrame
+        self._index_df = pd.merge(self._index_df, attr_df, on=container_fields.instance_ids, how='inner')
 
     def get_embedding_by_instance_ids(self, instance_ids):
         """Fetch batch of embedding vectors by given instance ids."""
@@ -419,9 +412,16 @@ class EmbeddingContainer(object):
 
     @property
     def has_index(self):
+        # Consider both attribute table and index df
         if self._index_df is None:
             return False
         return True
+
+    @property
+    def DataFrame(self):
+        if not self.has_index:
+            self.createIndex()
+        return self._index_df
 
     @property
     def meta_dict(self):
@@ -469,6 +469,7 @@ class EmbeddingContainer(object):
         self._embeddings = None
         self._probabilities = None
         self._index_df = None
+        self._attribute_table.clear()
         print('Clear {}'.format(self._name))
 
     def save(self, path):
@@ -499,18 +500,14 @@ class EmbeddingContainer(object):
         print("Save all extracted features at \'{}\'".format(path))
 
         # Save attributes
-        if self._attribute_by_instance:
-            db_path = os.path.join(path, 'attribute.db')
-            attribute_table = AttributeTable(db_path)
-            for instance_id, attributes in self._attribute_by_instance.items():
-                for attribute in attributes:
-                    if '.' in attribute: # attribute
-                        name, content = attribute.split('.', 1)
-                        attribute_table.insert_property(instance_id, name, content)
-                    else:
-                        attribute_table.insert_domain(instance_id, attribute)
-            attribute_table.commit()
-            print("Save all attributes into \'{}\'".format(db_path))
+        attr_table_path = os.path.join(path, 'attribute_table.csv')
+        self._attribute_table.save(attr_table_path)
+        print("Save all attributes into \'{}\'".format(attr_table_path))
+
+        # Save details
+        detail_table_path = os.path.join(path, 'indexes.csv')
+        self._index_df.to_csv(detail_table_path)
+        print("Save detailed indexed into \'{}\'".format(detail_table_path))
 
     def load(self, path):
         """Load embedding from disk"""
@@ -544,10 +541,12 @@ class EmbeddingContainer(object):
         probabilities = feature_importer.probabilities
 
         # Create AttributeTable
-        db_path = os.path.join(path, 'attribute.db')
-        if not os.path.exists(db_path):
-            print('NOTICE: {} contains no attribute table'.format(path))
-        attribute_table = AttributeTable(db_path)
+        csv_file_path = os.path.join(path, 'attribute_table.csv')
+        csv_reader = None
+        if not os.path.exists(csv_file_path):
+            print('NOTICE: {} contains no attribute table'.format(csv_file_path))
+        else:
+            csv_reader = CsvWrapper({'path': csv_file_path})
 
         for idx, instance_id in enumerate(instance_ids):
             label_id = feature_importer.label_ids[idx]
@@ -565,13 +564,10 @@ class EmbeddingContainer(object):
             if probabilities is not None:
                 probability = probabilities[idx]
 
-            properties = attribute_table.query_property_by_instance_ids(int(instance_id))
-            domains = attribute_table.query_domain_by_instance_ids(int(instance_id))
+            attributes = None
+            if csv_reader is not None:
+                attributes = csv_reader.query_attributes_by_instance_id(instance_id)
 
-            attributes = []
-            if properties or domains:
-                attributes = ['{}.{}'.format(name, content) for property_ in properties
-                              for name, content in property_.items()] + domains
             self.add(instance_id=instance_id,
                      label_id=label_id,
                      label_name=label_name,
