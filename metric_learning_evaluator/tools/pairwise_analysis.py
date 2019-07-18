@@ -16,16 +16,14 @@ from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import indexing_array
 
 from metric_learning_evaluator.analysis.manifold import Manifold
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
 
 from collections import Counter
-from pprint import pprint
-
-import pickle
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+
 
 def main(args):
     data_dir = args.data_dir
@@ -45,16 +43,14 @@ def main(args):
     instance_ids = np.arange(embeddings.shape[0])
 
     # Push all embeddings into container
-    embedding_container = EmbeddingContainer(
-        embedding_size=embeddings.shape[1],
-        logit_size=0,
-        container_size=embeddings.shape[0])
+    embedding_container = EmbeddingContainer(embedding_size=embeddings.shape[1],
+                                             container_size=embeddings.shape[0])
 
     for emb, inst_id, label_id in zip(embeddings, instance_ids, label_ids):
         embedding_container.add(inst_id, label_id, emb)
 
     manifold = Manifold(embedding_container, label_names)
-    
+
     if args.label_id is not None:
         intra_class_angles, inter_class_angles = manifold.one_class_pairwise_relation(label_id=args.label_id)
         plt_title = manifold._labelmap[args.label_id]
@@ -68,7 +64,7 @@ def main(args):
     plt.hist(inter_class_angles, bins=100, alpha=0.5, density=True)
     if args.label_id:
         plt.title(manifold._labelmap[args.label_id])
-    plt.legend(['positive pairs','negative pairs'])
+    plt.legend(['positive pairs', 'negative pairs'])
     plt.xlabel('degrees')
     plt.savefig(save_name)
 

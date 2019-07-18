@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.abspath(
 import re
 import yaml
 
-from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
 from metric_learning_evaluator.core.registered import REGISTERED_DATABASE_TYPE
 from metric_learning_evaluator.core.registered import REGISTERED_INDEX_AGENT
@@ -22,9 +22,7 @@ class ConfigParser(object):
         1. load from given config path
         2. get useful values to set containers
         3. get hyper-parameters for evaluation functions
-        
       Principal and Convention of using configurations:
-
     """
 
     def __init__(self, config_dict):

@@ -18,9 +18,9 @@ from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 
-from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
-from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
+from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
 
 
 class ClassificationEvaluationStandardFields(object):

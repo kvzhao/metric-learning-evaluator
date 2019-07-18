@@ -8,65 +8,11 @@ import math
 import numpy as np
 
 import itertools
+from random import shuffle
 from collections import Counter
 from collections import defaultdict
-from random import shuffle
 
-from pprint import pprint
-
-
-class SampleStrategyStandardFields:
-    # sampling
-    sample_method = 'sample_method'
-    class_sample_method = 'class_sample_method'
-    instance_sample_method = 'instance_sample_method'
-
-    # mothods
-    uniform = 'uniform'
-    all_class = 'all_class'
-    all_instance = 'all_instance'
-    instance_number_weighted = 'instance_number_weighted'
-    instance_number_inverse_weighted = 'instance_number_inverse_weighted'
-
-    # sampling options
-    sample_ratio = 'sample_ratio'
-
-    ratio_of_instance = 'ratio_of_instance'
-    ratio_of_sampled_class = 'ratio_of_sampled_class'
-    ratio_of_instance_per_class = 'ratio_of_instance_per_class'
-
-    num_of_sampled_class = 'num_of_sampled_class'
-    num_of_sampled_instance_per_class = 'num_of_sampled_instance_per_class'
-
-    num_of_db_class = 'num_of_db_class'
-    num_of_db_instance = 'num_of_db_instance' # DEPRECATE THIS
-    num_of_db_instance_per_class = 'num_of_db_instance_per_class'
-    num_of_query_class = 'num_of_query_class'
-    num_of_query_instance_per_class = 'num_of_query_instance_per_class'
-    maximum_of_sampled_data = 'maximum_of_sampled_data'
-
-    # pair
-    is_same = 'is_same'
-    num_of_pairs = 'num_of_pairs'
-    ratio_of_positive_pair = 'ratio_of_positive_pair'
-    ratio_of_negative_pair = 'ratio_of_negative_pair'
-    pair_A = 'pair_A'
-    pair_B = 'pair_B'
-    pair_A_label = 'pair_A_label'
-    pair_B_label = 'pair_B_label'
-
-    # ranking
-    sampled_instance_ids = 'sampled_instance_ids'
-    sampled_label_ids = 'sampled_label_ids'
-    query_instance_ids = 'query_instance_ids'
-    query_label_ids = 'query_label_ids'
-    db_instance_ids = 'db_instance_ids'
-    db_label_ids = 'db_label_ids'
-    database_instance_ids = 'database_instance_ids'
-    database_label_ids = 'database_label_ids'
-
-
-sample_fields = SampleStrategyStandardFields
+from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
 
 
 class SampleStrategy(object):

@@ -43,10 +43,9 @@ from metric_learning_evaluator.utils.switcher import switch
 from metric_learning_evaluator.utils.io_utils import create_embedding_container_from_featobj
 from metric_learning_evaluator.utils.io_utils import check_instance_id
 from metric_learning_evaluator.utils.report_writer import ReportWriter
-from metric_learning_evaluator.utils.result_saver import ResultSaver
 
-from metric_learning_evaluator.application.standard_fields import ApplicationStatusStandardFields as status_fields
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import ApplicationStatusStandardFields as status_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as metric_fields
 
 from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES as display_namemap
 
@@ -179,11 +178,8 @@ def main():
                     event_report = reporter.event_report
                     print(event_report)
                 if out_dir:
-                    saver = ResultSaver(container)
-                    path = '/'.join([out_dir, 'overall_{}'.format(display_name)])
-                    saver.save_overall(path)
-                    path = '/'.join([out_dir, 'event_{}'.format(display_name)])
-                    saver.save_event(path)
+                    path = '/'.join([out_dir, 'result_{}'.format(display_name)])
+                    container.save(path)
 
             # end of switch case
             break

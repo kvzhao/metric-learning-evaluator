@@ -31,23 +31,18 @@ import numpy as np
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
 from metric_learning_evaluator.query.general_database import QueryInterface
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
-
 # import all evaluation objects
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
 from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES
-
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
-from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
 from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
-
 from metric_learning_evaluator.evaluations.geometric_evaluation import GeometricEvaluation
-
-from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
+from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 
 
 class EvaluatorBuilder(object):

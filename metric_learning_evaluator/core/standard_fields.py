@@ -22,20 +22,10 @@ class EvaluationStandardFields:
 
     # Retrival
     ranking = 'RankingEvaluation'
-
-    # Ranking with Attributes Evaluation
-    ranking_with_attrs = 'RankingWithAttributesEvaluation'
-
-    mock = 'MockEvaluation'
-
     # FaceNet: Pair-wise evaluation
     facenet = 'FacenetEvaluation'
-
-    checkout = 'CheckoutEvaluation'
-
     # Avaliable evaluation implementations
     classification = 'ClassificationEvaluation'
-
     geometric = 'GeometricEvaluation'
 
     # ===== Inner items =====
@@ -66,6 +56,34 @@ class RankingEvaluationStandardFields:
     top_k_hit_accuracy = 'top_k_hit_accuracy'
     mAP = 'mAP'
     sampling = 'sampling'
+
+
+class FacenetEvaluationStandardFields:
+    """Define fields used only in Facenet evaluation
+        which may assign in `option` section in config.
+    """
+    # pair dict
+    pairA = 'pairA'
+    pairB = 'pairB'
+    is_same = 'is_same'
+    path_pairlist = 'path_pairlist'
+    num_maximum_pairs = 'num_maximum_pairs'
+    num_of_pairs = 'num_of_pairs'
+    # used for distance threshold
+    start = 'start'
+    end = 'end'
+    step = 'step'
+    # sampling options
+    sample_method = 'sample_method'
+    sample_ratio = 'sample_ratio'
+    ratio_of_class = 'ratio_of_class'
+    ratio_of_instance_per_class = 'ratio_of_instance_per_class'
+    num_of_instance_per_class = 'num_of_instance_per_class'
+    # sampling methods
+    class_sample_method = 'class_sample_method'
+    random_sample = 'random_sample'
+    amount_weighted = 'amount_weighted'
+    amount_inverse_weighted = 'amount_inverse_weighted'
 
 
 class ConfigParserStandardFields:
@@ -173,23 +191,18 @@ class MetricStandardFields:
     # === Metric Function and Items ===
     metric = 'metric'
     mAP = 'mAP'
-
     # Area Under Curve
     auc = 'AUC'
     area_under_curve = 'area_under_curve'
-
     # Equal Error Rate
     eer = 'EER'
     equal_error_rate = 'equal_error_rate'
-
     # False Accepted Rate: FAR = TA(d)/P_same
     far = 'FAR'
     false_accept_rate = 'false_accept_rate'
-
     # Validation Rate: VAR = FA(d)/P_diff
     var = 'VAR'
     validation_rate = 'validation_rate'
-
     accuracy = 'accuracy'
     # Top k accuracy
     top_k_accuracy = 'top_k_accuracy'
@@ -232,7 +245,6 @@ class AttributeStandardFields(object):
     # none attributes are given, use class instead.
     none = 'none'
     All = 'all'
-    # TODO @kv:
     per_category = 'per_category'
 
     # General attribute types:
@@ -240,16 +252,71 @@ class AttributeStandardFields(object):
     supercategory = 'supercategory'
 
     # Preserved keywords
-    #seen = 'seen'
-    #unseen = 'unseen'
     query = 'query'
     database = 'database'
     cross_reference = 'cross_reference'
     filtering = 'filtering'
     group = 'group'
 
-    # Customized for checkout
-    seen_to_seen = 'seen_to_seen'
-    unseen_to_unseen = 'unseen_to_unseen'
-    seen_to_total = 'seen_to_total'
-    unseen_to_total = 'unseen_to_total'
+
+class InterpreterStandardField:
+    LOAD_LIST = 'LOAD_LIST'
+    STORE_NAME = 'STORE_NAME'
+    LOAD_NAME = 'LOAD_NAME'
+    JOIN = 'JOIN'
+    REMOVE = 'REMOVE'
+    PRINT = 'PRINT'
+    instructions = 'instructions'
+    values = 'values'
+    names = 'names'
+
+
+class SampleStrategyStandardFields:
+    # sampling
+    sample_method = 'sample_method'
+    class_sample_method = 'class_sample_method'
+    instance_sample_method = 'instance_sample_method'
+
+    # mothods
+    uniform = 'uniform'
+    all_class = 'all_class'
+    all_instance = 'all_instance'
+    instance_number_weighted = 'instance_number_weighted'
+    instance_number_inverse_weighted = 'instance_number_inverse_weighted'
+
+    # sampling options
+    sample_ratio = 'sample_ratio'
+
+    ratio_of_instance = 'ratio_of_instance'
+    ratio_of_sampled_class = 'ratio_of_sampled_class'
+    ratio_of_instance_per_class = 'ratio_of_instance_per_class'
+
+    num_of_sampled_class = 'num_of_sampled_class'
+    num_of_sampled_instance_per_class = 'num_of_sampled_instance_per_class'
+
+    num_of_db_class = 'num_of_db_class'
+    num_of_db_instance = 'num_of_db_instance' # DEPRECATE THIS
+    num_of_db_instance_per_class = 'num_of_db_instance_per_class'
+    num_of_query_class = 'num_of_query_class'
+    num_of_query_instance_per_class = 'num_of_query_instance_per_class'
+    maximum_of_sampled_data = 'maximum_of_sampled_data'
+
+    # pair
+    is_same = 'is_same'
+    num_of_pairs = 'num_of_pairs'
+    ratio_of_positive_pair = 'ratio_of_positive_pair'
+    ratio_of_negative_pair = 'ratio_of_negative_pair'
+    pair_A = 'pair_A'
+    pair_B = 'pair_B'
+    pair_A_label = 'pair_A_label'
+    pair_B_label = 'pair_B_label'
+
+    # ranking
+    sampled_instance_ids = 'sampled_instance_ids'
+    sampled_label_ids = 'sampled_label_ids'
+    query_instance_ids = 'query_instance_ids'
+    query_label_ids = 'query_label_ids'
+    db_instance_ids = 'db_instance_ids'
+    db_label_ids = 'db_label_ids'
+    database_instance_ids = 'database_instance_ids'
+    database_label_ids = 'database_label_ids'
