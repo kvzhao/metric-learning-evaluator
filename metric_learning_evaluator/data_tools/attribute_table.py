@@ -89,24 +89,6 @@ class AttributeTable(object):
         command = '{key}==\'{value}\''.format(key, value)
         return self.DataFrame.query(command)[attrtable_fields.instance_id].tolist()
 
-    def get_attribute_by_instance_ids(self, instance_ids):
-        """
-          Args:
-          Returns:
-            attributes: List of dicts
-        """
-        return []
-
-    def get_instance_id_by_attributes(self, attributes):
-        """
-          Args:
-            ??? HOW TO QUERY BY KEY VALUES ???
-            Query by key? or by value?
-          Return:
-            queried_instance_ids: list of instance ids
-        """
-        return []
-
     def save(self, path):
         """
           Args:
