@@ -16,13 +16,13 @@ from metric_learning_evaluator.data_tools.embedding_container import EmbeddingCo
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
-from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
 from metric_learning_evaluator.index.agent import IndexAgent
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 
+from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
