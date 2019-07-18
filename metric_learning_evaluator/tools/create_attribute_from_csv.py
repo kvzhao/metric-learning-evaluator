@@ -3,7 +3,7 @@
 """
 
 from metric_learning_evaluator.query.general_database import QueryInterface
-from metric_learning_evaluator.data_tools.attribute_table_csv import AttributeTable
+from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 
 
 def main(args):

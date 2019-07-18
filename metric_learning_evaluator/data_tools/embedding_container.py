@@ -23,7 +23,7 @@ from abc import abstractmethod
 import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
-from metric_learning_evaluator.data_tools.attribute_table_csv import AttributeTable
+from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
