@@ -11,6 +11,7 @@ from abc import abstractmethod
 
 import numpy as np
 
+
 class AgentBase(object):
     """
       Base object of index agent

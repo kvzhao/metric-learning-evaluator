@@ -11,6 +11,7 @@ from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.utils.switcher import switch
 from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
 
+# TODO: Import from core but conflict
 REGISTERED_INDEX_AGENT = {
     config_fields.numpy_agent: NumpyAgent,
     config_fields.hnsw_agent: HNSWAgent,
