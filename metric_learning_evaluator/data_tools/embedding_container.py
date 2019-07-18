@@ -20,7 +20,6 @@ import pandas as pd
 
 from abc import ABCMeta
 from abc import abstractmethod
-import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
@@ -28,8 +27,8 @@ from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
-from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
+from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
 from metric_learning_evaluator.core.standard_fields import EmbeddingContainerStandardFields as container_fields
 
 
@@ -47,13 +46,9 @@ class EmbeddingContainer(object):
 
       = NOTE =======================================================================================
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
-      TODO @kv: use pandas dataframe as internals
+      TODO @kv: Use pandas dataframe as for query
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
-      TODO @kv: maybe we should add filename in container.
-      TODO @kv: ~~update or init container with blob of numpy array~~
-      TODO @kv: Join two dataframes from AttributeTable & Internal
-      NOTE @kv: Change the interface this commit!
       ==============================================================================================
     """
 
@@ -90,7 +85,6 @@ class EmbeddingContainer(object):
                           self._probability_size)
 
         self._attribute_table = AttributeTable()
-        # used for parsing commands
         self._interpreter = Interpreter()
 
     def __repr__(self):
@@ -175,19 +169,14 @@ class EmbeddingContainer(object):
                 One dimensional embedding vector with size less than self._embedding_size.
             probability: 1D numpy array,
                 One dimensional vector which records class-wise scores.
-            attributes: A dictionary,
-
+            attributes: A dictionary with attribute_name: attribute_value
             label_name: String
                 Human-realizable content of given label_id
             filename: String
                 The filename or filepath to the given instance_id.
           NOTICE:
             This should be the only interface data are added into container.
-          TODO: @kv Modify the attributes format
         """
-        # check type of label_id, instance_id,
-        # TODO: Use more elegant way
-        # type check?
         try:
             label_id = int(label_id)
             instance_id = int(instance_id)
@@ -211,8 +200,6 @@ class EmbeddingContainer(object):
         if probability is not None:
             self._probabilities[self._current, ...] = probability
 
-        # TODO: Change attributes type to dict
-        # TODO: add another dict to store attr_name
         if attributes is not None:
             self._attribute_by_instance[instance_id] = attributes
             if not isinstance(attributes, dict):
@@ -223,7 +210,6 @@ class EmbeddingContainer(object):
                     self._instance_by_attribute[attr_value] = []
                 self._instance_by_attribute[attr_value].append(instance_id)
 
-        # NOTE: same instance_id maps to many embedding!?
         self._index_by_instance_id[instance_id] = self._current
         self._label_by_instance_id[instance_id] = label_id
         self._label_name_by_instance_id[instance_id] = label_name
@@ -355,7 +341,6 @@ class EmbeddingContainer(object):
 
     @property
     def embeddings(self):
-        # get embeddings up to current index
         return self._embeddings[:self._current]
 
     @property
@@ -428,7 +413,6 @@ class EmbeddingContainer(object):
         """Fetch meta_dict used for Cradle.
         """
         internals = self._fetch_internals()
-        # TODO @kv: Also attributes are needed.
         _meta_dict = {
             container_fields.instance_ids:
                 np.expand_dims(np.asarray(internals[container_fields.instance_ids], np.int32), axis=1),
@@ -632,7 +616,6 @@ class EmbeddingContainer(object):
                 filename = filename_strings[idx]
 
             probability = None
-            # TODO: Implement attributes as refactoring
             attributes = []
             self.add(instance_id=instance_id,
                      label_id=label_id,
@@ -708,7 +691,6 @@ class EmbeddingContainer(object):
         source_command, target_command = _split_cross_reference_command(command)
         source_result = self.get_instance_id_by_group_command(source_command)
         target_result = self.get_instance_id_by_group_command(target_command)
-
         return source_result, target_result
 
     def _translate_command_to_executable(self, single_line_command):
@@ -758,7 +740,4 @@ class EmbeddingContainer(object):
                 _put_variable_in_stack(attr_name, instance_ids)
                 instruction = InstructionSymbolTable[op_symbol]
                 _put_command_in_stack(instruction)
-        else:
-            # seem to be error case
-            pass
         return executable_command
