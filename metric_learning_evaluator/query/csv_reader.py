@@ -17,11 +17,11 @@ MUST_BE_IGNORED = ['',
                    'instance_ids']
 
 
-class CsvWrapper(object):
+class CsvReader(object):
     def __init__(self,
                  database_config,
                  ignore_keys=[]):
-        """CsvWrapper
+        """CsvReader
           The reader of csv file
 
           Args:

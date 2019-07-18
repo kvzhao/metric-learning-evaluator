@@ -4,7 +4,6 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-from metric_learning_evaluator.query.csv_wrapper import CsvWrapper
 from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.core.standard_fields import QueryDatabaseStandardFields as db_fields
 # NOTE: Change the default (& the only) supported database format.

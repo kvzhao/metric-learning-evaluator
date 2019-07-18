@@ -24,7 +24,7 @@ import collections
 from collections import defaultdict
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.data_tools.attribute_table_csv import AttributeTable
-from metric_learning_evaluator.query.csv_wrapper import CsvWrapper
+from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
@@ -546,7 +546,7 @@ class EmbeddingContainer(object):
         if not os.path.exists(csv_file_path):
             print('NOTICE: {} contains no attribute table'.format(csv_file_path))
         else:
-            csv_reader = CsvWrapper({'path': csv_file_path})
+            csv_reader = CsvReader({'path': csv_file_path})
 
         for idx, instance_id in enumerate(instance_ids):
             label_id = feature_importer.label_ids[idx]

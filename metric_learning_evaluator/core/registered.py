@@ -21,7 +21,7 @@ from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 
 # ===========  Query Interface =============
-from metric_learning_evaluator.query.csv_wrapper import CsvWrapper
+from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
@@ -50,5 +50,5 @@ REGISTERED_INDEX_AGENT = {
 }
 
 REGISTERED_DATABASE_TYPE = {
-    query_fields.csv: CsvWrapper,
+    query_fields.csv: CsvReader,
 }
