@@ -56,28 +56,25 @@ parser = argparse.ArgumentParser('Command-line Metric Learning Evaluation Tool')
 
 # must-have argument
 parser.add_argument('--config', '-c', type=str, default=None,
-        help='Path to the evaluation configuration with yaml format.')
-
+                    help='Path to the evaluation configuration with yaml format.')
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
-        help='Path to the source (query) dataset.')
+                    help='Path to the source (query) dataset.')
 parser.add_argument('--database', '-db', type=str, default=None,
-        help='Path to the source dataset, with type folder')
+                    help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
-        help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
+                    help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
-        help='Path to the output dir for saving report.')
-
+                    help='Path to the output dir for saving report.')
 parser.add_argument('--embedding_size', '-es', type=int, default=2048,
-        help='Dimension of the given embeddings.')
+                    help='Dimension of the given embeddings.')
 # score_size, prob_size
 parser.add_argument('--prob_size', '-ps', type=int, default=0,
-        help='Size of the output probability size used in container, set 0 to disable')
+                    help='Size of the output probability size used in container, set 0 to disable')
 
 parser.add_argument('--verbose', '-v', action='store_true')
-
-
 APP_SIGNATURE = '[EVAL]'
+
 
 def main():
     args = parser.parse_args()
@@ -130,7 +127,7 @@ def main():
         probabilities = feature_importer.probabilities
         push_prob_to_evaluator = False
         # also check the configuration
-        if probabilities.size != 0 and args.prob_size:
+        if probabilities is not None and probabilities.size != 0 and args.prob_size:
             push_prob_to_evaluator = True
             print('feature_object contains probabilities, activate {}'.format(
                 metric_fields.classification))
