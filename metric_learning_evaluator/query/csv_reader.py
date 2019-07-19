@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 import csv
+from metric_learning_evaluator.core.standard_fields import AttributeTableStandardFields as fields
 
 """
 """
@@ -42,7 +43,7 @@ class CsvReader(object):
             with open(path, newline='') as csv_file:
                 csv_rows = csv.DictReader(csv_file)
                 for row in csv_rows:
-                    inst_id = row.get('instance_ids', self._counter)
+                    inst_id = row.get(fields.instance_id, self._counter)
                     for ignore in self._ignore_keys:
                         row.pop(ignore, None)
                     self.dict_attributes[inst_id] = row

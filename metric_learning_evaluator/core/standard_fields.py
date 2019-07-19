@@ -168,15 +168,20 @@ class ResultContainerStandardFields:
 class EmbeddingContainerStandardFields:
     embeddings = 'embeddings'
     probabilities = 'probabilities'
-    instance_ids = 'instance_ids'
-    label_ids = 'label_ids'
-    label_names = 'label_names'
-    filename_strings = 'filename_strings'
+    # Same as CsvFile columns
+    instance_ids = 'instance_id'
+    label_ids = 'label_id'
+    label_names = 'label_name'
+    filename_strings = 'filename_string'
     meta = 'meta'
 
 
 class AttributeTableStandardFields:
-    instance_id = 'instance_ids'
+    # And CsvFile column
+    instance_id = 'instance_id'
+    label_id = 'label_id'
+    label_name = 'label_name'
+    image_path = 'image_path'
 
 
 class IndexAgentStandardFields:
