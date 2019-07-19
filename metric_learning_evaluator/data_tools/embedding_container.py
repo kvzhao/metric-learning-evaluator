@@ -229,7 +229,9 @@ class EmbeddingContainer(object):
         internals = self._fetch_internals()
         self._index_df = pd.DataFrame(internals)
         attr_df = self._attribute_table.DataFrame
-        self._index_df = pd.merge(self._index_df, attr_df, on=container_fields.instance_ids, how='inner')
+        self._index_df = pd.merge(self._index_df, attr_df,
+                                  on=container_fields.instance_ids,
+                                  how='inner')
 
     def get_embedding_by_instance_ids(self, instance_ids):
         """Fetch batch of embedding vectors by given instance ids."""
