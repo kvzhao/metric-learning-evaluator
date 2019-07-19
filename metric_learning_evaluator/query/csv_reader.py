@@ -40,7 +40,7 @@ class CsvReader(object):
             raise FileNotFoundError("path is required")
 
         if os.path.exists(path):
-            with open(path, newline='') as csv_file:
+            with open(path, newline='', encoding='utf-8') as csv_file:
                 csv_rows = csv.DictReader(csv_file)
                 for row in csv_rows:
                     inst_id = row.get(fields.instance_id, self._counter)
