@@ -43,6 +43,8 @@ class AttributeTable(object):
         for instance_id, attr_dict in zip(self._instance_ids, self._attribute_buffer):
             dict_attributes[attrtable_fields.instance_id].append(instance_id)
             for attr_type in self.attribute_types:
+                if attr_type == attrtable_fields.instance_id:
+                    continue
                 attr = attr_dict.get(attr_type, None)
                 dict_attributes[attr_type].append(attr)
         self._attribute_df = pd.DataFrame(dict_attributes)
