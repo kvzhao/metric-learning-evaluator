@@ -11,8 +11,6 @@ from collections import defaultdict
 
 from metric_learning_evaluator.core.standard_fields import AttributeTableStandardFields as attrtable_fields
 
-# TODO: @kv deprecates the original version sqlite AttributeTable
-
 
 class AttributeTable(object):
     """
