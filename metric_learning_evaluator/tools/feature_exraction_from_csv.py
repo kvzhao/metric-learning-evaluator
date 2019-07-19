@@ -45,7 +45,7 @@ def main(args):
     instance_ids = []
     label_ids = []
     label_names = []
-    with open(csvfile_path, newline='') as csv_file:
+    with open(csvfile_path, newline='', encoding="utf-8") as csv_file:
         csv_rows = csv.DictReader(csv_file)
         for row in csv_rows:
             image_filenames.append(row[table_fields.image_path])
@@ -57,6 +57,7 @@ def main(args):
     total_number = len(image_filenames)
     container = EmbeddingContainer(embedding_size=embedding_size,
                                    container_size=total_number)
+    embedder = FeatureExtractor(model_path, img_size)
 
     try:
         for inst_id, img_path, label_id, label_name in tqdm(zip(instance_ids, image_filenames, label_ids, label_names)):
