@@ -11,7 +11,7 @@ from metric_learning_evaluator.core.standard_fields import AttributeTableStandar
 """
 MUST_BE_IGNORED = ['',
                    'image_path',
-                   'filename_strings',
+                   'filename_string',
                    'label_id',
                    'label_ids',
                    'label_name',
