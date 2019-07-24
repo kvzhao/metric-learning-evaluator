@@ -485,14 +485,15 @@ class EmbeddingContainer(object):
         feature_exporter.save(path)
         print("Save all extracted features at \'{}\'".format(path))
 
+        if not self.has_index:
+            self.createIndex()
+
         # Save attributes
         attr_table_path = os.path.join(path, 'attribute_table.csv')
         self._attribute_table.save(attr_table_path)
         print("Save all attributes into \'{}\'".format(attr_table_path))
 
         # Save details
-        if not self.has_index:
-            self.createIndex()
         detail_table_path = os.path.join(path, 'indexes.csv')
         self._index_df.to_csv(detail_table_path)
         print("Save detailed indexed into \'{}\'".format(detail_table_path))
