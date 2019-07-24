@@ -75,17 +75,15 @@ class ClassificationEvaluation(MetricEvaluationBase):
     def compute(self, embedding_container):
         """Compute Accuracy.
             Get compute classification metrics with categorical scores and label from embedding_container.
-            
           Args:
             embedding_container, EmbeddingContainer 
-
           Return:
             results, ResultContainer
         """
 
         # check the size is non-zero
-        if not isinstance(embedding_container.probs,
-                         (np.ndarray, np.generic)):
+        if not isinstance(embedding_container.probabilities,
+                          (np.ndarray, np.generic)):
             raise AttributeError('Logits should be provided when {} is performed'.format(self.evaluation_name))
 
         self.result_container = ResultContainer()
