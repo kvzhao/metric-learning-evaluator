@@ -25,7 +25,7 @@ from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_imag
 
 from metric_learning_evaluator.inference.utils.visualization_tools import vis_one_image
 
-from metric_learning_evaluator.data_tools.image_object import ImageObjectStandardFields as img_fields
+from metric_learning_evaluator.core.standard_fields import ImageObjectStandardFields as img_fields
 
 
 def retrieval_application(configs, args):
