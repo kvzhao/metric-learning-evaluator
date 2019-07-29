@@ -29,7 +29,7 @@ class IndexAgent:
                  ef_construction=200,
                  num_threads=4,
                  M=32):
-        if not agent_type in REGISTERED_INDEX_AGENT:
+        if agent_type not in REGISTERED_INDEX_AGENT:
             raise ValueError('index agent:{} is not registerred'.format(agent_type))
         else:
             self.agent_type = agent_type
