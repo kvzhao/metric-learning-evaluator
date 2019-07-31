@@ -1,6 +1,6 @@
-"""
-  Input: DatasetBackbone
-  Output: Saved EmbeddingContainer
+"""Bounding Box Perturbation Experiment
+  Input: DatasetBackbone with checkout images (large image contains several instances)
+  Output: Saved EmbeddingContainer (with attributes denote operations)
 """
 
 import yaml
@@ -61,7 +61,7 @@ def main(args):
 
     container = EmbeddingContainer(embedding_size,
                                    probability_size=0,
-                                   container_size=100000,
+                                   container_size=args.container_size,
                                    name='perturbation')
 
     instance_counter = 0
@@ -71,9 +71,9 @@ def main(args):
 
         image = read_jpeg_image(image_file_path)
         for annotation in annotations:
-            image_id = annotation['img_id']
-            annotation_id = annotation['id']
-            label_id = annotation['cate_id']
+            image_id = int(annotation['img_id'])
+            annotation_id = int(annotation['id'])
+            label_id = int(annotation['cate_id'])
             label_name = annotation['category']
             original_bbox = annotation['bbox']
 
@@ -114,7 +114,7 @@ def main(args):
                 if case == 'shrink':
                     bbox = shrink_box_by_offset(original_bbox, SIZE_PERTURBATION)
 
-                img = crop_and_resize(image, original_bbox, image_size)
+                img = crop_and_resize(image, bbox, image_size)
                 feat = feature_extractor.extract_feature(img)
                 perturbed_features[case] = feat
 
@@ -143,6 +143,8 @@ if __name__ == '__main__':
     parser.add_argument('-od', '--out_dir', type=str, default=None,
                         help='')
     parser.add_argument('--sample_n', type=int, default=None,
+                        help='')
+    parser.add_argument('--container_size', type=int, default=100000,
                         help='')
     args = parser.parse_args()
     main(args)
