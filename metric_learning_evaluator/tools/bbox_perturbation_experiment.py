@@ -27,9 +27,24 @@ CASES = [
     'shift_upper_right',
     'shift_lower_left',
     'shift_lower_right',
-    #'enlarge',
-    #'shrink',
-    #'shift_left_enlarge',
+    'enlarge',
+    'shrink',
+    'shift_left_enlarge',
+    'shift_right_enlarge',
+    'shift_up_enlarge',
+    'shift_down_enlarge',
+    'shift_left_shrink',
+    'shift_right_shrink',
+    'shift_up_shrink',
+    'shift_down_shrink',
+    'shift_upper_left_enlarge',
+    'shift_upper_right_enlarge',
+    'shift_lower_left_enlarge',
+    'shift_lower_right_enlarge',
+    'shift_upper_left_shrink',
+    'shift_upper_right_shrink',
+    'shift_lower_left_shrink',
+    'shift_lower_right_shrink',
 ]
 
 
@@ -108,6 +123,70 @@ def main(args):
                     bbox = bbox_size_offset(original_bbox, size_perturbation)
                 if case == 'shrink':
                     bbox = bbox_size_offset(original_bbox, -size_perturbation)
+                if case == 'shift_left_enlarge':
+                    bbox = bbox_center_offset(original_bbox, offset_x=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_right_enlarge':
+                    bbox = bbox_center_offset(original_bbox, offset_x=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_up_enlarge':
+                    bbox = bbox_center_offset(original_bbox, offset_y=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_down_enlarge':
+                    bbox = bbox_center_offset(original_bbox, offset_y=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_left_shrink':
+                    bbox = bbox_center_offset(original_bbox, offset_x=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_right_shrink':
+                    bbox = bbox_center_offset(original_bbox, offset_x=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_up_shrink':
+                    bbox = bbox_center_offset(original_bbox, offset_y=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_down_shrink':
+                    bbox = bbox_center_offset(original_bbox, offset_y=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_upper_left_enlarge':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=-translation_perturbation,
+                                              offset_y=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_upper_right_enlarge':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=translation_perturbation,
+                                              offset_y=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_lower_right_enlarge':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=translation_perturbation,
+                                              offset_y=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_lower_left_enlarge':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=-translation_perturbation,
+                                              offset_y=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, size_perturbation)
+                if case == 'shift_upper_left_shrink':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=-translation_perturbation,
+                                              offset_y=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_upper_right_shrink':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=translation_perturbation,
+                                              offset_y=translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_lower_right_shrink':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=translation_perturbation,
+                                              offset_y=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
+                if case == 'shift_lower_left_shrink':
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=-translation_perturbation,
+                                              offset_y=-translation_perturbation)
+                    bbox = bbox_size_offset(bbox, -size_perturbation)
 
                 img = crop_and_resize(image, bbox, image_size)
                 feat = feature_extractor.extract_feature(img)
