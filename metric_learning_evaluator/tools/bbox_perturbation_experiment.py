@@ -188,6 +188,15 @@ def main(args):
                                               offset_y=-translation_perturbation)
                     bbox = bbox_size_offset(bbox, -size_perturbation)
 
+                if not bbox:
+                    print('img:{} id:{} op={} has empty bbox, skip'.format(image_id, annotation_id, case))
+                    continue
+                try:
+                    img = crop_and_resize(image, bbox, image_size)
+                except:
+                    print('img:{} id:{} op={} crop bbox={} fails!, skip'.format(image_id, annotation_id, case, bbox))
+                    continue
+
                 img = crop_and_resize(image, bbox, image_size)
                 feat = feature_extractor.extract_feature(img)
                 perturbed_features[case] = feat
