@@ -6,7 +6,7 @@
 import yaml
 import numpy as np
 
-from tqdm import tdqm
+from tqdm import tqdm
 from scutils.scdata import DatasetBackbone
 
 from metric_learning_evaluator.inference.utils.image_utils import crop_and_resize
@@ -50,12 +50,15 @@ def main(args):
 
     if sample_n is not None:
         filenames = sorted(filenames)[: sample_n]
-    print('#of images: {}'.foramt(len(filenames)))
+    print('#of images: {}'.format(len(filenames)))
 
     feature_extractor = FeatureExtractor(pb_model_path=model_path,
                                          resize=image_size)
 
-    container = EmbeddingContainer(embedding_size, 100000, name='perturbation')
+    container = EmbeddingContainer(embedding_size,
+                                   probability_size=0,
+                                   container_size=100000,
+                                   name='perturbation')
 
     instance_counter = 0
     for filename in tqdm(filenames):
@@ -98,8 +101,8 @@ def main(args):
                               filename=image_file_path,
                               embedding=feature,
                               attributes={
-                                  'annotation_id': annotation_id,
                                   'perturb_case': case,
+                                  'annotation_id': 'anno_id:{}'.format(annotation_id),
                                   'image_id': 'img:{}'.format(image_id),
                               })
                 instance_counter += 1
