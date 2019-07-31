@@ -16,7 +16,10 @@ MUST_BE_IGNORED = ['',
                    'label_ids',
                    'label_name',
                    'label_names',
-                   'instance_ids']
+                   'instance_id',
+                   'instance_ids'
+                   'width',
+                   'height']
 
 
 class CsvReader(object):
