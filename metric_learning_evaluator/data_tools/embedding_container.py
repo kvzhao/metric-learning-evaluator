@@ -49,6 +49,7 @@ class EmbeddingContainer(object):
       TODO @kv: Use pandas dataframe as for query
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
+      TODO @kv: smooth clear
       ==============================================================================================
     """
 
@@ -340,6 +341,18 @@ class EmbeddingContainer(object):
         for label_id in label_ids:
             _instance_ids.extend(self._instance_id_by_label[label_id])
         return _instance_ids
+
+    def get_filename_strings_by_instance_ids(self, instance_ids):
+        """Fetch the label_names from given instance_ids."""
+        if isinstance(instance_ids, list):
+            return [self._filename_strings[self._index_by_instance_id[inst_id]]
+                    for inst_id in instance_ids]
+        if isinstance(instance_ids, int):
+            return self._filename_strings[self._index_by_instance_id[instance_ids]]
+        if isinstance(instance_ids, (np.ndarray, np.generic)):
+            return [self._filename_strings[self._index_by_instance_id[inst_id]]
+                    for inst_id in instance_ids.tolist()]
+        raise TypeError('instance_ids should be int, list or array.')
 
     @property
     def embeddings(self):
