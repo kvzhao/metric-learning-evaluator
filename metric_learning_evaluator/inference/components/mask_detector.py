@@ -56,10 +56,12 @@ class MaskDetector(DetectorBase):
                     mask_detector_fields.detection_classes,
                     mask_detector_fields.detection_scores,
                     mask_detector_fields.detection_boxes,
+                    mask_detector_fields.detection_masks
                     ]:
                         tensor_name = key + ':0'
                         if tensor_name in all_tensor_names:
                             tensor_dict[key] = tf.get_default_graph().get_tensor_by_name(tensor_name)
+                        if mask_detector_fields.detection_masks in tensor_dict:
                             tensor_dict = self._add_mask_graph(tensor_dict)
                 image_tensor = tf.get_default_graph().get_tensor_by_name('image_tensor:0')
                 self.sess = sess
