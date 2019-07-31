@@ -77,16 +77,7 @@ def bboxes_xywh_to_corner_format(bboxes):
     return [[box[1], box[0], box[1]+box[3], box[0]+box[2]] for box in bboxes]
 
 
-def enlarge_box_by_offset(bbox, offset):
-    """
-      Args:
-        bbox: [xmin, ymin, box_w, box_h]
-        offset: int pixel
-    """
-    return [bbox[0], bbox[1], bbox[2]+offset, bbox[3]+offset]
-
-
-def shrink_box_by_offset(bbox, offset):
+def bbox_size_offset(bbox, offset):
     """
       Args:
         bbox: [xmin, ymin, box_w, box_h]
@@ -95,7 +86,7 @@ def shrink_box_by_offset(bbox, offset):
     return [bbox[0], bbox[1], bbox[2]-offset, bbox[3]-offset]
 
 
-def shift_center_by_offset(bbox, offset_x=0, offset_y=0):
+def bbox_center_offset(bbox, offset_x=0, offset_y=0):
     """
       Args:
         bbox: [xmin, ymin, box_w, box_h]

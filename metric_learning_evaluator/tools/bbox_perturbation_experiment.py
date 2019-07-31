@@ -11,15 +11,11 @@ from scutils.scdata import DatasetBackbone
 
 from metric_learning_evaluator.inference.utils.image_utils import crop_and_resize
 from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_image
-from metric_learning_evaluator.inference.utils.image_utils import shift_center_by_offset
-from metric_learning_evaluator.inference.utils.image_utils import enlarge_box_by_offset
-from metric_learning_evaluator.inference.utils.image_utils import shrink_box_by_offset
+from metric_learning_evaluator.inference.utils.image_utils import bbox_center_offset
+from metric_learning_evaluator.inference.utils.image_utils import bbox_size_offset
 from metric_learning_evaluator.inference.components.extractor import FeatureExtractor
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
-# in pixels
-SIZE_PERTURBATION = 10
-SHIFT_PERTURBATION = 15
 
 CASES = [
     'origin',
@@ -49,6 +45,10 @@ def main(args):
     model_path = extractor_setting['model_path']
     embedding_size = extractor_setting['embedding_size']
 
+    # in pixels
+    translation_perturbation = args.translation_shift
+    size_perturbation = args.size_shift
+
     src_db = DatasetBackbone(data_dir)
     filenames = src_db.query_all_img_filenames()
 
@@ -76,43 +76,38 @@ def main(args):
             label_id = int(annotation['cate_id'])
             label_name = annotation['category']
             original_bbox = annotation['bbox']
-
             perturbed_features = {}
-            """
-              origin, shift, size
-              add container with attributes
-            """
             for case in CASES:
                 if case == 'origin':
                     bbox = original_bbox
                 if case == 'shift_up':
-                    bbox = shift_center_by_offset(original_bbox, offset_y=SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox, offset_y=translation_perturbation)
                 if case == 'shift_down':
-                    bbox = shift_center_by_offset(original_bbox, offset_y=-SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox, offset_y=-translation_perturbation)
                 if case == 'shift_right':
-                    bbox = shift_center_by_offset(original_bbox, offset_x=SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox, offset_x=translation_perturbation)
                 if case == 'shift_left':
-                    bbox = shift_center_by_offset(original_bbox, offset_x=-SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox, offset_x=-translation_perturbation)
                 if case == 'shift_upper_left':
-                    bbox = shift_center_by_offset(original_bbox,
-                                                  offset_x=-SHIFT_PERTURBATION,
-                                                  offset_y=SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=-translation_perturbation,
+                                              offset_y=translation_perturbation)
                 if case == 'shift_upper_right':
-                    bbox = shift_center_by_offset(original_bbox,
-                                                  offset_x=SHIFT_PERTURBATION,
-                                                  offset_y=SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=translation_perturbation,
+                                              offset_y=translation_perturbation)
                 if case == 'shift_lower_right':
-                    bbox = shift_center_by_offset(original_bbox,
-                                                  offset_x=SHIFT_PERTURBATION,
-                                                  offset_y=-SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=translation_perturbation,
+                                              offset_y=-translation_perturbation)
                 if case == 'shift_lower_left':
-                    bbox = shift_center_by_offset(original_bbox,
-                                                  offset_x=-SHIFT_PERTURBATION,
-                                                  offset_y=-SHIFT_PERTURBATION)
+                    bbox = bbox_center_offset(original_bbox,
+                                              offset_x=-translation_perturbation,
+                                              offset_y=-translation_perturbation)
                 if case == 'enlarge':
-                    bbox = enlarge_box_by_offset(original_bbox, SIZE_PERTURBATION)
+                    bbox = bbox_size_offset(original_bbox, size_perturbation)
                 if case == 'shrink':
-                    bbox = shrink_box_by_offset(original_bbox, SIZE_PERTURBATION)
+                    bbox = bbox_size_offset(original_bbox, -size_perturbation)
 
                 img = crop_and_resize(image, bbox, image_size)
                 feat = feature_extractor.extract_feature(img)
@@ -145,6 +140,10 @@ if __name__ == '__main__':
     parser.add_argument('--sample_n', type=int, default=None,
                         help='')
     parser.add_argument('--container_size', type=int, default=100000,
+                        help='')
+    parser.add_argument('-ts', '--translation_shift', type=int, default=15,
+                        help='')
+    parser.add_argument('-ss', '--size_shift', type=int, default=15,
                         help='')
     args = parser.parse_args()
     main(args)
