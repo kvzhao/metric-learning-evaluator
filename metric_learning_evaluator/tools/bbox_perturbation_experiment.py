@@ -27,9 +27,13 @@ CASES = [
     'shift_right',
     'shift_up',
     'shift_down',
-    'enlarge',
-    'shrink',
-    'shift_left_enlarge',
+    'shift_upper_left',
+    'shift_upper_right',
+    'shift_lower_left',
+    'shift_lower_right',
+    #'enlarge',
+    #'shrink',
+    #'shift_left_enlarge',
 ]
 
 
@@ -79,20 +83,40 @@ def main(args):
               add container with attributes
             """
             for case in CASES:
-
                 if case == 'origin':
-                    img = crop_and_resize(image, original_bbox, image_size)
-                    feat = feature_extractor.extract_feature(img)
-                    perturbed_features[case] = feat
-
-                if case == 'shift_left':
+                    bbox = original_bbox
+                if case == 'shift_up':
                     bbox = shift_center_by_offset(original_bbox, offset_y=SHIFT_PERTURBATION)
-                    img = crop_and_resize(image, bbox, image_size)
-                    feat = feature_extractor.extract_feature(img)
-                    perturbed_features[case] = feat
-
+                if case == 'shift_down':
+                    bbox = shift_center_by_offset(original_bbox, offset_y=-SHIFT_PERTURBATION)
                 if case == 'shift_right':
-                    pass
+                    bbox = shift_center_by_offset(original_bbox, offset_x=SHIFT_PERTURBATION)
+                if case == 'shift_left':
+                    bbox = shift_center_by_offset(original_bbox, offset_x=-SHIFT_PERTURBATION)
+                if case == 'shift_upper_left':
+                    bbox = shift_center_by_offset(original_bbox,
+                                                  offset_x=-SHIFT_PERTURBATION,
+                                                  offset_y=SHIFT_PERTURBATION)
+                if case == 'shift_upper_right':
+                    bbox = shift_center_by_offset(original_bbox,
+                                                  offset_x=SHIFT_PERTURBATION,
+                                                  offset_y=SHIFT_PERTURBATION)
+                if case == 'shift_lower_right':
+                    bbox = shift_center_by_offset(original_bbox,
+                                                  offset_x=SHIFT_PERTURBATION,
+                                                  offset_y=-SHIFT_PERTURBATION)
+                if case == 'shift_lower_left':
+                    bbox = shift_center_by_offset(original_bbox,
+                                                  offset_x=-SHIFT_PERTURBATION,
+                                                  offset_y=-SHIFT_PERTURBATION)
+                if case == 'enlarge':
+                    bbox = enlarge_box_by_offset(original_bbox, SIZE_PERTURBATION)
+                if case == 'shrink':
+                    bbox = shrink_box_by_offset(original_bbox, SIZE_PERTURBATION)
+
+                img = crop_and_resize(image, original_bbox, image_size)
+                feat = feature_extractor.extract_feature(img)
+                perturbed_features[case] = feat
 
             for case, feature in perturbed_features.items():
                 container.add(instance_id=instance_counter,
@@ -102,8 +126,8 @@ def main(args):
                               embedding=feature,
                               attributes={
                                   'perturb_case': case,
-                                  'annotation_id': 'anno_id:{}'.format(annotation_id),
-                                  'image_id': 'img:{}'.format(image_id),
+                                  'annotation_id': annotation_id,
+                                  'image_id': image_id,
                               })
                 instance_counter += 1
 

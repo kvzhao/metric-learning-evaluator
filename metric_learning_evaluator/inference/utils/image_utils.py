@@ -92,7 +92,7 @@ def shrink_box_by_offset(bbox, offset):
         bbox: [xmin, ymin, box_w, box_h]
         offset: int pixel
     """
-    return [bbox[0], bbox[1], bbox[2]+offset, bbox[3]+offset]
+    return [bbox[0], bbox[1], bbox[2]-offset, bbox[3]-offset]
 
 
 def shift_center_by_offset(bbox, offset_x=0, offset_y=0):
