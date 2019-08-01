@@ -2,6 +2,8 @@
     Function: Use `query` searches on `anchor`.
 """
 import numpy as np
+import pandas as pd
+from time import time
 from tqdm import tqdm
 from metric_learning_evaluator.index.agent import IndexAgent
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
@@ -50,15 +52,18 @@ def main(args):
             all_retrieved_distances.extend(retrieved_distances)
 
             pbar.update()
-    result.add_event(
+    print('Indexing finished, {} retrieved events'.format(len(all_retrieved_ids)))
+    print('Start exporting results...')
+    start_time = time()
+    result._event_buffer = pd.DataFrame(
         {
             Fields.query_instance_id: all_query_ids,
             Fields.retrieved_instance_id: all_retrieved_ids,
             Fields.retrieved_distance: all_retrieved_distances,
         }
     )
-
     result.save(out_dir)
+    print('Done, saving results take {] seconds.'.format(time()-start_time))
 
 if __name__ == '__main__':
     import argparse
