@@ -18,7 +18,7 @@ from metric_learning_evaluator.inference.components.mask_detector_base import Ma
 from metric_learning_evaluator.inference.components.mask_detector_base import MaskDetectorStandardFields
 mask_detector_fields = MaskDetectorStandardFields
 
-class MaskDetector(DetectorBase):
+class MaskDetector(MaskDetectorBase):
 
     def __init__(self, pb_model_path, labelmap_path, num_classes,
                        image_height, image_width):
@@ -62,6 +62,7 @@ class MaskDetector(DetectorBase):
                         if tensor_name in all_tensor_names:
                             tensor_dict[key] = tf.get_default_graph().get_tensor_by_name(tensor_name)
                         if mask_detector_fields.detection_masks in tensor_dict:
+                            print("include mask")
                             tensor_dict = self._add_mask_graph(tensor_dict)
                 image_tensor = tf.get_default_graph().get_tensor_by_name('image_tensor:0')
                 self.sess = sess
@@ -82,6 +83,8 @@ class MaskDetector(DetectorBase):
             mask_detector_fields.detection_boxes][0][valid_idxs]
         detections[mask_detector_fields.detection_scores] = output_dict[
             mask_detector_fields.detection_scores][valid_idxs]
+        detections[mask_detector_fields.detection_masks] = output_dict[
+            mask_detector_fields.detection_masks][0][valid_idxs]
 
         return detections
 
