@@ -41,13 +41,15 @@ def main(args):
     with tqdm(total=num_of_query) as pbar:
         for _idx, (query_id, qeury_emb) in enumerate(zip(query_ids, query_embeddings)):
             retrieved_ids, retrieved_distances = agent.search(qeury_emb, top_k=num_of_anchor)
-            result.add_event(
-                {
-                    Fields.query_instance_id: np.array(query_id).repeat(num_of_anchor),
-                    Fields.retrieved_instance_id: retrieved_ids,
-                    Fields.retrieved_distance: retrieved_distances,
-                }
-            )
+
+            for r_id, r_dist in zip(retrieved_ids, retrieved_distances):
+                result.add_event(
+                    {
+                        Fields.query_instance_id: np.array(query_id),
+                        Fields.retrieved_instance_id: r_id,
+                        Fields.retrieved_distance: r_dist,
+                    }
+                )
             pbar.update()
 
     result.save(out_dir)
