@@ -1,0 +1,6 @@
+detector_settings:
+    model_path: "/vol/home/chuan.chiew/project/US85-Bread-Recognition/inference_model/detector/v3.1/supercategory/frozen_inference_graph.pb"
+    labelmap_path: "/vol/08812201/chuan.chiew/US85/detector_dataset/benchmark/supercategory_label.pbtxt"
+    num_classes: 2
+    image_height: 512
+    image_width: 512
