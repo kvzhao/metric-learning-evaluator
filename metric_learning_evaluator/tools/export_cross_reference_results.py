@@ -67,7 +67,7 @@ def main(args):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser('Performace cross_reference on EmbeddingContainer & save ResultContainer.')
+    parser = argparse.ArgumentParser('Execute cross_reference on EmbeddingContainer & save ResultContainer.')
 
     parser.add_argument('-qc', '--query_command', type=str, default='query')
     parser.add_argument('-cc', '--anchor_command', type=str, default='anchor')
