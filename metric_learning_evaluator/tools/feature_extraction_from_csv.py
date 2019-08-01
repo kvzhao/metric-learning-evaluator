@@ -62,9 +62,16 @@ def main(args):
     try:
         for inst_id, img_path, label_id, label_name in tqdm(zip(instance_ids, image_filenames, label_ids, label_names)):
             attributes = attr_reader.query_attributes_by_instance_id(inst_id)
-            image = read_jpeg_image(img_path, img_size)
-            feature = embedder.extract_feature(image)
-            #feature = np.squeeze(feature)
+            try:
+                image = read_jpeg_image(img_path, img_size)
+            except:
+                print('image: {} reading fails, skip'.format(img_path))
+                continue
+            try:
+                feature = embedder.extract_feature(image)
+            except:
+                print('feature extraction: {} reading fails, skip'.format(img_path))
+                continue
             container.add(inst_id, label_id, feature,
                           attributes=attributes,
                           label_name=label_name,
