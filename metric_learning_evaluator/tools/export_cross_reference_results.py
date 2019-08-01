@@ -2,6 +2,7 @@
     Function: Use `query` searches on `anchor`.
 """
 import numpy as np
+from tqdm import tqdm
 from metric_learning_evaluator.index.agent import IndexAgent
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
@@ -31,20 +32,23 @@ def main(args):
     anchor_embeddings = container.get_embedding_by_instance_ids(anchor_ids)
 
     num_of_anchor = anchor_embeddings.shape[0]
+    num_of_query = query_embeddings.shape[0]
 
     agent = IndexAgent(agent_type='HNSW',
                        instance_ids=anchor_ids,
                        embeddings=anchor_embeddings)
 
-    for _idx, (query_id, qeury_emb) in enumerate(zip(query_ids, query_embeddings)):
-        retrieved_ids, retrieved_distances = agent.search(qeury_emb, top_k=num_of_anchor)
-        result.add_event(
-            {
-                Fields.query_instance_id: np.array(query_id).repeat(num_of_anchor),
-                Fields.retrieved_instance_id: retrieved_ids,
-                Fields.retrieved_distance: retrieved_distances,
-            }
-        )
+    with tqdm(total=num_of_query) as pbar:
+        for _idx, (query_id, qeury_emb) in enumerate(zip(query_ids, query_embeddings)):
+            retrieved_ids, retrieved_distances = agent.search(qeury_emb, top_k=num_of_anchor)
+            result.add_event(
+                {
+                    Fields.query_instance_id: np.array(query_id).repeat(num_of_anchor),
+                    Fields.retrieved_instance_id: retrieved_ids,
+                    Fields.retrieved_distance: retrieved_distances,
+                }
+            )
+            pbar.update()
 
     result.save(out_dir)
 
