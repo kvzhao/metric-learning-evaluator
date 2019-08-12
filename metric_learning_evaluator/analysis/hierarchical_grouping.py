@@ -1,4 +1,4 @@
-"""HC Module
+"""Hierarchical Clustering Module
 """
 
 import os
@@ -30,39 +30,13 @@ class HierarchicalGrouping(object):
             container: EmbeddingContainer
         """
         self._container = container
-        self._internals()
 
-    def _internals(self):
-        # origin label id to new
-        self._origin_table = self._container._instance_id_by_label
-        self._subgroup_table = defaultdict(list)
-
-    def label_subgroup(self, label_id, k_level=2):
-        """
-          Args:
-            label_id,
-            k_level: int
-          Returns:
-            sg_map:
-                Dict of list. key is subgroup id and fellowing value is list of instance ids.
-        """
-        instance_given_label = self._container.get_instance_ids_by_label(label_id)
-        num_of_instance = len(instance_given_label)
-        if k_level > num_of_instance:
-            print('NOTICE: Reduce split level {}->{}'.format(k_level, num_of_instance))
-            k_level = min(k_level, num_of_instance)
-        embedding_given_label = self._container.get_embedding_by_instance_ids(instance_given_label)
-        subgroup_ids = AgglomerativeClustering(k_level).fit(embedding_given_label).labels_
-        sg_map = defaultdict(list)
-        for inst_id, sg_id in zip(instance_given_label, subgroup_ids):
-            sg_map[sg_id].append(inst_id)
-        return sg_map
-
-    def auto_label_subgroup(self, label_id, use_dataframe=True):
+    def label_subgroup(self, label_id, depth_ratio=0.2, use_dataframe=True):
         """
           Args:
             label_id: Integer
             use_dataframe: Boolean, set True by default
+            depth_ratio: float. Take percent of given instances as clustering level.
           Returns:
             hc_levels: Dataframe if `use_dataframe` is set true, otherwise the dictionary
         """
@@ -75,7 +49,8 @@ class HierarchicalGrouping(object):
                            embeddings=embedding_given_label)
         hc_levels = {}
         # All levels (20% of given instances)
-        for k_level in range(2, num_of_instance // 5):
+        depth = int(num_of_instance * depth_ratio)
+        for k_level in range(2, depth):
             subgroup_ids = AgglomerativeClustering(k_level).fit(embedding_given_label).labels_
             sg_map, id_map = defaultdict(list), {}
             # parse subgroup ids
@@ -108,8 +83,8 @@ class HierarchicalGrouping(object):
                 truncated_retrieved_sg_ids = np.asarray([id_map[rid] for rid in truncated_retrieved_ids])
                 truncated_hit_array = truncated_retrieved_sg_ids == sg_id
 
-                # to up last positive
-                full_retrieved_ids, _ = agent.search(center, top_k=num_of_instance)
+                # to up last positive (TODO: compute full purity)
+                # full_retrieved_ids, _ = agent.search(center, top_k=num_of_instance)
 
                 # output
                 impurity_count += (num_sg_elements - np.sum(truncated_hit_array))
@@ -129,8 +104,13 @@ class HierarchicalGrouping(object):
             return hc_levels
         return pd.DataFrame.from_dict(hc_levels, orient='index')
 
-    def agnostic_subgroup(self):
-        pass
-
-    def auto_agnostic_subgroup(self):
+    def auto_label_subgroup(self, label_id, depth_ratio=0.2, use_dataframe=True):
+        """
+          Args:
+            label_id: Integer
+            use_dataframe: Boolean, set True by default
+          Returns:
+            hc_levels: Dataframe if `use_dataframe` is set true, otherwise the dictionary
+        """
+        df = self.label_subgroup(label_id, depth_ratio, True)
         pass
