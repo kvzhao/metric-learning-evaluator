@@ -63,7 +63,7 @@ def main(args):
         }
     )
     result.save(out_dir)
-    print('Done, saving results take {] seconds.'.format(time()-start_time))
+    print('Done, saving results take {} seconds.'.format(time()-start_time))
 
 if __name__ == '__main__':
     import argparse
