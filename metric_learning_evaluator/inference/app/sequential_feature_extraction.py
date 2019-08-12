@@ -1,3 +1,6 @@
+"""
+  TODO: Change the logic
+"""
 
 import os
 import sys
@@ -103,7 +106,8 @@ def extraction_application(configs, args):
                 img = read_jpeg_image(img_path, img_size)
                 feature = embedder.extract_feature(img)
                 embedding_container.add(instance_id=instance_id,
-                                        label_id=label_id, embedding=feature[0])
+                                        label_id=label_id,
+                                        embedding=feature[0])
                 # available filename in same order
                 all_image_filenames.append(filename)
         except:

@@ -1,5 +1,5 @@
 """
-    The evaluator builder for managing  customized evaluation metircs.
+    The evaluator builder for managing  customized evaluation metrics.
 
     EvaluatorBuilder
         - Data structure

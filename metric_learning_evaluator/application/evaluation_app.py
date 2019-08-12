@@ -113,8 +113,7 @@ def main():
                                  mode='offline')
 
     if data_type == 'folder':
-        # i think this is the unified interface:
-        # TODO @kv: Move this paragraph down into `case`
+        # TODO: @kv Load with embedding container
         feature_importer = FeatureObject()
         feature_importer.load(data_dir)
         embeddings = feature_importer.embeddings

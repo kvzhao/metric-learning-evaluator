@@ -18,7 +18,6 @@ class ResultContainer(object):
       1. add
       2. add_event
     """
-
     def __init__(self):
         """
           Args:
@@ -27,13 +26,12 @@ class ResultContainer(object):
 
             attributes, list of str:
                 Generated from ConfigParser.get_attributes()
-
         """
         self._results = pd.DataFrame()
         # A buffer for storing intermediate results,
         # only show when off-line mode is used.
         self._event_buffer = pd.DataFrame()
-        
+
     def add(self, attribute, metric, value, condition=None):
         """Add one result
             * create dict if key does not exist
