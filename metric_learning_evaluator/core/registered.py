@@ -13,7 +13,6 @@ sys.path.insert(0, os.path.abspath(
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
-from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
 from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
 from metric_learning_evaluator.evaluations.geometric_evaluation import GeometricEvaluation
 
@@ -22,12 +21,11 @@ from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 
 # ===========  Query Interface =============
-from metric_learning_evaluator.query.native_wrapper import NativeWrapper
+from metric_learning_evaluator.query.csv_reader import CsvReader
 
-## standard fields
-from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
-from metric_learning_evaluator.query.standard_fields import QueryDatabaseStandardFields as query_fields
+from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import QueryDatabaseStandardFields as query_fields
 
 
 # NOTICE: Make sure each function passed correctness test. 
@@ -52,5 +50,5 @@ REGISTERED_INDEX_AGENT = {
 }
 
 REGISTERED_DATABASE_TYPE = {
-    query_fields.native: NativeWrapper,
+    query_fields.csv: CsvReader,
 }

@@ -19,7 +19,7 @@ class SampleStrategyTestCases(unittest.TestCase):
         label_ids = [1, 1, 2, 2, 1]
 
         sampler = SampleStrategy(instance_ids, label_ids)
-        samped_ids_dict = sampler._sample('A', 'A', 2, 2, 4)
+        samped_ids_dict = sampler.sample('A', 'A', 2, 2, 4)
         sampled_label_ids = samped_ids_dict["sampled_label_ids"]
         sampled_instance_ids = samped_ids_dict["sampled_instance_ids"]
         print("instance_ids:{}".format(instance_ids))

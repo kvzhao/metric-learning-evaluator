@@ -16,16 +16,16 @@ from metric_learning_evaluator.data_tools.embedding_container import EmbeddingCo
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
-from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
 from metric_learning_evaluator.index.agent import IndexAgent
 
-from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
 
+from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
 
 class RankingEvaluationStandardFields(object):
     # Some keys only used in ranking evaluation
@@ -42,10 +42,10 @@ ranking_fields = RankingEvaluationStandardFields
 class RankingEvaluation(MetricEvaluationBase):
 
     def __init__(self, config, mode=None):
-        """Ranking Evaluation 
+        """Ranking Evaluation
             TODO with Attributes
           Two kinds of attribute
-            - grouping 
+            - grouping
             - cross reference
         """
         super(RankingEvaluation, self).__init__(config, mode)
@@ -188,8 +188,8 @@ class RankingEvaluation(MetricEvaluationBase):
                             'query_instance': int(query_inst_id),
                             'retrieved_labels': retrieved_labels[:top_k],
                             'retrieved_instances': retrieved_instances[:top_k].tolist(),
-                            'retrieved_distances': retrieved_distances[:top_k].tolist(),}
-                        self.result_container.add_event(attr_name, _event)
+                            'retrieved_distances': retrieved_distances[:top_k].tolist()}
+                        self.result_container.add_event(_event)
             ranking_metrics.add_inputs(hit_arrays)
             self.result_container.add(attr_name, ranking_fields.top_k_hit_accuracy,
                                       ranking_metrics.topk_hit_accuracy, condition={'k': top_k})

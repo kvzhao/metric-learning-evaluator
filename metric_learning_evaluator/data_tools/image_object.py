@@ -8,17 +8,8 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
+from metric_learning_evaluator.core.standard_fields import ImageObjectStandardFields as img_fields
 
-class ImageObjectStandardFields:
-    image_id = 'image_id'
-    instance_id = 'instance_id'
-    bounding_box = 'bounding_box'
-    bounding_box_confidence = 'bounding_box_confidence'
-    instance_feature = 'instance_feature'
-    instance_label_id = 'instance_label_id'
-    instance_label_name = 'instance_label_name'
-
-img_fields = ImageObjectStandardFields
 
 class ImageObject(object):
     """
@@ -39,7 +30,6 @@ class ImageObject(object):
                 - Label Name
                 - Label ID
     """
-
     def __init__(self, image_id, raw_image):
         self.clear()
 
@@ -48,7 +38,6 @@ class ImageObject(object):
 
     def __repr__(self):
         _content = 'image_id:{} contains {} instances.'.format(self._image_id, len(self._instance_ids))
-
         for _inst_id, _inst in self._instances.items():
             _inst_bbox = _inst[img_fields.bounding_box]
             _content += '\n\t inst_id:{} @{}'.format(_inst_id, _inst_bbox)
@@ -56,7 +45,6 @@ class ImageObject(object):
                 _content += '#conf={0:.3g}'.format(_inst[img_fields.bounding_box_confidence])
             if img_fields.instance_label_name in _inst:
                 _content += '={}'.format(_inst[img_fields.instance_label_name])
-
         return _content
 
     def add_instance(self,
@@ -73,12 +61,11 @@ class ImageObject(object):
             bbox_conf
             feature
         """
-        
         if instance_id in self._instances:
             print('WARNING: INSTACE ID: {} already exist.'.format(instance_id))
         else:
             self._instance_ids.append(instance_id)
-            self._instances[instance_id] = {} # create empty
+            self._instances[instance_id] = {}
 
         # TODO @kv: check bbox is legal
         self._instances[instance_id][img_fields.bounding_box] = bbox
@@ -130,7 +117,7 @@ class ImageObject(object):
     @property
     def instance_label_names(self):
         return [self._instances[_inst_id][img_fields.instance_label_name]
-            for _inst_id in self._instance_ids]
+                for _inst_id in self._instance_ids]
 
     def clear(self):
         self._instance_ids = []

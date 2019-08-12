@@ -29,11 +29,13 @@ def main(args):
     filename_strings = extracted_features.filename_strings
     label_ids = extracted_features.label_ids
     label_names = extracted_features.label_names
+    probabilities = extracted_features.probabilities
 
     print_arr_shape('embeddings', embeddings.shape)
     print_arr_shape('filename_strings', filename_strings.shape)
     print_arr_shape('label_ids', label_ids.shape)
     print_arr_shape('label_names', label_names.shape)
+    print_arr_shape('probabilities', probabilities.shape)
 
     """
     for fn, label_id, label_name in zip(filename_strings, label_ids, label_names):

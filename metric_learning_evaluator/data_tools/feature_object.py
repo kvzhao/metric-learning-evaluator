@@ -11,22 +11,8 @@ import inspect
 import numpy as np
 from abc import ABCMeta
 from abc import abstractmethod
+from metric_learning_evaluator.core.standard_fields import FeatureObjectStandardFields as fields
 
-
-class FeatureObjectStandardFields:
-    embeddings = 'embeddings'
-    probabilities = 'probabilities'
-    label_ids = 'label_ids'
-    label_names = 'label_names'
-    instance_ids = 'instance_ids'
-    filename_strings = 'filename_strings'
-    super_labels = 'super_labels'
-
-fields = FeatureObjectStandardFields
-
-def get_var_name(var):
-    callers_local_vars = inspect.currentframe().f_back.f_locals.items()
-    return [k for k, v in callers_local_vars if v is var][0]
 
 class FeatureObjectBase(object):
 
@@ -63,7 +49,7 @@ class FeatureObjectBase(object):
     def embeddings(self):
         if self._array_name_map[fields.embeddings] is None:
             print('WARNING: Get the empty embeddings array')
-            return np.empty(0)
+            return self._array_name_map[fields.embeddings]
         if len(self._array_name_map[fields.embeddings].shape) >= 3:
             print('NOTICE: Shape of given embeddings are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.embeddings].shape))
@@ -83,7 +69,7 @@ class FeatureObjectBase(object):
     def probabilities(self):
         if self._array_name_map[fields.probabilities] is None:
             print('WARNING: Get the empty probabilities array')
-            return np.empty(0)
+            return self._array_name_map[fields.probabilities]
         if len(self._array_name_map[fields.probabilities].shape) >= 3:
             print('NOTICE: Shape of given probabilities are {}, squeezed automatically.'.format(
                 self._array_name_map[fields.probabilities].shape))
@@ -175,9 +161,8 @@ class FeatureObject(FeatureObjectBase):
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         else:
-            print('WARNING: {} is already exists, still export numpy arrays to it.'.format(
-                data_dir))
+            print('WARNING: {} is already exists, still export numpy arrays to it.'.format(data_dir))
         for _name, _arr in self._array_name_map.items():
-            if not _arr is None:
+            if _arr is not None:
                 dst_path = '/'.join([data_dir, _name])
                 np.save(dst_path, _arr)

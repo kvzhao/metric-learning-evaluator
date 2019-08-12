@@ -11,7 +11,7 @@ class NativeWrapper(object):
     def __init__(self, database_config):
         path = database_config.get('path', None)
 
-        if path is None :
+        if path is None:
             raise FileNotFoundError("attribute database path is required")
 
         # if grouping_rules_file_path is None :

@@ -16,14 +16,12 @@ from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import indexing_array
 
 from metric_learning_evaluator.analysis.manifold import Manifold
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
 
 from collections import Counter
 from pprint import pprint
 
 import pickle
-
-import matplotlib.pyplot as plt
 
 def main(args):
     data_dir = args.data_dir
@@ -45,7 +43,7 @@ def main(args):
     # Push all embeddings into container
     embedding_container = EmbeddingContainer(
         embedding_size=embeddings.shape[1],
-        logit_size=0,
+        prob_size=0,
         container_size=embeddings.shape[0])
 
     for emb, inst_id, label_id in zip(embeddings, instance_ids, label_ids):
@@ -67,8 +65,6 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser('Evaluation for Given Database')
 
-    parser.add_argument('-c', '--config_path', type=str, default='config.yml',
-                        help='Path to the configuration yaml file.')
     parser.add_argument('-dd', '--data_dir', type=str, default=None,
                         help='Path to Input DatasetBackbone or raw image folder.')
     parser.add_argument('-od', '--out_dir', type=str, default=None,

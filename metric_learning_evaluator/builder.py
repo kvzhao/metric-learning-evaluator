@@ -1,5 +1,5 @@
 """
-    The evaluator builder for managing  customized evaluation metircs.
+    The evaluator builder for managing  customized evaluation metrics.
 
     EvaluatorBuilder
         - Data structure
@@ -31,23 +31,18 @@ import numpy as np
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
 from metric_learning_evaluator.query.general_database import QueryInterface
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
-
 # import all evaluation objects
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
 from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES
-
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.evaluations.evaluation_base import MetricEvaluationBase
 from metric_learning_evaluator.evaluations.ranking_evaluation import RankingEvaluation
 from metric_learning_evaluator.evaluations.facenet_evaluation import FacenetEvaluation
-from metric_learning_evaluator.evaluations.checkout_evaluation import CheckoutEvaluation
 from metric_learning_evaluator.evaluations.classification_evaluation import ClassificationEvaluation
-
 from metric_learning_evaluator.evaluations.geometric_evaluation import GeometricEvaluation
-
-from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
 from metric_learning_evaluator.config_parser.parser import ConfigParser
+from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 
 
 class EvaluatorBuilder(object):
@@ -57,7 +52,7 @@ class EvaluatorBuilder(object):
     def __init__(self, embedding_size, prob_size, config_dict, mode='online'):
         """Evaluator Builder.
 
-          The object builds evaluation functions according to the given configuration 
+          The object builds evaluation functions according to the given configuration
           and manage shared data (embeddings, labels and attributes) in container objects.
 
           Args:
@@ -97,9 +92,11 @@ class EvaluatorBuilder(object):
         # Allocate general query interface
         if not self.configs.database[config_fields.database_type]:
             # TODO @kv: consistent check with query condition
+            print('No attribute database')
             self.query_interface = None
         else:
             self.query_interface = QueryInterface(self.configs.database)
+            print('Attribute database is initialized.')
 
     def _build(self):
         """
@@ -107,7 +104,7 @@ class EvaluatorBuilder(object):
             Parse the config and create evaluators.
         """
         # Allocate evaluation object with corresponding configuration
-        self.evaluations = {} # evaluations -> evaluation_objects
+        self.evaluations = {}
         for eval_name in self.configs.chosen_evaluation_names:
             if eval_name == eval_fields.classification and self.prob_size == 0:
                 print('{} is assigned, but prob_size == 0, remove from the chosen list.'.format(eval_name))

@@ -31,8 +31,8 @@ from metric_learning_evaluator.utils.switcher import switch
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
-from metric_learning_evaluator.utils.interpreter import InterpreterStandardField as interpreter_field
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_field
+from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
 
 
 class AttributeContainer(object):

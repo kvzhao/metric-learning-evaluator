@@ -1,4 +1,5 @@
-"""
+"""ResultContainer
+  @kv, lotus
 """
 import os
 import sys
@@ -16,10 +17,7 @@ class ResultContainer(object):
 
       1. add
       2. add_event
-
-      TODO @kv: I want to refactor this.
     """
-
     def __init__(self):
         """
           Args:
@@ -28,13 +26,12 @@ class ResultContainer(object):
 
             attributes, list of str:
                 Generated from ConfigParser.get_attributes()
-
         """
         self._results = pd.DataFrame()
         # A buffer for storing intermediate results,
         # only show when off-line mode is used.
         self._event_buffer = pd.DataFrame()
-        
+
     def add(self, attribute, metric, value, condition=None):
         """Add one result
             * create dict if key does not exist
@@ -49,10 +46,10 @@ class ResultContainer(object):
         if condition:
             for _cond_name, _threshold in condition.items():
                 self._results = self._results.append({'attribute': attribute,
-                                                    'metric': metric,
-                                                    'value': value,
-                                                    'condition_name': _cond_name,
-                                                    'condition_threshold': _threshold}, ignore_index=True)
+                                                      'metric': metric,
+                                                      'value': value,
+                                                      'condition_name': _cond_name,
+                                                      'condition_threshold': _threshold}, ignore_index=True)
 
     def add_event(self, content):
         """
@@ -85,19 +82,17 @@ class ResultContainer(object):
 
     @property
     def results(self):
-        # TODO: Do not return empty dict
         return self._results
 
     @property
     def flatten(self):
         dict_flatten = {}
         for row in self._results.itertuples(index=False):
-            attribute           = row.__getattribute__('attribute')
-            metric              = row.__getattribute__('metric')
-            value               = row.__getattribute__('value')
-            condition_name      = row.__getattribute__('condition_name')
+            attribute = row.__getattribute__('attribute')
+            metric = row.__getattribute__('metric')
+            value = row.__getattribute__('value')
+            condition_name = row.__getattribute__('condition_name')
             condition_threshold = row.__getattribute__('condition_threshold')
-            
             name = '{}/{}'.format(attribute, metric)
             if condition_name and condition_threshold:
                 name += '@{}={}'.format(condition_name, condition_threshold)
