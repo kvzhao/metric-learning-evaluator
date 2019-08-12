@@ -21,11 +21,11 @@ class Cluster(object):
     """Cluster is a group of same label embeddings.
     """
 
-    def __init__(self, instance_ids, embeddings,
-                label_id, cluster_id=None, label_name=None):
+    def __init__(self, instance_ids, embeddings, label_id,
+        cluster_id=None, label_name=None):
         """
           Args:
-            instance_ids: 1d numpy array
+            instance_ids: 1D numpy array
             embeddings: 2D numpy array
             label_id: An integer-like
             label_name: A string
@@ -63,6 +63,9 @@ class Cluster(object):
 
     @property
     def area(self):
+        """
+          Compute cluster area
+        """
         _center = self.mean
         _distances = np.sort(euclidean_distance(_center, self._embeddings))
         _rmax = _distances[-1] + 1e-8

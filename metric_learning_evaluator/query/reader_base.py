@@ -7,14 +7,13 @@ sys.path.insert(0, os.path.abspath(
 from abc import ABCMeta
 from abc import abstractmethod
 
-class DatabaseWrapperBase(object):
-    """
-      Wrapper should be re-defined
-    """
 
+class DatabaseReaderBase(object):
+    """Wrapper for reader
+    """
     def __init__(self):
         pass
 
     @abstractmethod
-    def query_image_ids_by_attribute(self):
+    def query_attributes_by_instance_id(self):
         pass

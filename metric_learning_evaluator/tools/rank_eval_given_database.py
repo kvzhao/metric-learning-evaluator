@@ -14,7 +14,7 @@ from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import indexing_array
 
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
 
 
 def main(args):

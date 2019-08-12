@@ -5,11 +5,11 @@
 #       and with the key: `evaluator`.
 
 # TODO: Change name to `attribute_database`
-# database: Native | Json | Zeus
+# database: CSV (the only supported format)
 database:
-    database_type: # Native
+    database_type: #CSV
     database_config:
-        path: misc/sample_features/attr_table.db
+        path: misc/sample_features/attribute_table.csv
 
 # index agent option: Numpy | HNSW
 # TODO: taking care about importing lib not installed

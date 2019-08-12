@@ -6,6 +6,7 @@
         &: And
     TODO:
         ~: Exclusive
+    TODO: @kv redesign is needed. Reconsider the role when pandas is used.
 """
 
 import os
@@ -16,18 +17,7 @@ sys.path.insert(0, os.path.abspath(
 
 import re
 
-class InterpreterStandardField:
-    LOAD_LIST = 'LOAD_LIST'
-    STORE_NAME = 'STORE_NAME'
-    LOAD_NAME = 'LOAD_NAME'
-    JOIN = 'JOIN'
-    REMOVE = 'REMOVE'
-    PRINT = 'PRINT'
-    instructions = 'instructions'
-    values = 'values'
-    names = 'names'
-
-field = InterpreterStandardField
+from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as field
 
 InstructionSymbolTable = {
     '+': 'JOIN',
@@ -35,6 +25,7 @@ InstructionSymbolTable = {
     '-': 'REMOVE',
     '#': 'PRINT',
 }
+
 
 class Interpreter(object):
 
@@ -85,8 +76,7 @@ class Interpreter(object):
     def fetch(self):
         if self.stack:
             return self.stack.pop()
-        else:
-            return []
+        return []
 
     def clear(self):
         self.stack = []

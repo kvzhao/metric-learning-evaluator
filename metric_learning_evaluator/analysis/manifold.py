@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.abspath(
 import numpy as np
 
 from tqdm import tqdm
-from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
-from metric_learning_evaluator.index.np_agent import NumpyAgent
+from metric_learning_evaluator.index.agent import IndexAgent
+
 from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.utils import angular_distance
 from metric_learning_evaluator.index.utils import indexing_array
@@ -18,16 +18,21 @@ from metric_learning_evaluator.utils.switcher import switch
 
 
 class Cluster(object):
-    """Cluster centers at mean vector of same class embedding
+    """Cluster is a group of same label embeddings.
     """
 
-    def __init__(self):
+    def __init__(self, label_id, embeddings):
         pass
 
     @property
     def center(self):
         pass
 
+    @property
+    def cluster_size(self):
+        pass
+
+# TODO (kv): WOW! this needs refactoring!
 class Manifold(object):
     """Manifold is the geometric analysis tool.
        It describes the global geometric point of view and remain the relation.
@@ -37,14 +42,16 @@ class Manifold(object):
        - margin
        - locality
        - global structure
+       - local structure
     """
-
     def __init__(self, embedding_container, label_names=None, agent_type='HNSW'):
         """
           Args:
-            embedding_container: Object of EmbeddingContainer
-            TODO @kv,
-            index_agent:
+            embedding_container:
+                Object of EmbeddingContainer
+            label_names:
+                Easier for human understanding
+            index_agent: String, option: HWNS | Numpy
         """
         self._label_names = label_names
 
@@ -56,16 +63,10 @@ class Manifold(object):
         self._preprocess()
 
         # search engine
-        for case in switch(agent_type):
-            if case('HNSW'):
-                self._agent = HNSWAgent(self._embedding_container)
-                print('Use {} as search agent.'.format(agent_type))
-                break
-            if case('Numpy'):
-                self._agent = NumpyAgent(self._embedding_container)
-                print('Use {} as search agent.'.format(agent_type))
-                break
-
+        self._agent = IndexAgent(agent_type,
+            self._embedding_container.instance_ids,
+            self._embedding_container.embeddings)
+        print('Manifold is initialized')
 
     def _create_labelmap(self, label_ids, label_names):
         """
@@ -88,7 +89,6 @@ class Manifold(object):
     def _preprocess(self):
         """Preprocess
             build up relations and indices of each label & instance id
-
             1. class_ids
             2. class_id to {instance_ids}
             3. class_id to class_name

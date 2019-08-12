@@ -11,23 +11,7 @@ import inspect
 import numpy as np
 from abc import ABCMeta
 from abc import abstractmethod
-
-
-class FeatureObjectStandardFields:
-    embeddings = 'embeddings'
-    probabilities = 'probabilities'
-    label_ids = 'label_ids'
-    label_names = 'label_names'
-    instance_ids = 'instance_ids'
-    filename_strings = 'filename_strings'
-    super_labels = 'super_labels'
-
-fields = FeatureObjectStandardFields
-
-
-def get_var_name(var):
-    callers_local_vars = inspect.currentframe().f_back.f_locals.items()
-    return [k for k, v in callers_local_vars if v is var][0]
+from metric_learning_evaluator.core.standard_fields import FeatureObjectStandardFields as fields
 
 
 class FeatureObjectBase(object):

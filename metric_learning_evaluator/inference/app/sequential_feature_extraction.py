@@ -1,3 +1,6 @@
+"""
+  TODO: Change the logic
+"""
 
 import os
 import sys
@@ -24,12 +27,13 @@ from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_imag
 from metric_learning_evaluator.inference.utils.read_json_labelmap import read_json_labelmap
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
-from metric_learning_evaluator.utils.sample_strategy import sample_fields
 
 from metric_learning_evaluator.inference.components.extractor import FeatureExtractor
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+
+from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
 
 
 def extraction_application(configs, args):
@@ -102,7 +106,8 @@ def extraction_application(configs, args):
                 img = read_jpeg_image(img_path, img_size)
                 feature = embedder.extract_feature(img)
                 embedding_container.add(instance_id=instance_id,
-                                        label_id=label_id, embedding=feature[0])
+                                        label_id=label_id,
+                                        embedding=feature[0])
                 # available filename in same order
                 all_image_filenames.append(filename)
         except:

@@ -43,10 +43,9 @@ from metric_learning_evaluator.utils.switcher import switch
 from metric_learning_evaluator.utils.io_utils import create_embedding_container_from_featobj
 from metric_learning_evaluator.utils.io_utils import check_instance_id
 from metric_learning_evaluator.utils.report_writer import ReportWriter
-from metric_learning_evaluator.utils.result_saver import ResultSaver
 
-from metric_learning_evaluator.application.standard_fields import ApplicationStatusStandardFields as status_fields
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import ApplicationStatusStandardFields as status_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as metric_fields
 
 from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES as display_namemap
 
@@ -56,28 +55,25 @@ parser = argparse.ArgumentParser('Command-line Metric Learning Evaluation Tool')
 
 # must-have argument
 parser.add_argument('--config', '-c', type=str, default=None,
-        help='Path to the evaluation configuration with yaml format.')
-
+                    help='Path to the evaluation configuration with yaml format.')
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
-        help='Path to the source (query) dataset.')
+                    help='Path to the source (query) dataset.')
 parser.add_argument('--database', '-db', type=str, default=None,
-        help='Path to the source dataset, with type folder')
+                    help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
-        help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
+                    help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
-        help='Path to the output dir for saving report.')
-
+                    help='Path to the output dir for saving report.')
 parser.add_argument('--embedding_size', '-es', type=int, default=2048,
-        help='Dimension of the given embeddings.')
+                    help='Dimension of the given embeddings.')
 # score_size, prob_size
 parser.add_argument('--prob_size', '-ps', type=int, default=0,
-        help='Size of the output probability size used in container, set 0 to disable')
+                    help='Size of the output probability size used in container, set 0 to disable')
 
 parser.add_argument('--verbose', '-v', action='store_true')
-
-
 APP_SIGNATURE = '[EVAL]'
+
 
 def main():
     args = parser.parse_args()
@@ -117,8 +113,7 @@ def main():
                                  mode='offline')
 
     if data_type == 'folder':
-        # i think this is the unified interface:
-        # TODO @kv: Move this paragraph down into `case`
+        # TODO: @kv Load with embedding container
         feature_importer = FeatureObject()
         feature_importer.load(data_dir)
         embeddings = feature_importer.embeddings
@@ -130,7 +125,7 @@ def main():
         probabilities = feature_importer.probabilities
         push_prob_to_evaluator = False
         # also check the configuration
-        if probabilities.size != 0 and args.prob_size:
+        if probabilities is not None and probabilities.size != 0 and args.prob_size:
             push_prob_to_evaluator = True
             print('feature_object contains probabilities, activate {}'.format(
                 metric_fields.classification))
@@ -182,11 +177,8 @@ def main():
                     event_report = reporter.event_report
                     print(event_report)
                 if out_dir:
-                    saver = ResultSaver(container)
-                    path = '/'.join([out_dir, 'overall_{}'.format(display_name)])
-                    saver.save_overall(path)
-                    path = '/'.join([out_dir, 'event_{}'.format(display_name)])
-                    saver.save_event(path)
+                    path = '/'.join([out_dir, 'result_{}'.format(display_name)])
+                    container.save(path)
 
             # end of switch case
             break

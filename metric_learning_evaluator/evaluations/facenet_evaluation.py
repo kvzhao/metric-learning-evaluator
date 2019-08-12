@@ -14,9 +14,14 @@ import math
 from random import shuffle
 import itertools
 import numpy as np
-from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attribute_fields
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
+from collections import defaultdict
+from collections import namedtuple
+from collections import Counter
+
+from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import FacenetEvaluationStandardFields as facenet_fields
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
@@ -26,47 +31,7 @@ from metric_learning_evaluator.index.utils import euclidean_distance_filter
 from metric_learning_evaluator.metrics.classification_metrics import ClassificationMetrics
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
-from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
-
-from collections import defaultdict
-from collections import namedtuple
-from collections import Counter
-
-
-# For verbose
-from pprint import pprint
-
-
-class FacenetEvaluationStandardFields(object):
-    """Define fields used only in Facenet evaluation
-        which may assign in `option` section in config.
-    """
-    ### NOTE @kv: Move these sampling option into sample_strategy
-    # pair dict
-    pairA = 'pairA'
-    pairB = 'pairB'
-    is_same = 'is_same'
-    path_pairlist = 'path_pairlist'
-    num_maximum_pairs = 'num_maximum_pairs'
-    num_of_pairs = 'num_of_pairs'
-    # used for distance threshold
-    start = 'start'
-    end = 'end'
-    step = 'step'
-    # sampling options
-    sample_method = 'sample_method'
-    sample_ratio = 'sample_ratio'
-    ratio_of_class = 'ratio_of_class'
-    ratio_of_instance_per_class = 'ratio_of_instance_per_class'
-    num_of_instance_per_class = 'num_of_instance_per_class'
-    # sampling methods
-    class_sample_method = 'class_sample_method'
-    random_sample = 'random_sample'
-    amount_weighted = 'amount_weighted'
-    amount_inverse_weighted = 'amount_inverse_weighted'
-
-
-facenet_fields = FacenetEvaluationStandardFields
+from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
 
 
 class FacenetEvaluation(MetricEvaluationBase):
@@ -143,7 +108,6 @@ class FacenetEvaluation(MetricEvaluationBase):
                 self._has_attribute = True
         else:
             self._has_attribute = True
-
         self.show_configs()
 
     @property
@@ -158,7 +122,6 @@ class FacenetEvaluation(MetricEvaluationBase):
                         _attr_name, _metric_name, threshold)
                     _metric_names.append(_name)
         return _metric_names
-
 
     def compute(self, embedding_container):
         """Procedure:
@@ -179,13 +142,10 @@ class FacenetEvaluation(MetricEvaluationBase):
         return self.result_container
 
     def _pair_measure(self,
-        attr_name,
-        instance_ids,
-        embedding_container,
-        ):
-
+                      attr_name,
+                      instance_ids,
+                      embedding_container):
         sampling_config = self.sampling
-
         label_ids = embedding_container.get_label_by_instance_ids(instance_ids)
 
         sampler = SampleStrategy(instance_ids, label_ids)

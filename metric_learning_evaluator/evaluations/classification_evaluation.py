@@ -18,9 +18,9 @@ from metric_learning_evaluator.metrics.ranking_metrics import RankingMetrics
 
 from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 
-from metric_learning_evaluator.metrics.standard_fields import MetricStandardFields as metric_fields
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
-from metric_learning_evaluator.utils.sample_strategy import SampleStrategyStandardFields as sample_fields
+from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
 
 
 class ClassificationEvaluationStandardFields(object):
@@ -75,17 +75,15 @@ class ClassificationEvaluation(MetricEvaluationBase):
     def compute(self, embedding_container):
         """Compute Accuracy.
             Get compute classification metrics with categorical scores and label from embedding_container.
-            
           Args:
             embedding_container, EmbeddingContainer 
-
           Return:
             results, ResultContainer
         """
 
         # check the size is non-zero
-        if not isinstance(embedding_container.probs,
-                         (np.ndarray, np.generic)):
+        if not isinstance(embedding_container.probabilities,
+                          (np.ndarray, np.generic)):
             raise AttributeError('Logits should be provided when {} is performed'.format(self.evaluation_name))
 
         self.result_container = ResultContainer()

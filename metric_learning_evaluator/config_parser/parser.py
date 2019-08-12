@@ -6,14 +6,15 @@ sys.path.insert(0, os.path.abspath(
 import re
 import yaml
 
-from metric_learning_evaluator.config_parser.standard_fields import ConfigStandardFields as config_fields
-from metric_learning_evaluator.evaluations.standard_fields import EvaluationStandardFields as eval_fields
-from metric_learning_evaluator.query.standard_fields import AttributeStandardFields as attr_fields
+from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
+from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJECTS
 from metric_learning_evaluator.core.registered import REGISTERED_DATABASE_TYPE
 from metric_learning_evaluator.core.registered import REGISTERED_INDEX_AGENT
 
 from pprint import pprint
+
 
 class ConfigParser(object):
     """Evaluator Configuration:
@@ -21,9 +22,7 @@ class ConfigParser(object):
         1. load from given config path
         2. get useful values to set containers
         3. get hyper-parameters for evaluation functions
-        
       Principal and Convention of using configurations:
-
     """
 
     def __init__(self, config_dict):
@@ -37,7 +36,7 @@ class ConfigParser(object):
         minimum_requirements_of_config = [
             config_fields.container_size,
             config_fields.evaluation_options,
-            config_fields.database, # can be absent i think...
+            config_fields.database,
         ]
 
         for req in minimum_requirements_of_config:
@@ -50,16 +49,16 @@ class ConfigParser(object):
             self._configs[config_fields.chosen_evaluations] = [eval_fields.facenet]
 
         if not self._configs[config_fields.database]:
-            print ('NOTICE: No database is assigned, some evaluations can not be executed.')
+            print('NOTICE: No database is assigned, some evaluations can not be executed.')
             # NOTE @kv: Should we ignore given attribute names & use category as attr_name?
-        
+
         # Make sure self._config is legal dict before parsing.
         self._parse()
 
     def _parse(self):
 
         # Fetch valid evaluation names
-        self._all_evaluation_options= self._configs[config_fields.evaluation_options]
+        self._all_evaluation_options = self._configs[config_fields.evaluation_options]
         self._chosen_evaluation_names = self._configs[config_fields.chosen_evaluations]
 
         # Save evaluator system information
@@ -68,9 +67,9 @@ class ConfigParser(object):
         self._index_agent = self._configs[config_fields.index_agent]
 
         # Index Agent is Numpy by default
-        if not self._index_agent in [config_fields.numpy_agent, config_fields.hnsw_agent]:
+        if self._index_agent not in [config_fields.numpy_agent, config_fields.hnsw_agent]:
             self._index_agent = config_fields.numpy_agent
-        
+
         # Parse legal evaluation applications
         self._evaluations = {}
 
@@ -87,7 +86,6 @@ class ConfigParser(object):
             required_attributes.extend(_eval_config.attribute_items)
         self._required_attributes = list(set(required_attributes))
 
-
     @property
     def chosen_evaluation_names(self):
         # return: list of string
@@ -100,7 +98,7 @@ class ConfigParser(object):
 
     @property
     def database(self):
-        # return: dict of database section 
+        # return: dict of database section
         return self._database
 
     @property
@@ -111,7 +109,7 @@ class ConfigParser(object):
         db_type = self.database[config_fields.database_type]
         if db_type is None:
             return False
-        elif not db_type in REGISTERED_DATABASE_TYPE:
+        elif db_type not in REGISTERED_DATABASE_TYPE:
             return False
         else:
             return True
@@ -192,8 +190,7 @@ class ConfigParser(object):
         if eval_name is None:
             all_group_commands = []
             for name, eval_config in self.evaluations.items():
-                all_group_commands.extend(
-                    eval_config.attribute_group_commands)
+                all_group_commands.extend(eval_config.attribute_group_commands)
             return list(set(all_group_commands))
         elif eval_name in self.evaluations:
             return self.evaluations[eval_name].attribute_group_commands
@@ -212,13 +209,12 @@ class ConfigParser(object):
         attr_items = []
         if eval_name is None:
             for name, eval_config in self.evaluations.items():
-                attr_items.extend(
-                    eval_config.attribute_items)
+                attr_items.extend(eval_config.attribute_items)
         elif eval_name in self.evaluations:
             attr_items.extend(self.evaluations[eval_name].attr_items)
         return attr_items
 
-    #TODO: Use EvaluationConfigParser
+    # TODO: Use EvaluationConfigParser
     def get_metrics(self, eval_name=None):
         """
           Args:
@@ -300,7 +296,8 @@ class EvaluationConfigParser(object):
             return {}
         else:
             _attr = self._eval_config[config_fields.attribute]
-            if _attr is None: _attr = {}
+            if _attr is None: 
+                return {}
             return _attr
 
     @property
@@ -336,9 +333,7 @@ class EvaluationConfigParser(object):
             cross_reference_commands = [self._remove_blanks(cmd)
                 for cmd in cross_reference_commands if cmd is not None]
             return list(set(cross_reference_commands))
-        else:
-            # NOTE: Figure out what will happen when empty
-            return []
+        return []
 
     @property
     def attribute_group_items(self):
@@ -362,9 +357,7 @@ class EvaluationConfigParser(object):
             group_commands = attr_section[config_fields.group]
             group_commands = [self._remove_blanks(cmd) for cmd in group_commands if cmd is not None]
             return list(set(group_commands))
-        else:
-            # NOTE: Consider not provide empty but all
-            return [attr_fields.All]
+        return [attr_fields.All]
 
     @property
     def attribute_cross_reference_items(self):
@@ -379,15 +372,13 @@ class EvaluationConfigParser(object):
                 attr_items.extend(
                     self._parse_single_attribute_command(tar_cmd))
             return attr_items
-        else:
-            return []
+        return []
 
     @property
     def option_section(self):
         if config_fields.option in self._eval_config:
             return self._eval_config[config_fields.option]
-        else:
-            return {}
+        return {}
 
     @staticmethod
     def _parse_single_attribute_command(command):
