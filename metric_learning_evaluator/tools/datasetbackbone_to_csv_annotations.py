@@ -22,6 +22,8 @@ def main(args):
     label_ids = []
     label_names = []
     image_paths = []
+    img_widths = []
+    img_heights = []
 
     for category_name in tqdm(all_categories):
         annotations = src_db.query_anno_info_by_category_name(category_name)
@@ -34,20 +36,27 @@ def main(args):
             if label_name is None or label_name == '':
                 print("Skip id:{} item: which has no label name".format(inst_id))
                 continue
+            img_info = src_db.query_img_info_by_filename(annotation['filename'])[0]
             label_name = labelmap[label_name]['label_name']
             label_id = labelmap[label_name]['label_int']
             filename = anno['filename']
+            width = img_info['w']
+            height = img_info['h']
             image_path = src_db.query_img_abspath_by_filename(filename)[0]
             # push
             instance_ids.append(inst_id)
             label_ids.append(label_id)
             label_names.append(label_name)
             image_paths.append(image_path)
+            img_widths.append(width)
+            img_heights.append(height)
     data_dict = {
         'instance_id': instance_ids,
         'label_id': label_ids,
         'label_name': label_names,
         'image_path': image_paths,
+        'width': img_widths,
+        'height': img_heights,
     }
 
     data_df = pd.DataFrame(data_dict)
