@@ -151,6 +151,23 @@ class ImageObjectStandardFields:
     instance_label_name = 'instance_label_name'
 
 
+class ImageRetrievalStandardFields:
+    detector_settings = 'detector_settings'
+    extractor_settings = 'extractor_settings'
+    num_classes = 'num_classes'
+    model_path = 'model_path'
+    labelmap_path = 'labelmap_path'
+    image_size = 'image_size'
+    database_path = 'database_path'
+
+
+class DetectorStandardFields:
+    num_detections = 'num_detections'
+    detection_classes = 'detection_classes'
+    detection_boxes = 'detection_boxes'
+    detection_scores = 'detection_scores'
+
+
 class FeatureObjectStandardFields:
     embeddings = 'embeddings'
     probabilities = 'probabilities'
@@ -325,3 +342,7 @@ class SampleStrategyStandardFields:
     db_label_ids = 'db_label_ids'
     database_instance_ids = 'database_instance_ids'
     database_label_ids = 'database_label_ids'
+
+
+class TwoStageInferenceStandardFields:
+    pass
