@@ -96,7 +96,7 @@ def structure_folder_retrieval(configs, args):
 
     # NOTE: Suppose the input is dataset backbone.
 
-    container = EmbeddingContainer(embedding_size, container_capacity)
+    container = EmbeddingContainer(extractor_embedding_size, container_capacity)
 
     label_map = {}
     label_id_counter = 0
