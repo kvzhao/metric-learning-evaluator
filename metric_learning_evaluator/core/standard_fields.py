@@ -158,6 +158,7 @@ class ImageRetrievalStandardFields:
     model_path = 'model_path'
     labelmap_path = 'labelmap_path'
     image_size = 'image_size'
+    embedding_size = 'embedding_size'
     database_path = 'database_path'
 
 

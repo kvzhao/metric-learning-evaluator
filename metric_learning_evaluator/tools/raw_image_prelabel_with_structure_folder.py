@@ -74,11 +74,13 @@ def structure_folder_retrieval(configs, args):
     detector_labelmap_path = detector_settings[config_fields.labelmap_path]
     extractor_model_path = extractor_settings[config_fields.model_path]
     extractor_image_size = extractor_settings[config_fields.image_size]
+    extractor_embedding_size = extractor_settings[config_fields.embedding_size]
+    container_capacity = configs['embedding_container_capacity']
 
     detector = Detector(pb_model_path=detector_model_path,
                         labelmap_path=detector_labelmap_path,
                         num_classes=detector_num_classes)
-    
+
     extractor = FeatureExtractor(pb_model_path=extractor_model_path,
                                  resize=extractor_image_size)
 
@@ -94,7 +96,7 @@ def structure_folder_retrieval(configs, args):
 
     # NOTE: Suppose the input is dataset backbone.
 
-    container = EmbeddingContainer()
+    container = EmbeddingContainer(embedding_size, container_capacity)
 
     label_map = {}
     label_id_counter = 0
