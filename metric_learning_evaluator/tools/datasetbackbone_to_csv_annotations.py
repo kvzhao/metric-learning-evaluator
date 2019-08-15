@@ -36,7 +36,7 @@ def main(args):
             if label_name is None or label_name == '':
                 print("Skip id:{} item: which has no label name".format(inst_id))
                 continue
-            img_info = src_db.query_img_info_by_filename(annotation['filename'])[0]
+            img_info = src_db.query_img_info_by_filename(anno['filename'])[0]
             label_name = labelmap[label_name]['label_name']
             label_id = labelmap[label_name]['label_int']
             filename = anno['filename']
