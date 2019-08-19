@@ -19,11 +19,8 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_image
-
 from metric_learning_evaluator.query.csv_reader import CsvReader
-from metric_learning_evaluator.inference.components.extractor import FeatureExtractor
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-
 from metric_learning_evaluator.core.standard_fields import AttributeTableStandardFields as table_fields
 
 
@@ -31,6 +28,13 @@ def main(args):
     config_path = args.config_path
     csvfile_path = args.csv_file
     output_dir = args.out_dir
+    extractor = args.extractor_type
+
+    assert extractor == 'f' or extractor == 'm' , 'choose a suitable feature extractor. ("f" for facenet , "m" for metric-learning.)'
+    if extractor == 'f':
+       from metric_learning_evaluator.inference.components.facenet_extractor import FeatureExtractor
+    elif extractor == 'm':
+       from metric_learning_evaluator.inference.components.extractor import FeatureExtractor
 
     with open(config_path, 'r') as f:
         configs = yaml.load(f)
@@ -86,6 +90,9 @@ def main(args):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser('Evaluation for Given Database')
+
+    parser.add_argument('-e', '--extractor_type', type=str, default=None,
+                        help='f for facenet pb, m for metric-learning pb')
 
     parser.add_argument('-c', '--config_path', type=str, default=None)
 
