@@ -2,8 +2,26 @@
   Image and Bounding Box Tools
 """
 
+import os
+from os import listdir
+from os.path import join
+from os.path import isfile
+
 import cv2
 import numpy as np
+
+
+def load_file_from_folder(folder_path, ext=('.png', '.jpg', '.jpeg')):
+    """
+      Args:
+        folder_path: string
+      Return:
+        filenames: list of strings
+    """
+    filenames = [join(folder_path, f) for f in listdir(folder_path)
+                 if isfile(join(folder_path, f)) and f.lower().endswith(ext)]
+    print('Load files from folder with {} images.'.format(len(filenames)))
+    return filenames
 
 
 def read_jpeg_image(filename, size=None):
