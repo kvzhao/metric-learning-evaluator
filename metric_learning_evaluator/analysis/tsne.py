@@ -1,6 +1,7 @@
 """
 
     Requirement:
+        pip install cmake
         pip install MulticoreTSNE
 """
 import os
@@ -66,8 +67,6 @@ class TSNE(object):
             return
         classes = set(self._label_ids)
         fig, ax = plt.subplots()
-        print(max(self._results[:, 0]), max(self._results[:, 1]))
-        print(min(self._results[:, 0]), min(self._results[:, 1]))
         for n_class in classes:
             idx = self._label_ids == n_class
             ax.scatter(self._results[idx, 0], self._results[idx, 1],

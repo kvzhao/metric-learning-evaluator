@@ -18,6 +18,7 @@ def main(args):
 
     tsne = TSNE(container,
                 n_iter=args.iterations,
+                n_jobs=args.n_jobs,
                 perplexity=args.perplexity)
 
     tsne.run()
@@ -34,8 +35,8 @@ if __name__ == '__main__':
                         help='Path to exported features.')
     parser.add_argument('-i', '--iterations', type=int, default=1000,
                         help='Number of iteration for running t-SNE.')
-    parser.add_argument('-p', '--perplexity', type=int, default=30.0,
-                        help='Number of iteration for running t-SNE.')
+    parser.add_argument('-p', '--perplexity', type=float, default=30.0)
+    parser.add_argument('-j', '--n_jobs', type=int, default=4)
 
     args = parser.parse_args()
     main(args)
