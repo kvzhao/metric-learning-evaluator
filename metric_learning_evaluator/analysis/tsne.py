@@ -56,8 +56,8 @@ class TSNE(object):
         label_names = self._container.get_label_name_by_instance_ids(ids)
         results = self._engine.fit_transform(features, label_ids)
         self._results = results
-        self._ids = ids
-        self._label_ids = label_ids
+        self._ids = np.asarray(ids)
+        self._label_ids = np.asarray(label_ids)
         self._label_names = list(set(label_names))
         return results
 
@@ -65,10 +65,16 @@ class TSNE(object):
         if self._results is None:
             return
         classes = set(self._label_ids)
-        plt.scatter(self._results[:, 0],
-                    self._results[:, 1],
-                    c=self._label_ids,
-                    cmap=plt.cm.get_cmap("Set1", len(classes)),
-                    marker='.')
-        plt.axis('off')
-        plt.savefig(figure_path)
+        fig, ax = plt.subplots()
+        print(max(self._results[:, 0]), max(self._results[:, 1]))
+        print(min(self._results[:, 0]), min(self._results[:, 1]))
+        for n_class in classes:
+            idx = self._label_ids == n_class
+            ax.scatter(self._results[idx, 0], self._results[idx, 1],
+                       label=n_class,
+                       alpha=0.3,
+                       edgecolors='none')
+        ax.axis('off')
+        ax.legend(self._label_names, numpoints=1, fancybox=True, shadow=True,
+                  loc='best')
+        fig.savefig(figure_path)
