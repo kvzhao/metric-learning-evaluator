@@ -22,7 +22,7 @@ from metric_learning_evaluator.inference.utils.image_utils import bbox_ratio_to_
 #from metric_learning_evaluator.data_tools.image_object import ImageObjectStandardFields as img_fields
 
 from metric_learning_evaluator.inference.components.detector import Detector
-from metric_learning_evaluator.inference.components.detector_base import DetectorStandardFields
+from metric_learning_evaluator.core.standard_fields import DetectorStandardFields
 
 detector_fields = DetectorStandardFields
 

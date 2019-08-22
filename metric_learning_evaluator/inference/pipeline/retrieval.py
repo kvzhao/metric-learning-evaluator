@@ -28,7 +28,7 @@ from metric_learning_evaluator.index.utils import euclidean_distance
 from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 
-from metric_learning_evaluator.inference.components.detector_base import DetectorStandardFields
+from metric_learning_evaluator.core.standard_fields import DetectorStandardFields
 
 
 class ImageRetrievalStandardFields:
