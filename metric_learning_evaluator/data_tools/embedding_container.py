@@ -27,22 +27,30 @@ from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
-from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
 from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
 from metric_learning_evaluator.core.standard_fields import EmbeddingContainerStandardFields as container_fields
 
 
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Probabilities
+      Minimum requirements:
+        - instance_id, embedding, label_id, filename_string
 
-      Container operanios:
-        - add: an unique interface for adding datum into container
-        - clear: clear the internal buffer
-        - save:
-        - load:
+      Container operations:
+        - add
+            an unique interface for adding datum into container
+        - clear
+            clear the internal buffer
+        - save
+            save all data in container as the folder
+        - load
+            load from folder
         - load_pkl:
+            load from Cradle.EmbeddingDB .pkl format
 
       Query methods:
+
 
       = NOTE =======================================================================================
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
@@ -50,6 +58,7 @@ class EmbeddingContainer(object):
       TODO @kv: Error-handling when current exceeds container_size
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO @kv: smooth clear
+      TODO: Now, it is the branch to refactor the query interface
       ==============================================================================================
     """
 
@@ -72,6 +81,7 @@ class EmbeddingContainer(object):
         assert embedding_size >= 0, 'embedding_size must larger than 0'
         assert container_size >= 0, 'container_size must larger than 0'
         assert probability_size >= 0, 'probability_size must larger than or equal to 0'
+
         self._embedding_size = embedding_size
         self._probability_size = probability_size
         self._container_size = container_size
@@ -122,7 +132,10 @@ class EmbeddingContainer(object):
         self._init_index_buffer()
 
     def _init_index_buffer(self):
-        """Initialize Indexes"""
+        """Initialize Indexes
+
+          TODO: Now, it's time to change.
+        """
         # maps index used in numpy array and instance_id list
         self._index_by_instance_id = {}
         self._label_by_instance_id = {}
@@ -130,8 +143,11 @@ class EmbeddingContainer(object):
         # instance_ids with same attribute
         # attribute-id mapping, shallow key-value pair
         self._instance_id_by_label = defaultdict(list)
-        self._instance_by_attribute = {}
+        self._instance_by_attribute_key = {}
+        self._instance_by_attribute_value = {}
         self._attribute_by_instance = defaultdict(list)
+        self._attribute_keys = set()
+        self._attribute_values = set()
 
     def _fetch_internals(self):
         """Fetch the dictionary of internal lists"""
@@ -170,14 +186,16 @@ class EmbeddingContainer(object):
                 One dimensional embedding vector with size less than self._embedding_size.
             probability: 1D numpy array,
                 One dimensional vector which records class-wise scores.
-            attributes: A dictionary with attribute_name: attribute_value
-            label_name: String
+            attributes: A dictionary,
+                 With key is attribute_name and value is attribute_value
+            label_name: string
                 Human-realizable content of given label_id
-            filename: String
+            filename: string
                 The filename or filepath to the given instance_id.
           NOTICE:
             This should be the only interface data are added into container.
         """
+        # TODO: change this code
         try:
             label_id = int(label_id)
             instance_id = int(instance_id)
@@ -207,9 +225,14 @@ class EmbeddingContainer(object):
                 print('WARNING: given attributes must be a dictionary.')
             self._attribute_table.add(instance_id, attributes)
             for attr_name, attr_value in attributes.items():
-                if attr_value not in self._instance_by_attribute:
-                    self._instance_by_attribute[attr_value] = []
-                self._instance_by_attribute[attr_value].append(instance_id)
+                if attr_name not in self._instance_by_attribute_key:
+                    self._instance_by_attribute_key[attr_name] = []
+                if attr_value not in self._instance_by_attribute_value:
+                    self._instance_by_attribute_value[attr_value] = []
+                self._instance_by_attribute_key[attr_name].append(instance_id)
+                self._instance_by_attribute_value[attr_value].append(instance_id)
+                self._attribute_keys.add(attr_name)
+                self._attribute_values.add(attr_value)
 
         self._index_by_instance_id[instance_id] = self._current
         self._label_by_instance_id[instance_id] = label_id
@@ -373,7 +396,8 @@ class EmbeddingContainer(object):
 
     @property
     def attributes(self):
-        return list(self._instance_by_attribute.keys())
+        # TODO: Modify this function
+        return list(self._instance_by_attribute_value.keys())
 
     @property
     def label_ids(self):
@@ -394,6 +418,14 @@ class EmbeddingContainer(object):
     @property
     def label_name_set(self):
         return list(set(self.label_names))
+
+    @property
+    def attribute_keys(self):
+        return list(self._attribute_keys)
+
+    @property
+    def attribute_values(self):
+        return list(self._attribute_values)
 
     @property
     def labelmap(self):
@@ -645,16 +677,16 @@ class EmbeddingContainer(object):
                      filename=filename)
         print('Container initialized.')
 
-    # Add new functions
-    def get_instance_id_by_attribute(self, attribute_name):
-        """
+    # DEPRECATED
+    def get_instance_id_by_attribute_value(self, attribute_name):
+        """TODO: Deprecate this function.
           Args:
             attribute_name: string
           Return:
             instance_ids: list, empty if query can not be found
         """
-        if attribute_name in self._instance_by_attribute:
-            return self._instance_by_attribute[attribute_name]
+        if attribute_name in self._instance_by_attribute_value:
+            return self._instance_by_attribute_value[attribute_name]
         return []
 
     def get_attribute_by_instance_id(self, instance_id):
@@ -668,18 +700,43 @@ class EmbeddingContainer(object):
             return self._attribute_by_instance[instance_id]
         return []
 
-    def get_instance_id_by_group_command(self, command):
+    def get_instance_id_by_attribute(self, attr_key, attr_val):
+        """Base function for attribute query
+          Args:
+            attr_key: string
+            attr_val: string
+          Return:
+            results: list of int, instance_ids
+          NOTE:
+            Attribute is a dict
+            e.g. attr_dict = {
+                              'category_name': 'coffee',
+                              'supercategory_name': 'bottle'
+                              }
         """
+        if attr_key not in self.attribute_keys or attr_val not in self.attribute_values:
+            return []
+        df = self._attribute_table.DataFrame
+        # Key Value are given
+        return df[df[attr_key] == attr_val][container_fields.instance_ids].tolist()
+
+    def get_instance_id_by_group_command(self, command):
+        """The interface with command parsing
           Args:
             command: string of query command in defined format
                 command = 'A+B-C'
-                where A, B, C are attribute_name
+                where A, B, C are attribute_value
+                TODO: Use new formating
+                e.g. source.A + (source.B & type.seen)
           Return:
-            results: list of integer
+            results would be two types?
+                - list of integer
+                - list of list
+            NOTE: Or should we turn results into dict{cmd: ids}
           NOtE: Special commands:
             - all
-            (TODO)- all_class
-            (TODO)- all_attribute
+            (TODO) - all_class
+            (TODO) - all_attribute
         """
         # Special Cases
         if command == attr_field.All:
@@ -749,13 +806,13 @@ class EmbeddingContainer(object):
         # push first variable
 
         attr_name = operand_names.pop()
-        instance_ids = self.get_instance_id_by_attribute(attr_name)
+        instance_ids = self.get_instance_id_by_attribute_value(attr_name)
         _put_variable_in_stack(attr_name, instance_ids)
 
         if len(op_list) == len(operand_names):
             for attr_name, op_symbol in zip(operand_names, op_list):
                 ###
-                instance_ids = self.get_instance_id_by_attribute(attr_name)
+                instance_ids = self.get_instance_id_by_attribute_value(attr_name)
                 _put_variable_in_stack(attr_name, instance_ids)
                 instruction = InstructionSymbolTable[op_symbol]
                 _put_command_in_stack(instruction)
