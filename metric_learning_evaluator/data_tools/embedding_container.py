@@ -627,11 +627,11 @@ class EmbeddingContainer(object):
 
             label_name = None
             if label_names is not None:
-                label_name = label_names[idx]
+                label_name = label_names[idx][0]
 
             filename = None
             if filename_strings is not None:
-                filename = filename_strings[idx]
+                filename = filename_strings[idx][0]
 
             probability = None
             attributes = {}
