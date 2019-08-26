@@ -427,17 +427,11 @@ class EmbeddingContainer(object):
     @property
     def meta_dict(self):
         """Fetch meta_dict used for Cradle.
+           Save all dataframe content into meta_dict.
         """
-        internals = self._fetch_internals()
-        _meta_dict = {
-            container_fields.instance_ids:
-                np.expand_dims(np.asarray(internals[container_fields.instance_ids], np.int32), axis=1),
-            container_fields.label_ids:
-                np.expand_dims(np.asarray(internals[container_fields.label_ids], np.int32), axis=1),
-            container_fields.label_names:
-                np.expand_dims(np.asarray(internals[container_fields.label_names]), axis=1),
-            container_fields.filename_strings:
-                np.expand_dims(np.asarray(internals[container_fields.filename_strings]), axis=1)}
+        _meta_dict = {}
+        for k, v in self.DataFrame.to_dict('list').items():
+            _meta_dict[k] = np.vstack(v)
         return _meta_dict
 
     @property
@@ -611,6 +605,11 @@ class EmbeddingContainer(object):
         assert meta_dict is not None, '{} contains no meta data'.format(pkl_path)
         assert container_fields.label_ids in meta_dict, 'Label ids cannot found in meta_dict'
 
+        extra_keys = [k for k in meta_dict.keys()
+                      if k not in [container_fields.label_names,
+                                   container_fields.instance_ids,
+                                   container_fields.label_ids,
+                                   container_fields.filename_strings]]
         if container_fields.instance_ids in meta_dict:
             instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
         else:
@@ -635,7 +634,9 @@ class EmbeddingContainer(object):
                 filename = filename_strings[idx]
 
             probability = None
-            attributes = []
+            attributes = {}
+            for k in extra_keys:
+                attributes[k] = meta_dict[k][idx][0]
             self.add(instance_id=instance_id,
                      label_id=label_id,
                      label_name=label_name,
