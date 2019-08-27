@@ -383,9 +383,9 @@ class AutoVerification(object):
         if run_config is None or not run_config:
             # TODO: run basic performance check
             # Top k accuracy (category level)
-            per_class_measures = [per_class_top_k_accuracy(self._q2g_df, 1),
-                                  per_class_top_k_accuracy(self._q2g_df, 3),
-                                  per_class_top_k_accuracy(self._q2g_df, 5)]
+            per_class_measures = [per_class_top_k_accuracy(self._q2g_df, 1).to_frame(),
+                                  per_class_top_k_accuracy(self._q2g_df, 3).to_frame(),
+                                  per_class_top_k_accuracy(self._q2g_df, 5).to_frame()]
             # merge several dataframes
             # https://stackoverflow.com/questions/23668427/pandas-three-way-joining-multiple-dataframes-on-columns
             report = reduce(lambda left, right: pd.merge(left, right, on=Fields.query_label_name),
