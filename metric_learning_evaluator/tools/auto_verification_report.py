@@ -10,9 +10,7 @@ from metric_learning_evaluator.deploy.auto_verification import AutoVerification
 
 def main(args):
     data_dir = args.data_dir
-    out_dir = args.out_dir
     sys_config_path = args.sys_config_path
-    run_config_path = args.run_config_path
     force_update = args.force_update
 
     with open(sys_config_path, 'r') as fp:
@@ -48,10 +46,6 @@ if __name__ == '__main__':
                         help='Path to EmbeddingDB pkl path')
     parser.add_argument('-sc', '--sys_config_path', type=str, default=None,
                         help='Configuration for verification measures')
-    parser.add_argument('-rc', '--run_config_path', type=str, default=None,
-                        help='Configuration for verification measures')
-    parser.add_argument('-od', '--out_dir', type=str, default=None,
-                        help='Path to output folder.')
     parser.add_argument('-f', '--force_update', action='store_true')
 
     args = parser.parse_args()
