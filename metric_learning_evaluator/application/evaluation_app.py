@@ -61,10 +61,13 @@ parser.add_argument('--config', '-c', type=str, default=None,
 # Read data from args or config.
 parser.add_argument('--data_dir', '-dd', type=str, default=None,
                     help='Path to the source (query) dataset.')
+
 parser.add_argument('--database', '-db', type=str, default=None,
                     help='Path to the source dataset, with type folder')
-parser.add_argument('--data_type', '-dt', type=str, default='folder',
-                    help='Type of the input dataset, Future supports: dataset_backbone | folder')
+
+parser.add_argument('--data_type', '-dt', type=str, default='embedding_container',
+                    help='Type of the input dataset, Future supports: embedding_container | embedding_db')
+
 parser.add_argument('--out_dir', '-od', type=str, default=None,
                     help='Path to the output dir for saving report.')
 parser.add_argument('--embedding_size', '-es', type=int, default=2048,
@@ -114,10 +117,11 @@ def main():
                                  config_dict,
                                  mode='offline')
 
-    if data_type == 'folder':
-        # TODO: @kv Load with embedding container
-        container = EmbeddingContainer()
+    container = EmbeddingContainer()
+    if data_type == 'embedding_container':
         container.load(data_dir)
+    elif data_type == 'embedding_db':
+        container.load_pkl(data_dir)
 
     print('evaluator metric names: {}'.format(evaluator.metric_names))
 
