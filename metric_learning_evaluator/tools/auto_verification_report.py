@@ -12,6 +12,7 @@ def main(args):
     data_dir = args.data_dir
     sys_config_path = args.sys_config_path
     force_update = args.force_update
+    data_type = args.data_type
 
     with open(sys_config_path, 'r') as fp:
         config_dict = yaml.load(fp)
@@ -20,7 +21,10 @@ def main(args):
                                          verbose=True)
 
     # load embedding db from disk
-    auto_verification.load(data_dir)
+    if data_type == 'embedding_db':
+        auto_verification.load(data_dir)
+    if data_type == 'embedding_container':
+        auto_verification.load_embedding_container(data_dir)
 
     auto_verification.preprocessing(force_update=force_update,
                                     save=True)
@@ -46,6 +50,8 @@ if __name__ == '__main__':
                         help='Path to EmbeddingDB pkl path')
     parser.add_argument('-sc', '--sys_config_path', type=str, default=None,
                         help='Configuration for verification measures')
+    parser.add_argument('-dt', '--data_type', type=str, default='embedding_db',
+                        help='Given data type: embedding_db | embedding_container')
     parser.add_argument('-f', '--force_update', action='store_true')
 
     args = parser.parse_args()
