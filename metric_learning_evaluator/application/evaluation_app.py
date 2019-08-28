@@ -146,9 +146,6 @@ def main():
                 reporter = ReportWriter(container)
                 overall_report = reporter.overall_report
                 print(overall_report)
-                if args.verbose:
-                    event_report = reporter.event_report
-                    print(event_report)
                 if out_dir:
                     path = '/'.join([out_dir, 'result_{}'.format(display_name)])
                     container.save(path)
