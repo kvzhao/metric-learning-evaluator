@@ -70,7 +70,7 @@ parser.add_argument('--data_type', '-dt', type=str, default='embedding_container
 
 parser.add_argument('--out_dir', '-od', type=str, default=None,
                     help='Path to the output dir for saving report.')
-parser.add_argument('--embedding_size', '-es', type=int, default=2048,
+parser.add_argument('--embedding_size', '-es', type=int, default=128,
                     help='Dimension of the given embeddings.')
 # score_size, prob_size
 parser.add_argument('--prob_size', '-ps', type=int, default=0,
