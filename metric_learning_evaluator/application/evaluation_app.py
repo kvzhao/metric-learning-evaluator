@@ -48,6 +48,7 @@ from metric_learning_evaluator.utils.report_writer import ReportWriter
 
 from metric_learning_evaluator.core.standard_fields import ApplicationStatusStandardFields as status_fields
 from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as metric_fields
+from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
 
 from metric_learning_evaluator.core.registered import EVALUATION_DISPLAY_NAMES as display_namemap
 
@@ -156,6 +157,17 @@ def main():
             # clear buffer
             query_container.clear()
             anchor_container.clear()
+
+            # Change config TODO: A little bit hacky, modify in future
+            _opt = config_fields.evaluation_options
+            _rank = 'RankingEvaluation'
+            _attr = config_fields.attribute
+            _cref = config_fields.cross_reference
+            _smp = config_fields.sampling
+            _cmd = 'query->anchor'
+            if _cmd not in config_dict[_opt][_rank][_attr][_cref]:
+                config_dict[_opt][_rank][_attr][_cref].append(_cmd)
+            config_dict[_opt][_rank][_attr][_smp]['num_of_db_instance_per_class'] = 1000
             break
 
     # Build and run evaluation
