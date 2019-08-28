@@ -1,28 +1,31 @@
-"""
+"""ml-evaluation
+
     Main function for the offline evaluation.
     This program load extracted features and analyze results.
 
-    Assumption:
-      1. Folder in the structure
-        folder
+    Input:
+        Saved EmbeddingContainer (with a folder)
+        ├── attribute.db
+        ├── attribute_table.csv
         ├── embeddings.npy
         ├── filename_strings.npy
-        └── label_ids.npy
+        ├── instance_ids.npy
+        ├── label_ids.npy
+        └── label_names.npy
 
-    TODO @kv:
-      This program would handle source data from folder (with numpy arrays)
-      tfrecord or dataset backbone.
-    NOTE:
-      support data_dir & database objects are `feat_obj` and `raw_images`. (tfrecord in the future?)
-        ->  status flow
-      offline can be totally different mode without calling evaluate.
-      # control attribute container.
+    Functions:
+        - Evaluate single container
+        - Evaluate two containers
 
-    NOTE: for developing
-    Quickly build up this program.
-        1. Json wrapper
-        2. Dataset reader
-        3. Metric functions
+    Output:
+
+    Post-Analysis:
+
+
+    TODO:
+        - Auto configuration
+        - Logger & Error handling
+        - Evaluation & Result container working relation
 """
 
 import os
@@ -34,13 +37,12 @@ sys.path.insert(0, os.path.abspath(
 import yaml
 import numpy as np
 
-from pprint import pprint
 from metric_learning_evaluator.builder import EvaluatorBuilder
-from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+
+from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 from metric_learning_evaluator.utils.switcher import switch
 
 # should cooperate add_container
-from metric_learning_evaluator.utils.io_utils import create_embedding_container_from_featobj
 from metric_learning_evaluator.utils.io_utils import check_instance_id
 from metric_learning_evaluator.utils.report_writer import ReportWriter
 
@@ -62,7 +64,7 @@ parser.add_argument('--data_dir', '-dd', type=str, default=None,
 parser.add_argument('--database', '-db', type=str, default=None,
                     help='Path to the source dataset, with type folder')
 parser.add_argument('--data_type', '-dt', type=str, default='folder',
-                    help='Type of the input dataset, Future supports: tfrecord | dataset_backbone | folder')
+                    help='Type of the input dataset, Future supports: dataset_backbone | folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
                     help='Path to the output dir for saving report.')
 parser.add_argument('--embedding_size', '-es', type=int, default=2048,
@@ -114,21 +116,8 @@ def main():
 
     if data_type == 'folder':
         # TODO: @kv Load with embedding container
-        feature_importer = FeatureObject()
-        feature_importer.load(data_dir)
-        embeddings = feature_importer.embeddings
-        filenames = feature_importer.filename_strings
-        labels = feature_importer.label_ids
-        instance_ids = feature_importer.instance_ids
-        # TODO @kv: check instance_ids size, if empty, use filenames instead
-        #           or generate pseudo instance ids
-        probabilities = feature_importer.probabilities
-        push_prob_to_evaluator = False
-        # also check the configuration
-        if probabilities is not None and probabilities.size != 0 and args.prob_size:
-            push_prob_to_evaluator = True
-            print('feature_object contains probabilities, activate {}'.format(
-                metric_fields.classification))
+        container = EmbeddingContainer()
+        container.load(data_dir)
 
     print('evaluator metric names: {}'.format(evaluator.metric_names))
 
@@ -137,31 +126,15 @@ def main():
 
         if case(status_fields.evaluate_single_container):
             # Add datum through loop
-            if instance_ids is None:
-                if filenames is None:
-                    raise ValueError('instance_ids and filenames should not be empty!')
-                unique_ids = filenames
-            else:
-                unique_ids = instance_ids
 
-            if not push_prob_to_evaluator:
-                for inst_id, feat, label in zip(unique_ids, embeddings, labels):
-                    # TODO @kv: Do not confuse `filename` with `instance_id`.
-                    inst_id = check_instance_id(inst_id)
-                    evaluator.add_instance_id_and_embedding(inst_id, label, feat)
-            else:
-                for inst_id, feat, label, prob in zip(unique_ids, embeddings, labels, probabilities):
-                    # TODO @kv: Do not confuse `filename` with `instance_id`.
-                    inst_id = check_instance_id(inst_id)
-                    evaluator.add_instance_id_and_embedding(inst_id, label, feat, prob)
-
-            total_results = evaluator.evaluate()
+            evaluator.add_container(container)
+            all_measures = evaluator.evaluate()
 
             print('----- evaluation results -----')
             # remove this
             for metric_name in evaluator.metric_names:
-                if metric_name in total_results:
-                    print('{}: {}'.format(metric_name, total_results[metric_name]))
+                if metric_name in all_measures:
+                    print('{}: {}'.format(metric_name, all_measures[metric_name]))
 
             if out_dir is not None:
                 if not os.path.exists(out_dir):
