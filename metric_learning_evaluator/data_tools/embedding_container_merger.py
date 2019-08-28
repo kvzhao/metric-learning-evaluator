@@ -54,7 +54,7 @@ class EmbeddingContainerMerger(object):
         dim_list = [cont.embedding_size for cont in containers]
 
         if len(set(dim_list)) != 1:
-            raise ValueError('Error, embedding dimension not equal')
+            raise ValueError('Error, embedding dimension not equal but get {}'.format(dim_list))
 
         total_num = sum(cont.counts for cont in containers)
         emb_dim = dim_list[0]
