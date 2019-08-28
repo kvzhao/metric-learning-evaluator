@@ -142,6 +142,21 @@ class EmbeddingContainer(object):
             container_fields.filename_strings: self._filename_strings}
         return _internal_dict
 
+    def _fetch_attributes(self):
+        """Fetch the list of dict with instance_id order
+            e.g.
+            [
+                {type: query},
+                {type: anchor},
+            ]
+        """
+        if not self.has_index:
+            self.createIndex()
+        if not self._attribute_table.DataFrame.empty:
+            # remove instance_id
+            return self._attribute_table.DataFrame.drop(container_fields.instance_ids, axis=1).to_dict('records')
+        return []
+
     def _init_arrays(self, container_size, embedding_size, probability_size):
         """Internal numpy arrays and array_index"""
         if container_size != self._container_size:
@@ -201,7 +216,7 @@ class EmbeddingContainer(object):
         if probability is not None:
             self._probabilities[self._current, ...] = probability
 
-        if attributes is not None:
+        if attributes is not None and attributes:
             self._attribute_by_instance[instance_id] = attributes
             if not isinstance(attributes, dict):
                 print('WARNING: given attributes must be a dictionary.')
@@ -453,6 +468,10 @@ class EmbeddingContainer(object):
     @property
     def counts(self):
         return self._current
+
+    @property
+    def name(self):
+        return self._name
 
     def clear(self):
         # clear dictionaries
