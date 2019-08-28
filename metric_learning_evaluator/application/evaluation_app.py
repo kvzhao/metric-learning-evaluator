@@ -167,7 +167,7 @@ def main():
             _cmd = 'query->anchor'
             if _cmd not in config_dict[_opt][_rank][_attr][_cref]:
                 config_dict[_opt][_rank][_attr][_cref].append(_cmd)
-            config_dict[_opt][_rank][_attr][_smp]['num_of_db_instance_per_class'] = 1000
+            config_dict[_opt][_rank][_smp]['num_of_db_instance_per_class'] = 1000
             break
 
     # Build and run evaluation
