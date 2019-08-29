@@ -194,7 +194,7 @@ class EvaluatorBuilder(object):
     def evaluate(self):
         """Execute given evaluations and returns a dictionary of metrics.
           Return:
-            total_metrics, dict:
+            total_metrics: A flatten dictionary for display each measures
         """
         for _eval_name, _evaluation in self.evaluations.items():
             # Pass the container to the evaluation objects.

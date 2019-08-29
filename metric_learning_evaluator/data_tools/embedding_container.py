@@ -158,6 +158,21 @@ class EmbeddingContainer(object):
             container_fields.filename_strings: self._filename_strings}
         return _internal_dict
 
+    def _fetch_attributes(self):
+        """Fetch the list of dict with instance_id order
+            e.g.
+            [
+                {type: query},
+                {type: anchor},
+            ]
+        """
+        if not self.has_index:
+            self.createIndex()
+        if not self._attribute_table.DataFrame.empty:
+            # remove instance_id
+            return self._attribute_table.DataFrame.drop(container_fields.instance_ids, axis=1).to_dict('records')
+        return []
+
     def _init_arrays(self, container_size, embedding_size, probability_size):
         """Internal numpy arrays and array_index"""
         if container_size != self._container_size:
@@ -219,7 +234,7 @@ class EmbeddingContainer(object):
         if probability is not None:
             self._probabilities[self._current, ...] = probability
 
-        if attributes is not None:
+        if attributes is not None and attributes:
             self._attribute_by_instance[instance_id] = attributes
             if not isinstance(attributes, dict):
                 print('WARNING: given attributes must be a dictionary.')
@@ -459,17 +474,11 @@ class EmbeddingContainer(object):
     @property
     def meta_dict(self):
         """Fetch meta_dict used for Cradle.
+           Save all dataframe content into meta_dict.
         """
-        internals = self._fetch_internals()
-        _meta_dict = {
-            container_fields.instance_ids:
-                np.expand_dims(np.asarray(internals[container_fields.instance_ids], np.int32), axis=1),
-            container_fields.label_ids:
-                np.expand_dims(np.asarray(internals[container_fields.label_ids], np.int32), axis=1),
-            container_fields.label_names:
-                np.expand_dims(np.asarray(internals[container_fields.label_names]), axis=1),
-            container_fields.filename_strings:
-                np.expand_dims(np.asarray(internals[container_fields.filename_strings]), axis=1)}
+        _meta_dict = {}
+        for k, v in self.DataFrame.to_dict('list').items():
+            _meta_dict[k] = np.vstack(v)
         return _meta_dict
 
     @property
@@ -491,6 +500,10 @@ class EmbeddingContainer(object):
     @property
     def counts(self):
         return self._current
+
+    @property
+    def name(self):
+        return self._name
 
     def clear(self):
         # clear dictionaries
@@ -643,6 +656,11 @@ class EmbeddingContainer(object):
         assert meta_dict is not None, '{} contains no meta data'.format(pkl_path)
         assert container_fields.label_ids in meta_dict, 'Label ids cannot found in meta_dict'
 
+        extra_keys = [k for k in meta_dict.keys()
+                      if k not in [container_fields.label_names,
+                                   container_fields.instance_ids,
+                                   container_fields.label_ids,
+                                   container_fields.filename_strings]]
         if container_fields.instance_ids in meta_dict:
             instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
         else:
@@ -660,14 +678,16 @@ class EmbeddingContainer(object):
 
             label_name = None
             if label_names is not None:
-                label_name = label_names[idx]
+                label_name = label_names[idx][0]
 
             filename = None
             if filename_strings is not None:
-                filename = filename_strings[idx]
+                filename = filename_strings[idx][0]
 
             probability = None
-            attributes = []
+            attributes = {}
+            for k in extra_keys:
+                attributes[k] = meta_dict[k][idx][0]
             self.add(instance_id=instance_id,
                      label_id=label_id,
                      label_name=label_name,
