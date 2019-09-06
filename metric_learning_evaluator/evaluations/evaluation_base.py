@@ -20,10 +20,6 @@ sys.path.insert(0, os.path.abspath(
 
 from abc import ABCMeta
 from abc import abstractmethod
-import collections
-from collections import namedtuple
-from collections import OrderedDict
-from collections import defaultdict
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
 
@@ -31,7 +27,7 @@ import logging
 import numpy as np
 
 
-class MetricEvaluationBase(object):    
+class MetricEvaluationBase(object):
     """Interface for Evaluation Object which serves as the functional building block.
 
         Usage:
@@ -48,7 +44,7 @@ class MetricEvaluationBase(object):
                 Configuration used for the EvaluationObject.
                 (which is provided by calling parser.get_eval_config)
         """
-        # TODO @kv: remove dash line in variable names 
+        # TODO @kv: remove dash line in variable names
         self.configs = eval_config
 
         # TODO: Iterator for getting embeddings from given attribute_names
@@ -77,8 +73,10 @@ class MetricEvaluationBase(object):
         pass
 
     def show_configs(self):
-        print ('{} - Compute {} metrics over attributes: {}'.format(
-            self.evaluation_name, ', '.join(self.metrics.keys()), ', '.join(self.configs.attribute_items)))
+        print('{} - Compute {} metrics over attributes: {}'.format(
+            self.evaluation_name,
+            ', '.join(self.metrics.keys()),
+            ', '.join(self.configs.attribute_items)))
 
     @abstractmethod
     def compute(self, embedding_container):
