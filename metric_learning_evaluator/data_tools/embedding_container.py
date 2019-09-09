@@ -99,7 +99,7 @@ class EmbeddingContainer(object):
             probability_size=probability_size,
             name=name)
         self._interpreter = Interpreter()
-        print('Container:{} allocated'.format(self._name))
+        print('Container:{} created'.format(self._name))
 
     def __repr__(self):
         _content = '=' * 15 + ' {} '.format(self._name) + '=' * 15 + '\n'
@@ -642,9 +642,19 @@ class EmbeddingContainer(object):
                 (from cradle.data_container.embedding_db import EmbeddingDB)
         """
         print('Copy data from embedding_db to container:{}'.format(self.name))
-        raise NotImplementedError
 
-    # TODO: Make these consistent with self.add
+        embeddings = embedding_db.embeddings
+        if not isinstance(embeddings, (np.ndarray, np.generic)):
+            embeddings = np.asarray(embeddings, np.float32)
+        assert len(embeddings.shape) == 2, 'Embeddings should be 2D np array'
+
+        meta_dict = embedding_db.meta_dict
+        assert meta_dict is not None, 'embedding db contains no meta data'
+
+        self._from_cradle_internals(embeddings, meta_dict)
+
+        print('Container initialized from given EmbeddingDB')
+
     def _from_np_array(self,
                        instance_ids,
                        embeddings,
@@ -764,6 +774,52 @@ class EmbeddingContainer(object):
                      attribute=attr_dict,
                      filename=filename)
 
+    def _from_cradle_internals(self, embeddings, meta_dict):
+
+        probabilities = None
+        if container_fields.probabilities in meta_dict:
+            probabilities = meta_dict[container_fields.probabilities]
+
+        assert container_fields.label_ids in meta_dict, 'Label ids must be provided in meta_dict'
+
+        extra_keys = [k for k in meta_dict.keys()
+                      if k not in [container_fields.label_names,
+                                   container_fields.instance_ids,
+                                   container_fields.label_ids,
+                                   container_fields.filename_strings]]
+
+        if container_fields.instance_ids in meta_dict:
+            instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
+        else:
+            # Use pseudo instance ids instead
+            instance_ids = np.arange(embeddings.shape[0])
+        label_ids = np.squeeze(meta_dict[container_fields.label_ids])
+        filename_strings, label_names = None, None
+
+        if container_fields.label_names in meta_dict:
+            label_names = np.squeeze(meta_dict[container_fields.label_names])
+
+        if container_fields.filename_strings in meta_dict:
+            filename_strings = np.squeeze(meta_dict[container_fields.filename_strings])
+
+        attributes = []
+        for idx in range(len(instance_ids)):
+            attr_dict = {}
+            for k in extra_keys:
+                attr_dict[k] = meta_dict[k][idx][0]
+            attributes.append(attr_dict)
+        if not attributes:
+            attributes = None
+
+        self._from_np_array(
+            instance_ids,
+            embeddings,
+            label_ids,
+            filename_strings,
+            label_names,
+            attributes,
+            probabilities)
+
     def load(self, path):
         """Load embedding from disk"""
         # Create FeatureObject
@@ -824,57 +880,15 @@ class EmbeddingContainer(object):
         if not isinstance(embeddings, (np.ndarray, np.generic)):
             embeddings = np.asarray(embeddings, np.float32)
         assert len(embeddings.shape) == 2, 'Embeddings should be 2D np array'
-        container_size, _ = embeddings.shape
-
-        probabilities = None
-        if container_fields.probabilities in db_data:
-            probabilities = db_data[container_fields.probabilities]
 
         meta_dict = None
         if container_fields.meta in db_data:
             meta_dict = db_data[container_fields.meta]
         assert meta_dict is not None, '{} contains no meta data'.format(pkl_path)
-        assert container_fields.label_ids in meta_dict, 'Label ids cannot found in meta_dict'
 
-        extra_keys = [k for k in meta_dict.keys()
-                      if k not in [container_fields.label_names,
-                                   container_fields.instance_ids,
-                                   container_fields.label_ids,
-                                   container_fields.filename_strings]]
+        self._from_cradle_internals(embeddings, meta_dict)
 
-        if container_fields.instance_ids in meta_dict:
-            instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
-        else:
-            # Use pseudo instance ids instead
-            instance_ids = np.arange(container_size)
-        label_ids = np.squeeze(meta_dict[container_fields.label_ids])
-        filename_strings, label_names = None, None
-
-        if container_fields.label_names in meta_dict:
-            label_names = np.squeeze(meta_dict[container_fields.label_names])
-
-        if container_fields.filename_strings in meta_dict:
-            filename_strings = np.squeeze(meta_dict[container_fields.filename_strings])
-
-        attributes = []
-        for idx in range(len(instance_ids)):
-            attr_dict = {}
-            for k in extra_keys:
-                attr_dict[k] = meta_dict[k][idx][0]
-            attributes.append(attr_dict)
-        if not attributes:
-            attributes = None
-
-        self._from_np_array(
-            instance_ids,
-            embeddings,
-            label_ids,
-            filename_strings,
-            label_names,
-            attributes,
-            probabilities)
-
-        print('Container initialized.')
+        print('Container initialized from pickle file.')
 
     def get_instance_id_by_attribute_value(self, attr_value):
         """
