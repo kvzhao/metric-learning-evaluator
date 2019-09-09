@@ -35,7 +35,7 @@ from metric_learning_evaluator.core.standard_fields import EmbeddingContainerSta
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Probabilities
       Minimum requirements:
-        - instance_id, embedding, label_id, filename_string
+        - instance_id, embedding, label_id
 
       Container operations:
         - add
@@ -48,6 +48,10 @@ class EmbeddingContainer(object):
             load from folder
         - load_pkl:
             load from Cradle.EmbeddingDB .pkl format
+        - from_embedding_container
+            copy data from another embedding container (in memory)
+        - from_cradle_embedding_db
+            copy data from cradle.data_container.embedding_db (in memory)
 
       Query methods:
 
@@ -55,9 +59,8 @@ class EmbeddingContainer(object):
       = NOTE =======================================================================================
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
       TODO @kv: Use pandas dataframe as for query
-      TODO @kv: Error-handling when current exceeds container_size
+      TODO @kv: Error-handling when current exceeds container_size when add
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
-      TODO @kv: smooth clear
       TODO: Now, it is the branch to refactor the query interface
       ==============================================================================================
     """
