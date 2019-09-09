@@ -22,9 +22,10 @@ class FeatureObjectBase(object):
             fields.embeddings,
             fields.probabilities,
             fields.label_ids,
+            fields.label_names,
             fields.instance_ids,
-            fields.filename_strings,
-            fields.super_labels]
+            fields.filename_strings
+        ]
         self._array_name_map = {
             fields.embeddings: None,
             fields.probabilities: None,
@@ -131,16 +132,6 @@ class FeatureObjectBase(object):
     def filename_strings(self, _filename_strings):
         self._check_numpy_arrlike(_filename_strings)
         self._array_name_map[fields.filename_strings] = _filename_strings
-
-    @property
-    def super_labels(self):
-        return self._super_labels
-
-    @super_labels.setter
-    def super_labels(self, _super_labels):
-        self._check_numpy_arrlike(_super_labels)
-        self._super_labels = _super_labels
-
 
 class FeatureObject(FeatureObjectBase):
 
