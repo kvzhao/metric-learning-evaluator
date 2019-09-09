@@ -627,13 +627,13 @@ class EmbeddingContainer(object):
                        ):
         """Add given arrays.
           Args:
-            instance_ids: np array with shape(N, 1)
+            instance_ids: np array with shape(N,)
             embeddings: np array with shape (N, D)
-            label_ids: np array with shape (N, 1)
+            label_ids: np array with shape (N,)
             filename_strings: (option)
             label_names: (option)
-            attributes: (option)
-            probabilities: (option) np array with shape (N, 1)
+            attributes: (option) List of dict
+            probabilities: (option) np array with shape (N, #of classes)
 
           Raises:
             - embeddings are not 2D array
@@ -655,6 +655,9 @@ class EmbeddingContainer(object):
         if len(embeddings.shape) != 2:
             raise ValueError('Embedding shape should be 2D (N, d)')
 
+        if label_names is not None and not isinstance(label_names, np.ndarray):
+            label_names = np.asarray(label_names)
+
         # check dimension
         total_amount = instance_ids.shape[0]
         emb_num, emb_size = embeddings.shape
@@ -667,11 +670,11 @@ class EmbeddingContainer(object):
             raise ValueError('#of Instance does not match #of Label ids, {} != {}'.format(
                 total_amount, label_ids.shape[0]))
 
-        if label_names and len(label_names) != total_amount:
+        if label_names is not None and label_names.shape[0] != total_amount:
             raise ValueError('#of Instance does not match #of Label names, {} != {}'.format(
-                total_amount, len(label_names)))
+                total_amount, label_names.shape[0]))
 
-        if attributes and len(attributes) != total_amount:
+        if attributes is not None and len(attributes) != total_amount:
             raise ValueError('#of Instance does not match #of Label names, {} != {}'.format(
                 total_amount, len(attributes)))
 
@@ -817,11 +820,14 @@ class EmbeddingContainer(object):
             embeddings = np.asarray(embeddings, np.float32)
         assert len(embeddings.shape) == 2, 'Embeddings should be 2D np array'
         container_size, embedding_size = embeddings.shape
-        probability_size = 0
-        self._init_internals()
-        self._init_arrays(container_size,
-                          embedding_size,
-                          probability_size)
+
+        probabilities = None
+        prob_size = 0
+        if container_fields.probabilities in db_data:
+            probabilities = db_data[container_fields.probabilities]
+            if len(probabilities.shape) != 2:
+                raise ValueError('Probabilities must be 2D.')
+            prob_size = probabilities.shape[1]
 
         meta_dict = None
         if container_fields.meta in db_data:
@@ -834,41 +840,39 @@ class EmbeddingContainer(object):
                                    container_fields.instance_ids,
                                    container_fields.label_ids,
                                    container_fields.filename_strings]]
+
         if container_fields.instance_ids in meta_dict:
             instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
         else:
+            # Use pseudo instance ids instead
             instance_ids = np.arange(container_size)
-        label_ids = meta_dict[container_fields.label_ids]
+        label_ids = np.squeeze(meta_dict[container_fields.label_ids])
         filename_strings, label_names = None, None
+
         if container_fields.label_names in meta_dict:
-            label_names = meta_dict[container_fields.label_names]
+            label_names = np.squeeze(meta_dict[container_fields.label_names])
+
         if container_fields.filename_strings in meta_dict:
-            filename_strings = meta_dict[container_fields.filename_strings]
+            filename_strings = np.squeeze(meta_dict[container_fields.filename_strings])
 
-        # TODO: Load from memory
-        for idx, instance_id in enumerate(instance_ids):
-            label_id = label_ids[idx]
-            embedding = embeddings[idx]
-
-            label_name = None
-            if label_names is not None:
-                label_name = label_names[idx][0]
-
-            filename = None
-            if filename_strings is not None:
-                filename = filename_strings[idx][0]
-
-            probability = None
-            attributes = {}
+        attributes = []
+        for idx in range(len(instance_ids)):
+            attr_dict = {}
             for k in extra_keys:
-                attributes[k] = meta_dict[k][idx][0]
-            self.add(instance_id=instance_id,
-                     label_id=label_id,
-                     label_name=label_name,
-                     embedding=embedding,
-                     probability=probability,
-                     attribute=attributes,
-                     filename=filename)
+                attr_dict[k] = meta_dict[k][idx][0]
+            attributes.append(attr_dict)
+        if not attributes:
+            attributes = None
+
+        self._from_np_array(
+            instance_ids,
+            embeddings,
+            label_ids,
+            filename_strings,
+            label_names,
+            attributes,
+            probabilities)
+
         print('Container initialized.')
 
     def get_instance_id_by_attribute_value(self, attr_value):
