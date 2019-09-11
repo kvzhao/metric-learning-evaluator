@@ -88,7 +88,7 @@ def extraction_application(configs, args):
     if labelmap_path is not None:
         # label maps
         labelmap = read_json_labelmap(labelmap_path)
-        category_name_map = {} # not used
+        category_name_map = {}
         for _, content in labelmap.items():
             category_name_map[content['unique_id']] = content['label_name']
 
@@ -183,6 +183,8 @@ def extraction_application(configs, args):
 
     if instance_ids is None:
         instance_ids = [idx for idx in range(len(image_filenames))]
+    if attributes is None:
+        attributes = [{}] * len(image_filenames)
 
     # =================================
     # Feature extraction loop
@@ -191,9 +193,8 @@ def extraction_application(configs, args):
     container = EmbeddingContainer(embedding_size=embedding_size,
                                    container_size=num_total_images)
     try:
-        for inst_id, img_path, label_id, label_name in tqdm(zip(instance_ids, image_filenames, label_ids, label_names)):
-            # attr_dict = attr_reader.query_attributes_by_instance_id(inst_id)
-            attr_dict = {}
+        for inst_id, img_path, label_id, label_name, attr_dict in tqdm(
+            zip(instance_ids, image_filenames, label_ids, label_names, attributes)):
             try:
                 image = read_jpeg_image(img_path, img_size)
             except:
