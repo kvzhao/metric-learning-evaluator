@@ -149,6 +149,11 @@ def extraction_application(configs, args):
         # folder contains raw images
         image_filenames, label_names = load_file_from_structure_folder(data_dir)
         # TODO: Create label id itself
+        if labelmap:
+            label_ids = []
+            for name in label_names:
+                label_ids.append(labelmap.get(name, -1))
+
     elif data_type == 'csv':
         csvfile_path = data_dir
         instance_ids = []
