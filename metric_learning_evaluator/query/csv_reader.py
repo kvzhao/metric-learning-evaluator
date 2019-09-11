@@ -43,6 +43,7 @@ class CsvReader(object):
         if path is None:
             raise FileNotFoundError("path is required")
 
+        # TODO: store all csv information
         if os.path.exists(path):
             with open(path, newline='', encoding='utf-8') as csv_file:
                 csv_rows = csv.DictReader(csv_file)
@@ -58,9 +59,19 @@ class CsvReader(object):
     def query_attributes_by_instance_id(self, instance_id):
         """
           Args:
-            instance_id: Integer or string?
+            instance_id: integer
+          Return
+            attr_dict: dict, empty if no attributes exist
         """
         instance_id = str(instance_id)
         if instance_id in self.dict_attributes:
             return self.dict_attributes[instance_id]
         return {}
+
+    # TODO:
+    def query_info_by_instance_id(self, instance_id):
+        pass
+
+    @property
+    def instance_ids(self):
+        return list(self.dict_attributes.keys())

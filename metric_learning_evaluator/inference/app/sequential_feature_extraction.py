@@ -1,5 +1,15 @@
 """
-  TODO: Change the logic
+    Input
+        - folder
+        - csv
+        - datasetbackbone
+    Output
+        - EmbeddingContainer
+
+    Input situation
+        - 
+
+    Labelmap format
 """
 
 import os
@@ -22,18 +32,29 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from scutils.scdata import DatasetBackbone
+from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.inference.utils.image_utils import read_jpeg_image
 from metric_learning_evaluator.inference.utils.read_json_labelmap import read_json_labelmap
 
-from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
+from metric_learning_evaluator.inference.utils.image_utils import load_file_from_folder
+from metric_learning_evaluator.inference.utils.image_utils import load_file_from_structure_folder
 
 from metric_learning_evaluator.inference.components.extractor import FeatureExtractor
-
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.feature_object import FeatureObject
+from metric_learning_evaluator.core.standard_fields import AttributeTableStandardFields as table_fields
 
-from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
+
+"""TODO:
+    Change the application interface to
+        custom_application(configs, datasets)
+"""
+
+SUPPORTED_DATATYPES = [
+    'csv',
+    'folder',
+    'datasetbackbone',
+]
 
 
 def extraction_application(configs, args):
@@ -46,6 +67,8 @@ def extraction_application(configs, args):
     img_size = model_configs['image_size']
     embedding_size = model_configs['embedding_size']
     model_path = model_configs['model_path']
+
+    # TODO: Check if None or not
     database_path = model_configs['database_path']
 
     # parse arguments
@@ -53,49 +76,57 @@ def extraction_application(configs, args):
     out_dir = args.out_dir
     data_type = args.data_type
 
-    ## ===== Error Proofing =======
+    # ===== Error Proofing =======
     if data_dir is None:
         raise ValueError('data_dir is not given')
     if out_dir is None:
         out_dir = '/tmp/extracted_features'
-        print('NOTEICE: out_dir is not given, save to {} in default'.format(out_dir))
+        print('NOTICE: out_dir is not given, save to {} in default'.format(out_dir))
 
+    # TODO: remove labelmap
+    labelmap = None
     if labelmap_path is not None:
         # label maps
         labelmap = read_json_labelmap(labelmap_path)
         category_name_map = {} # not used
         for _, content in labelmap.items():
             category_name_map[content['unique_id']] = content['label_name']
-    else:
-        # create own labelmap
-        print('NOTICE: labelmap is not given,')
-        labelmap = {}
 
     # Restore frozen model
     embedder = FeatureExtractor(model_path, img_size)
 
-    ### =================================
-    ###  Sequentially extract embeddings
-    ### =================================
-    all_image_filenames = []
+    # =================================
+    # Data preprocessing
+    # =================================
+
+    # all input information
+    attributes = None
+    image_filenames, label_names, label_ids = None, None, None
+
     if data_type == 'datasetbackbone':
         print('Extract features from dataset backbone')
+        # For sanity check
         dataset_backbone_db_path = glob.glob(data_dir + '/*.db')
 
         # TODO: check whether the path is legal or not
+        # We should handle dataset backbone boxes!
         src_db = DatasetBackbone(data_dir)
-        filenames = src_db.query_all_img_filenames() # can be used as instance_ids
+        short_filenames = src_db.query_all_img_filenames()
+        image_filenames = src_db.query_img_abspath_by_filename(short_filenames)
+        # can be used as instance_ids
+
+        # prepare label ids and names
 
         label_ids, instance_ids = [], []
-        embedding_container = EmbeddingContainer(embedding_size, 0, container_capacity)
         try:
+            pass
+            """
             for filename in tqdm(filenames):
-                """TODO: cropped or not?"""
                 annotation = src_db.query_anno_info_by_filename(filename)[0]
                 instance_id = annotation['id']
                 category_name = annotation['category']
-                if not category_name in labelmap:
-                    #print('NOTICE: {} cannot be found in {} which would be skipped'.format(category_name, labelmap_path))
+                if category_name not in labelmap:
+                    # print('NOTICE: {} cannot be found in {} which would be skipped'.format(category_name, labelmap_path))
                     label_id = annotation['cate_id']
                     label_ids.append(label_id)
                 else:
@@ -110,48 +141,78 @@ def extraction_application(configs, args):
                                         embedding=feature[0])
                 # available filename in same order
                 all_image_filenames.append(filename)
-        except:
-            """TODO:
-                Save embeddings up to current state
             """
-            print('Exception happens for ? reason.')
+        except:
             pass
-
     elif data_type == 'folder':
         # folder contains raw images
-        input_filenames = [
-            join(data_dir, f) for f in listdir(data_dir) if isfile(join(data_dir, f))]
-        print('Load input data from folder with {} images.'.format(len(input_filenames)))
+        image_filenames, label_names = load_file_from_structure_folder(data_dir)
+        # TODO: Create label id itself
+    elif data_type == 'csv':
+        csvfile_path = data_dir
+        instance_ids = []
+        attributes = []
+        image_filenames, label_names, label_ids = [], [], []
 
-    feature_exporter = FeatureObject()
-    feature_exporter.filename_strings = np.asarray(filenames)
-    feature_exporter.embeddings = embedding_container.embeddings
-    print('Export embedding with shape: {}'.format(embedding_container.embeddings.shape))
+        with open(csvfile_path, newline='', encoding="utf-8") as csv_file:
+            csv_rows = csv.DictReader(csv_file)
+            # fetch necessary
+            for line_id, row in enumerate(csv_rows):
+                inst_id = row.get(table_fields.instance_id, line_id)
+                instance_ids.append(inst_id)
+                if table_fields.instance_id in row:
+                    row.pop(table_fields.instance_id)
+                if table_fields.image_path in row:
+                    image_filenames.append(row.pop(table_fields.image_path))
+                if table_fields.label_id in row:
+                    label_ids.append(row.pop(table_fields.label_id))
+                if table_fields.label_name in row:
+                    label_names.append(row.pop(table_fields.label_name))
+                # Rest of them are attributes (and remove noises)
+                row.pop('', None)
+                attributes.append(row)
 
-    # suppose the groundtruth is provided
-    if data_type == 'datasetbackbone':
-        category_names, category_ids = [], []
-        try:
-            for name in all_image_filenames:
-                annos = src_db.query_anno_info_by_filename(name)
-                for anno in annos:
-                    cate_name = anno['category']
-                    if not cate_name in labelmap:
-                        category_names.append('unknown_instance')
-                        category_ids.append(anno['cate_id'])
-                    else:
-                        category_names.append(labelmap[cate_name]['label_name'])
-                        category_ids.append(labelmap[cate_name]['unique_id'])
-        except KeyboardInterrupt:
-            print('Interrupted by user, save {} features to {}'.format(len(category_names)))
-            feature_exporter.label_names = np.asarray(category_names)
-            feature_exporter.label_ids = np.asarray(category_ids)
-            feature_exporter.save(out_dir)
+    if labelmap is None:
+        labelmap = {}
+    if label_ids is None:
+        label_name_set = set(label_names)
+        labelmap = {name: index
+                    for index, name in enumerate(label_name_set)}
+        label_ids = [labelmap[name] for name in label_names]
 
-        if category_names:
-            feature_exporter.label_names = np.asarray(category_names)
-        if category_ids:
-            feature_exporter.label_ids = np.asarray(category_ids)
+    if instance_ids is None:
+        instance_ids = [idx for idx in range(len(image_filenames))]
 
-    feature_exporter.save(out_dir)
+    # =================================
+    # Feature extraction loop
+    # =================================
+    num_total_images = len(image_filenames)
+    container = EmbeddingContainer(embedding_size=embedding_size,
+                                   container_size=num_total_images)
+    try:
+        for inst_id, img_path, label_id, label_name in tqdm(zip(instance_ids, image_filenames, label_ids, label_names)):
+            # attr_dict = attr_reader.query_attributes_by_instance_id(inst_id)
+            attr_dict = {}
+            try:
+                image = read_jpeg_image(img_path, img_size)
+            except:
+                print('image: {} reading fails, skip'.format(img_path))
+                continue
+            try:
+                feature = embedder.extract_feature(image)
+                feature = np.squeeze(feature)
+            except:
+                print('feature extraction: {} inference fails, skip'.format(img_path))
+                continue
+            container.add(inst_id,
+                          label_id,
+                          feature,
+                          attribute=attr_dict,
+                          label_name=label_name,
+                          filename=img_path)
+    except:
+        # Stop temporarily
+        print('Stop unexpectedly, save the intermediate results.')
+        container.save(out_dir)
+    container.save(out_dir)
     print("Save all extracted features at {}".format(out_dir))
