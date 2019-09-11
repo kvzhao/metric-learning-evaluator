@@ -101,6 +101,7 @@ def extraction_application(configs, args):
 
     # all input information
     attributes = None
+    instance_ids = None
     image_filenames, label_names, label_ids = None, None, None
 
     if data_type == 'datasetbackbone':
