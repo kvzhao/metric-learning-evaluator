@@ -1,17 +1,37 @@
 # Metric Learning Evaluator
 
-## System Architecture Overview
+## Introduction
 
-[Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
+The repo provides an metric learning evaluation tool which support online (training time) evaluation and offline performance & report generation. Several features the evaluator provides
+1. Modularization of each performance measures
+2. Efficient and reusable data container
+3. Several command line tools for smooth data manipulation
 
-![](figures/tf-metric-evaluator_v0.3.png)
+TODO: This version is targeted for 1.0.0 publish.
+1. Ready for deployment
+2. Online evaluation: more detailed measures (e.g. purity, margin..)
+3. Offline evaluation: complete report generation
+4. DB-verification supports
 
 
-## Quick Start
+## Installation
 
-### Installation
+Install **metric_learning_evaluator**
 
-### Usage
+```
+python setup.py install
+```
+Two command-line tools will be installed
+- `ml-evaluation`
+- `ml-inference`
+
+### Dependencies and `hnswlib`
+Run installation script
+```bash
+  sh install_hnsw.sh
+```
+
+## Usage
 
 Extract features
 ```
@@ -24,50 +44,55 @@ Evaluate performance
 ml-evaluation -c configs/eval_config.yml -dd <path_to_feature_object>
 ```
 
-### Modules & Components
-- `application`: Command-line applications
-- `analysis`: Analysis tools
-- `core`: Define standard fields
-- config_parser
-- `evaluations`: Customized applications for measuring model performance
-- `metrics`: Computational objects used in evaluations
-- `index`: Provide fast algorithm for query features and distance functions
-- `query`: Attribute database general interface
-- `tools`: Scripts for some utilities
-  - NOTE: should we promote to analysis tool?
-- `data_tools`: General data containers including embedding, attribute and result containers
-- `utils`: Contains sampler, switcher
-- `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
 
+### Applications
+**Extract features and save as EmbeddingContainier**
+Two kinds of input are supported
+- folder
+  - structure folder, for example
+  ```bash
+        20190815_repeated/
+        |-- 45141164
+        |   |-- 20190810-123145_877.JPG
+        |   |-- 20190810-123149_617.JPG
+        |   |-- 20190810-123153_477.JPG
+        |   |-- 20190810-123157_403.JPG
+        |   `-- 20190810-123201_115.JPG
+        |-- 45164804
+        |   |-- 20190810-123406_888.JPG
+        |   |-- 20190810-123411_307.JPG
+        |   |-- 20190810-123414_922.JPG
+        |   |-- 20190810-123419_248.JPG
+        |   `-- 20190810-123422_616.JPG
+        |-- 45173639
+        |   |-- 20190810-124026_046.JPG
+        |   |-- 20190810-124030_040.JPG
+        |   |-- 20190810-124033_827.JPG
+        |   |-- 20190810-124037_939.JPG
+        |   `-- 20190810-124041_653.JPG
+  ```
+- csv
+  - 
+  ```
+  image_path,instance_id,label_id,label_name,type,seen_or_unseen,source
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00002515.jpg,2515,1,An-donuts,bread,unseen,Fuko
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00003441.jpg,3441,1,An-donuts,bread,unseen,Fuko
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00000085.jpg,85,1,An-donuts,bread,unseen,Fuko
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00000056.jpg,56,1,An-donuts,bread,unseen,Fuko
+  ```
 
-### Roadmap and TODOs
-
-#### Roadmap
-- inference
-- analysis
-- front-end gui
-
-#### TODO
-- Save out data reside in container.
-  - Consider concatenating each containers
-- Manifold
-  - locality
-  - input robustness
-  - margin search
-  - find reasonable center
-- ImageContainer?
-  - ContainerBaseObject?
-  - <T>Container <-> <T>Object
-
-- Change cmdline name, design operation logic
-
-## Installation
+Execution command
+```bash
+  ml-inference -c extract_config.yaml \
+               -t extract \
+               -dd <image_folder or csv_path> \
+               -dt folder \
+               -od <output_folder_path>
 ```
-python setup.py install
-```
-Two command-line tools will be installed: `ml-evaluation` and `ml-inference`.
+- dt (data_type) can be `csv` or `folder`
 
-### Intallation of `hnswlib`
+
+
 
 Source: [hnswlib](https://github.com/nmslib/hnswlib)
 Binding installation
@@ -128,6 +153,35 @@ ml_evaluator -c eval_config.yml -dd extracted_embeddings_facenet-centerloss-batc
 ```
 
 NOTE: Off-line mode not fully supported now.
+
+
+## System Architecture Overview
+
+[Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
+
+![](figures/tf-metric-evaluator_v0.3.png)
+
+
+### Modules & Components
+- `application`: Command-line applications
+- `analysis`: Analysis tools
+- `core`: Define standard fields
+- config_parser
+- `evaluations`: Customized applications for measuring model performance
+- `metrics`: Computational objects used in evaluations
+- `index`: Provide fast algorithm for query features and distance functions
+- `query`: Attribute database general interface
+- `tools`: Scripts for some utilities
+  - NOTE: should we promote to analysis tool?
+- `data_tools`: General data containers including embedding, attribute and result containers
+- `utils`: Contains sampler, switcher
+- `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
+
+
+#### Roadmap
+- inference
+- analysis
+- front-end gui
 
 ## ISSUES
 - Pushed embeddings are more than container size.
