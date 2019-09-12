@@ -93,6 +93,7 @@ class ConfigParserStandardFields:
 class ConfigStandardFields:
     """Items for Evaluation Configuration"""
 
+    # === Evaluation Configs ===
     # Key of database
     database = 'database'
 
@@ -130,6 +131,10 @@ class ConfigStandardFields:
     # Following two are deprecated
     embedding_size = 'embedding_size'
     prob_size = 'prob_size'
+
+    # === Inference Configs ===
+    embedding_container_capacity = 'embedding_container_capacity'
+    extractor_settings = 'extractor_settings'
 
 
 class ApplicationStatusStandardFields:
