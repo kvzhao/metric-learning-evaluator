@@ -344,7 +344,6 @@ class EmbeddingContainer(object):
         if self._probability_size == 0:
             return np.asarray([])
         if not (type(label_ids) is int or type(label_ids) is list):
-            raise ValueError('instance_ids should be int or list.')
             if isinstance(label_ids, (np.ndarray, np.generic)):
                 label_ids = label_ids.tolist()
             else:
@@ -456,23 +455,6 @@ class EmbeddingContainer(object):
     def attributes(self):
         """Return list of attr_dict of each instances"""
         return self._fetch_attributes()
-
-    @property
-    def labelmap(self):
-        # TODO: @kv Deprecate this
-        # id to name
-        if self.label_names and self.label_ids:
-            labelmap = {}
-            for _name, _id in zip(self.label_names, self.label_ids):
-                if _name not in labelmap:
-                    labelmap[_id] = _name
-                else:
-                    if labelmap[_id] != _name:
-                        # or just print
-                        raise ValueError('label name:{} (!={}) is not consistent for id:{}!'.format(
-                            _name, labelmap[_name], _id))
-            return labelmap
-        return {}
 
     @property
     def has_index(self):
