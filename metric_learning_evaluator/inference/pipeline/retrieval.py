@@ -1,6 +1,7 @@
 """Image Retrieval
      - Detector
      - Feature Extractor
+     - Index Agent
 """
 
 import os
@@ -25,8 +26,7 @@ from metric_learning_evaluator.inference.utils.read_json_labelmap import read_js
 from metric_learning_evaluator.index.utils import indexing_array
 from metric_learning_evaluator.index.utils import euclidean_distance
 # use index agent instead
-from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
-from metric_learning_evaluator.index.np_agent import NumpyAgent
+from metric_learning_evaluator.index.agent import IndexAgent
 
 from metric_learning_evaluator.core.standard_fields import DetectorStandardFields
 
@@ -43,9 +43,10 @@ class ImageRetrievalStandardFields:
 config_fields = ImageRetrievalStandardFields
 detector_fields = DetectorStandardFields
 
+
 class ImageRetrieval(object):
     """Retrieval
-        - Input: an image with 3d channels
+        - Input: an single image with 3d channels
         - Output: an ImageObject describes the image and instances.
       TODO: Change the initialization procedure
     """
@@ -72,65 +73,43 @@ class ImageRetrieval(object):
         extractor_image_size = extractor_settings[config_fields.image_size]
         self._extractor_image_size = extractor_image_size
 
+        # TODO: Choose model type?
         self._detector = Detector(
             pb_model_path=detector_model_path,
             labelmap_path=detector_labelmap_path,
             num_classes=detector_num_classes)
-        
+
         self._extractor = FeatureExtractor(
             pb_model_path=extractor_model_path,
             resize=extractor_image_size)
 
         self._search_database_path = extractor_settings[
             config_fields.database_path]
+        if self._search_database_path and not os.path.exists(self._search_database_path):
+            self._search_database_path = None
 
-        """
-          Label Map
-        """
+        """Label Map"""
         label_map_path = self._configs[config_fields.labelmap_path]
         if label_map_path is not None:
             self._labelmap = read_json_labelmap(label_map_path)
         else:
             self._labelmap = {}
-        
-        """
-          For current version, use naive numpy array as search db.
-        """
+
+        self._agent = None
+        self._container = None
         if self._search_database_path is not None:
-            self._feature_object = FeatureObject()
-            self._feature_object.load(self._search_database_path)
-            self._database_features = np.squeeze(self._feature_object.embeddings)
-            self._database_label_names = self._feature_object.label_names
-            self._database_label_ids = self._feature_object.label_ids
-            # TODO @kv: Push embeddings into container, then init the index agent.
+            self._container = EmbeddingContainer(name='anchor_database')
+            self._container.load(self._search_database_path)
+            self._agent = IndexAgent(agent_type='HNSW',
+                                     instance_ids=self._container.instance_ids,
+                                     embeddings=self._container.embeddings)
 
-
-    def _search(self, feature):
-        """
-          NOTE: How to manage search strategy?
-          NOTE: We can use index agent here.
-          # TODO @kv: Reranking Strategy may be here.
-        """
-        pass
-
-    def _naive_search(self, query_feature, top_k=5):
-        """
-          We can also use db_agent
-        """
-
-        distances = euclidean_distance(query_feature, self._database_features)
-
-        sorted_database_label_names = indexing_array(distances, self._database_label_names)
-        sorted_database_label_ids = indexing_array(distances, self._database_label_ids)
-
-        return sorted_database_label_names[:top_k], sorted_database_label_ids[:top_k]
-
-    def _forward(self, raw_images):
-        """Batch forward inference
-          Args:
-            raw_images: 3D or 4D ndarray
-        """
-        pass
+    def _search(self, feature, top_k=10):
+        _ids, _ = self._agent.search(feature, top_k)
+        _ids = np.squeeze(_ids)
+        retrieved_label_ids = self._container.get_label_by_instance_ids(_ids)
+        retrieved_label_names = self._container.get_label_name_by_instance_ids(_ids)
+        return retrieved_label_names, retrieved_label_ids
 
     def inference(self, image, image_id=None):
         """
@@ -160,20 +139,17 @@ class ImageRetrieval(object):
             inst_feat = self._extractor.extract_feature(inst_img)
             image_object.add_instance(self._instance_counts, formal_bbox, feature=inst_feat)
 
-            # Naive search
-            if self._search_database_path is not None:
-                searched_instance_names, searched_instance_labels = self._naive_search(inst_feat)
+            if not (self._container is None or self._agent is None):
+                searched_instance_names, searched_instance_labels = self._search(inst_feat)
 
                 image_object.update_instance(self._instance_counts,
-                    instance_label_id=searched_instance_labels[0],
-                    instance_label_name=searched_instance_names[0])
+                                             instance_label_id=searched_instance_labels[0],
+                                             instance_label_name=searched_instance_names[0])
             else:
                 image_object.update_instance(self._instance_counts,
-                    instance_label_id=0,
-                    instance_label_name='unknown_instance')
-
+                                             instance_label_id=0,
+                                             instance_label_name='unknown_instance')
             self._instance_counts += 1
-
         self._image_counts += 1
 
         return image_object
