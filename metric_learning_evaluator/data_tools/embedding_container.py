@@ -45,9 +45,7 @@ class EmbeddingContainer(object):
         - save
             save all data in container as the folder
         - load
-            load from folder
-        - load_pkl:
-            load from Cradle.EmbeddingDB .pkl format
+            load from folder or Cradle.EmbeddingDB .pkl format
         - from_embedding_container
             copy data from another embedding container (in memory)
         - from_cradle_embedding_db
@@ -62,6 +60,7 @@ class EmbeddingContainer(object):
       TODO @kv: Error-handling when current exceeds container_size when add
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO: Now, it is the branch to refactor the query interface
+      TODO: More flexible size reset.
       ==============================================================================================
     """
 
@@ -313,7 +312,6 @@ class EmbeddingContainer(object):
     def get_embedding_by_label_ids(self, label_ids):
         """Fetch batch of embedding vectors by given label ids."""
         if not (type(label_ids) is int or type(label_ids) is list):
-            raise ValueError('instance_ids should be int or list.')
             if isinstance(label_ids, (np.ndarray, np.generic)):
                 label_ids = label_ids.tolist()
             else:
@@ -824,6 +822,29 @@ class EmbeddingContainer(object):
             probabilities)
 
     def load(self, path):
+        """
+          Args:
+            path: path to EmbeddingContainer folder or .pkl
+          Raise:
+            - path does not exist
+            - given path is not folder nor .pkl
+            - given path can not be parsed
+        """
+        if not os.path.exists(path):
+            raise ValueError('Given path:{} does not exist')
+
+        if os.path.isdir(path):
+            print('Load embedding container from feat_obj format')
+            self._load_featobj(path)
+        elif os.path.isfile(path):
+            if not path.endswith('.pkl'):
+                raise ValueError('Given path:{} does not support')
+            print('Load embedding container from pickle format')
+            self._load_pkl(path)
+        else:
+            raise ValueError('Given path:{} does not support')
+
+    def _load_featobj(self, path):
         """Load embedding from disk"""
         # Create FeatureObject
         feature_importer = FeatureObject()
@@ -871,6 +892,9 @@ class EmbeddingContainer(object):
           Args:
             pkl_path: A string, path to the pickle file
         """
+        self._load_pkl(pkl_path)
+
+    def _load_pkl(self, pkl_path):
         with open(pkl_path, 'rb') as pkl_file:
             db_data = pickle.load(pkl_file)
 
