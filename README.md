@@ -72,7 +72,7 @@ Two kinds of input are supported
         |   `-- 20190810-124041_653.JPG
   ```
 - csv
-  - 
+  - column name convention
   ```
   image_path,instance_id,label_id,label_name,type,seen_or_unseen,source
   /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00002515.jpg,2515,1,An-donuts,bread,unseen,Fuko
@@ -90,8 +90,6 @@ Execution command
                -od <output_folder_path>
 ```
 - dt (data_type) can be `csv` or `folder`
-
-
 
 
 Source: [hnswlib](https://github.com/nmslib/hnswlib)
@@ -155,7 +153,7 @@ ml_evaluator -c eval_config.yml -dd extracted_embeddings_facenet-centerloss-batc
 NOTE: Off-line mode not fully supported now.
 
 
-## System Architecture Overview
+## System Overview
 
 [Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
 
@@ -177,8 +175,42 @@ NOTE: Off-line mode not fully supported now.
 - `utils`: Contains sampler, switcher
 - `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
 
+### Supported Data Format
 
-#### Roadmap
+#### Label map
+Save in json, with two layers structure (dict of dict)
+```
+  {
+    "": {
+    }
+  }
+```
+
+#### Attribute table
+Save in csv format, with 4 must have column names:
+```
+```
+
+#### Data CSV
+
+#### EmbeddingContainer & EmbeddingDB
+- EmbeddingContainer: The container is fully supported in evaluation system
+- EmbeddingDB: `metric_learning_evaluator` provides seamless conversion methods to Cradle EmbeddingDB if it follows several convention
+
+##### EmbeddingContainer
+
+##### EmbeddingDB
+Several keywords should be provided in `meta_dict`
+```python
+meta_dict = {
+  'instance_ids'  : [],
+  'label_ids'     : [],
+  'label_names'   : [],
+}
+```
+
+
+### Roadmap
 - inference
 - analysis
 - front-end gui
