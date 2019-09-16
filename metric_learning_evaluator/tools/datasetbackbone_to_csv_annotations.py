@@ -1,5 +1,5 @@
 """
-  Dump annotations and attribute to a csv file.
+  Export image information & attribute to a csv file.
 """
 
 import os
@@ -15,15 +15,15 @@ def main(args):
     src_db_path = args.data_dir
     labelmap_path = args.labelmap
     src_db = DatasetBackbone(src_db_path)
-    labelmap = json.load(open(labelmap_path, 'r'))
+    if labelmap_path:
+        labelmap = json.load(open(labelmap_path, 'r'))
+    else:
+        labelmap = None
+
     all_categories = src_db.query_all_category_names()
 
-    instance_ids = []
-    label_ids = []
-    label_names = []
-    image_paths = []
-    img_widths = []
-    img_heights = []
+    instance_ids, label_ids, label_names,  = [], [], []
+    image_paths, img_widths, img_heights = [], [], []
 
     for category_name in tqdm(all_categories):
         annotations = src_db.query_anno_info_by_category_name(category_name)
@@ -37,12 +37,18 @@ def main(args):
                 print("Skip id:{} item: which has no label name".format(inst_id))
                 continue
             img_info = src_db.query_img_info_by_filename(anno['filename'])[0]
-            label_name = labelmap[label_name]['label_name']
-            label_id = labelmap[label_name]['label_int']
+
+            if labelmap:
+                label_name = labelmap[label_name]['label_name']
+                label_id = labelmap[label_name]['label_int']
+            else:
+                label_name = category_name
+                label_id = anno['cate_id']
+
             filename = anno['filename']
-            width = img_info['w']
-            height = img_info['h']
+            width, height = img_info['w'], img_widths['h']
             image_path = src_db.query_img_abspath_by_filename(filename)[0]
+
             # push
             instance_ids.append(inst_id)
             label_ids.append(label_id)
@@ -50,6 +56,7 @@ def main(args):
             image_paths.append(image_path)
             img_widths.append(width)
             img_heights.append(height)
+
     data_dict = {
         'instance_id': instance_ids,
         'label_id': label_ids,
