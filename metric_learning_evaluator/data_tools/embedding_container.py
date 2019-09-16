@@ -61,6 +61,7 @@ class EmbeddingContainer(object):
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
       TODO: Now, it is the branch to refactor the query interface
       TODO: More flexible size reset.
+      TODO: Add bounding box
       ==============================================================================================
     """
 
