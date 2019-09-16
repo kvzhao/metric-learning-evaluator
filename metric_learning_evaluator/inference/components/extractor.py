@@ -29,12 +29,12 @@ class FeatureExtractor(FeatureExtractorBase):
         # load graph
         self.graph = tf.Graph()
         with self.graph.as_default():
-            od_graph_def = tf.GraphDef()
-
+            config = tf.ConfigProto(allow_soft_placement=True)
+            config.gpu_options.per_process_gpu_memory_fraction = 0.3
             self.sess = tf.Session(graph=self.graph)
             tf.saved_model.loader.load(self.sess,
-                                      [tf.saved_model.tag_constants.SERVING],
-                                      self._pb_model_path)
+                                       [tf.saved_model.tag_constants.SERVING],
+                                       self._pb_model_path)
             # get tensor
             try:
                 self.images_placeholder =\

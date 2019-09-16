@@ -1,6 +1,3 @@
-
-
-
 import os
 import sys
 sys.path.insert(0, os.path.abspath(
@@ -15,7 +12,7 @@ from metric_learning_evaluator.inference.utils import label_map_util
 from metric_learning_evaluator.inference.utils.image_utils import bbox_ratio_to_xywh
 from metric_learning_evaluator.inference.utils.image_utils import bbox_xywh_to_corner_format
 from metric_learning_evaluator.inference.components.detector_base import DetectorBase
-from metric_learning_evaluator.inference.components.detector_base import DetectorStandardFields
+from metric_learning_evaluator.core.standard_fields import DetectorStandardFields
 detector_fields = DetectorStandardFields
 
 class Detector(DetectorBase):

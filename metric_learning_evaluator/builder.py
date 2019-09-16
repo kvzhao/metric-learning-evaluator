@@ -160,7 +160,7 @@ class EvaluatorBuilder(object):
         if self.query_interface:
             queried_attributes = self.query_interface.query(instance_id)
             self.embedding_container.add(instance_id, label_id,
-                                         embedding, probability, attributes=queried_attributes)
+                                         embedding, probability, attribute=queried_attributes)
         else:
             self.embedding_container.add(instance_id, label_id, embedding, probability)
 

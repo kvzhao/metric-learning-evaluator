@@ -27,29 +27,41 @@ from metric_learning_evaluator.query.csv_reader import CsvReader
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
-from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
 from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
+from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
 from metric_learning_evaluator.core.standard_fields import EmbeddingContainerStandardFields as container_fields
 
 
 class EmbeddingContainer(object):
     """The Data Container for Embeddings & Probabilities
+      Minimum requirements:
+        - instance_id, embedding, label_id
 
-      Container operanios:
-        - add: an unique interface for adding datum into container
-        - clear: clear the internal buffer
-        - save:
-        - load:
-        - load_pkl:
+      Container operations:
+        - add
+            an unique interface for adding datum into container
+        - clear
+            clear the internal buffer
+        - save
+            save all data in container as the folder
+        - load
+            load from folder or Cradle.EmbeddingDB .pkl format
+        - from_embedding_container
+            copy data from another embedding container (in memory)
+        - from_cradle_embedding_db
+            copy data from cradle.data_container.embedding_db (in memory)
 
       Query methods:
+
 
       = NOTE =======================================================================================
       NOTE: We CAN NOT confirm the orderness of logits & embedding consistent with instance_ids.
       TODO @kv: Use pandas dataframe as for query
-      TODO @kv: Error-handling when current exceeds container_size
+      TODO @kv: Error-handling when current exceeds container_size when add
       TODO @kv: instance_id can be `int` or `filename`, this is ambiguous
-      TODO @kv: smooth clear
+      TODO: Now, it is the branch to refactor the query interface
+      TODO: More flexible size reset.
+      TODO: Add bounding box
       ==============================================================================================
     """
 
@@ -72,21 +84,25 @@ class EmbeddingContainer(object):
         assert embedding_size >= 0, 'embedding_size must larger than 0'
         assert container_size >= 0, 'container_size must larger than 0'
         assert probability_size >= 0, 'probability_size must larger than or equal to 0'
-        self._embedding_size = embedding_size
-        self._probability_size = probability_size
-        self._container_size = container_size
+
+        # Create internal names
+        self._embedding_size = None
+        self._probability_size = None
+        self._container_size = None
         self._embeddings = None
         self._probabilities = None
+        self._name = None
         self._index_df = None
-        self._name = name
-
-        self._init_internals()
-        self._init_arrays(self._container_size,
-                          self._embedding_size,
-                          self._probability_size)
-
         self._attribute_table = AttributeTable()
+        self._interpreter = None
+
+        self._re_init(
+            container_size=container_size,
+            embedding_size=embedding_size,
+            probability_size=probability_size,
+            name=name)
         self._interpreter = Interpreter()
+        print('Container:{} created'.format(self._name))
 
     def __repr__(self):
         _content = '=' * 15 + ' {} '.format(self._name) + '=' * 15 + '\n'
@@ -94,17 +110,34 @@ class EmbeddingContainer(object):
         if self._probabilities is not None:
             _content += 'probabilities: ({}, {})\n'.format(self.counts, self.probability_size)
         _content += 'internals: '
+        if self._instance_ids:
+            _content += 'instance_ids, '
         if self._label_ids:
             _content += 'label_ids, '
         if self._label_names:
             _content += 'label_names, '
         if self._filename_strings:
-            _content += 'filename_strings, '
+            _content += 'filename_strings'
         if self.attributes:
-            _content += '\nattributes: {}'.format(', '.join(self.attributes))
+            _content += '\nattributes: {}'.format(', '.join(self.attribute_keys))
         _content += '\n'
         _content += '=' * 50 + '\n'
         return _content
+
+    def _re_init(self,
+                 container_size,
+                 embedding_size,
+                 probability_size,
+                 name):
+        self._container_size = container_size
+        self._embedding_size = embedding_size
+        self._probability_size = probability_size
+        self._name = name
+        self._init_internals()
+        self._init_arrays(self._container_size,
+                          self._embedding_size,
+                          self._probability_size)
+        self._attribute_table.clear()
 
     def _init_internals(self):
         """Internals & Indexes
@@ -122,7 +155,10 @@ class EmbeddingContainer(object):
         self._init_index_buffer()
 
     def _init_index_buffer(self):
-        """Initialize Indexes"""
+        """Initialize Indexes
+
+          TODO: Now, it's time to change.
+        """
         # maps index used in numpy array and instance_id list
         self._index_by_instance_id = {}
         self._label_by_instance_id = {}
@@ -130,8 +166,11 @@ class EmbeddingContainer(object):
         # instance_ids with same attribute
         # attribute-id mapping, shallow key-value pair
         self._instance_id_by_label = defaultdict(list)
-        self._instance_by_attribute = {}
+        self._instance_by_attribute_key = {}
+        self._instance_by_attribute_value = {}
         self._attribute_by_instance = defaultdict(list)
+        self._attribute_keys = set()
+        self._attribute_values = set()
 
     def _fetch_internals(self):
         """Fetch the dictionary of internal lists"""
@@ -172,8 +211,9 @@ class EmbeddingContainer(object):
                                             self._probability_size), dtype=np.float32)
         self._current = 0
 
+    # TODO: Reconsider signature of the unique interface
     def add(self, instance_id, label_id, embedding,
-            probability=None, attributes=None, label_name=None, filename=None):
+            probability=None, attribute=None, label_name=None, filename=None):
         """Add datum interface for instance_id, label_id and embeddings.
 
           Args:
@@ -185,14 +225,16 @@ class EmbeddingContainer(object):
                 One dimensional embedding vector with size less than self._embedding_size.
             probability: 1D numpy array,
                 One dimensional vector which records class-wise scores.
-            attributes: A dictionary with attribute_name: attribute_value
-            label_name: String
+            attribute: A dictionary,
+                 With key is attribute_name and value is attribute_value
+            label_name: string
                 Human-realizable content of given label_id
-            filename: String
+            filename: string
                 The filename or filepath to the given instance_id.
           NOTICE:
             This should be the only interface data are added into container.
         """
+        # TODO: change this code
         try:
             label_id = int(label_id)
             instance_id = int(instance_id)
@@ -216,15 +258,21 @@ class EmbeddingContainer(object):
         if probability is not None:
             self._probabilities[self._current, ...] = probability
 
-        if attributes is not None and attributes:
-            self._attribute_by_instance[instance_id] = attributes
-            if not isinstance(attributes, dict):
-                print('WARNING: given attributes must be a dictionary.')
-            self._attribute_table.add(instance_id, attributes)
-            for attr_name, attr_value in attributes.items():
-                if attr_value not in self._instance_by_attribute:
-                    self._instance_by_attribute[attr_value] = []
-                self._instance_by_attribute[attr_value].append(instance_id)
+        # TODO: All attributes push to AttributeTable or Not use at all
+        if attribute is not None and attribute:
+            self._attribute_by_instance[instance_id] = attribute
+            if not isinstance(attribute, dict):
+                raise ValueError('Given attributes must be a dictionary.')
+            self._attribute_table.add(instance_id, attribute)
+            for attr_name, attr_value in attribute.items():
+                if attr_name not in self._instance_by_attribute_key:
+                    self._instance_by_attribute_key[attr_name] = []
+                if attr_value not in self._instance_by_attribute_value:
+                    self._instance_by_attribute_value[attr_value] = []
+                self._instance_by_attribute_key[attr_name].append(instance_id)
+                self._instance_by_attribute_value[attr_value].append(instance_id)
+                self._attribute_keys.add(attr_name)
+                self._attribute_values.add(attr_value)
 
         self._index_by_instance_id[instance_id] = self._current
         self._label_by_instance_id[instance_id] = label_id
@@ -265,7 +313,6 @@ class EmbeddingContainer(object):
     def get_embedding_by_label_ids(self, label_ids):
         """Fetch batch of embedding vectors by given label ids."""
         if not (type(label_ids) is int or type(label_ids) is list):
-            raise ValueError('instance_ids should be int or list.')
             if isinstance(label_ids, (np.ndarray, np.generic)):
                 label_ids = label_ids.tolist()
             else:
@@ -298,7 +345,6 @@ class EmbeddingContainer(object):
         if self._probability_size == 0:
             return np.asarray([])
         if not (type(label_ids) is int or type(label_ids) is list):
-            raise ValueError('instance_ids should be int or list.')
             if isinstance(label_ids, (np.ndarray, np.generic)):
                 label_ids = label_ids.tolist()
             else:
@@ -387,16 +433,8 @@ class EmbeddingContainer(object):
         return self._instance_ids
 
     @property
-    def attributes(self):
-        return list(self._instance_by_attribute.keys())
-
-    @property
     def label_ids(self):
         return self._label_ids
-
-    @property
-    def label_id_set(self):
-        return list(set(self.label_ids))
 
     @property
     def label_names(self):
@@ -407,24 +445,17 @@ class EmbeddingContainer(object):
         return self._filename_strings
 
     @property
-    def label_name_set(self):
-        return list(set(self.label_names))
+    def attribute_keys(self):
+        return list(self._attribute_keys)
 
     @property
-    def labelmap(self):
-        # id to name
-        if self.label_names and self.label_ids:
-            labelmap = {}
-            for _name, _id in zip(self.label_names, self.label_ids):
-                if _name not in labelmap:
-                    labelmap[_id] = _name
-                else:
-                    if labelmap[_id] != _name:
-                        # or just print
-                        raise ValueError('label name:{} (!={}) is not consistent for id:{}!'.format(
-                            _name, labelmap[_name], _id))
-            return labelmap
-        return {}
+    def attribute_values(self):
+        return list(self._attribute_values)
+
+    @property
+    def attributes(self):
+        """Return list of attr_dict of each instances"""
+        return self._fetch_attributes()
 
     @property
     def has_index(self):
@@ -473,16 +504,63 @@ class EmbeddingContainer(object):
     def name(self):
         return self._name
 
+    @property
+    def empty(self):
+        """Boolean if empty"""
+        return self.counts == 0
+
+    def reset(self,
+              container_size,
+              embedding_size,
+              probability_size,
+              name=None):
+        """Reset
+         Note: Use previous values if sanity does not pass
+        """
+        # TODO: Info backup
+        origin_container_size = self._container_size
+        origin_emb_size = self._embedding_size
+        origin_prob_size = self._probability_size
+        origin_name = self._name
+
+        # TODO: Sanity check
+        if container_size > 0:
+            if container_size != origin_container_size:
+                print('container size: {} -> {}'.format(origin_container_size, container_size))
+        else:
+            print('Ignore nonsense size')
+
+        if embedding_size < 0:
+            embedding_size = self._embedding_size
+        elif embedding_size != origin_emb_size:
+                print('embedding size: {} -> {}'.format(origin_emb_size, embedding_size))
+
+        if probability_size < 0:
+            probability_size = self._probability_size
+        elif probability_size != origin_prob_size:
+                print('probability size: {} -> {}'.format(origin_prob_size, probability_size))
+
+        if name is None:
+            name = origin_name
+        else:
+            if name != origin_name:
+                print('name: {} -> {}'.format(origin_name, name))
+
+        self._re_init(
+            container_size=container_size,
+            embedding_size=embedding_size,
+            probability_size=probability_size,
+            name=name)
+
+        print('Reset {}'.format(self._name))
+
     def clear(self):
-        # clear dictionaries
-        self._init_internals()
-        self._init_arrays(self._container_size,
-                          self._embedding_size,
-                          self._probability_size)
-        self._embeddings = None
-        self._probabilities = None
-        self._index_df = None
-        self._attribute_table.clear()
+        # clear and reallocate internals
+        self._re_init(
+            container_size=self._container_size,
+            embedding_size=self._embedding_size,
+            probability_size=self._probability_size,
+            name=self._name)
         print('Clear {}'.format(self._name))
 
     def save(self, path):
@@ -525,48 +603,136 @@ class EmbeddingContainer(object):
         self._index_df.to_csv(detail_table_path)
         print("Save detailed indexed into \'{}\'".format(detail_table_path))
 
-    def load(self, path):
-        """Load embedding from disk"""
-        # Create FeatureObject
-        feature_importer = FeatureObject()
-        feature_importer.load(path)
+    def from_embedding_container(self, another_container):
+        """Direct copy data from another embedding container
+          Args:
+            another_container: EmbeddingContainer
+        """
+        print('Copy data from container:{} to container:{}'.format(
+            another_container.name, self.name))
 
-        # type check
-        assert feature_importer.label_ids is None or feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
-        assert feature_importer.embeddings is None or feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
-        assert len(feature_importer.embeddings) == len(feature_importer.label_ids)
+        self._from_np_array(
+            instance_ids=another_container.instance_ids,
+            embeddings=another_container.embeddings,
+            label_ids=another_container.label_ids,
+            label_names=another_container.label_names,
+            filename_strings=another_container.filename_strings,
+            attributes=another_container.attributes)
 
-        container_size = n_instances = len(feature_importer.label_ids)
-        embedding_size = feature_importer.embeddings.shape[1]
-        probability_size = feature_importer.probabilities.shape[1] if feature_importer.probabilities is not None else 0
+    def from_cradle_embedding_db(self, embedding_db):
+        """
+          Args:
+            embedding_db: Cradle embedding db
+                (from cradle.data_container.embedding_db import EmbeddingDB)
+        """
+        print('Copy data from embedding_db to container:{}'.format(self.name))
 
-        self._init_internals()
-        self._init_arrays(container_size,
-                          embedding_size,
-                          probability_size)
+        embeddings = embedding_db.embeddings
+        if not isinstance(embeddings, (np.ndarray, np.generic)):
+            embeddings = np.asarray(embeddings, np.float32)
+        assert len(embeddings.shape) == 2, 'Embeddings should be 2D np array'
 
-        # Give sequential instance_ids if not specified
-        if feature_importer.instance_ids is None or feature_importer.instance_ids.size == 0:
-            instance_ids = np.arange(n_instances)
-        else:
-            assert len(feature_importer.instance_ids) == n_instances
-            instance_ids = feature_importer.instance_ids
+        meta_dict = embedding_db.meta_dict
+        assert meta_dict is not None, 'embedding db contains no meta data'
 
-        label_names = feature_importer.label_names
-        filename_strings = feature_importer.filename_strings
-        probabilities = feature_importer.probabilities
+        self._from_cradle_internals(embeddings, meta_dict)
 
-        # Create AttributeTable
-        csv_file_path = os.path.join(path, 'attribute_table.csv')
-        csv_reader = None
-        if not os.path.exists(csv_file_path):
-            print('NOTICE: {} contains no attribute table'.format(csv_file_path))
-        else:
-            csv_reader = CsvReader({'path': csv_file_path})
+        print('Container initialized from given EmbeddingDB')
 
-        for idx, instance_id in enumerate(instance_ids):
-            label_id = feature_importer.label_ids[idx]
-            embedding = feature_importer.embeddings[idx]
+    def _from_np_array(self,
+                       instance_ids,
+                       embeddings,
+                       label_ids,
+                       filename_strings=None,
+                       label_names=None,
+                       attributes=None,
+                       probabilities=None,
+                       ):
+        """Add given arrays.
+          Args:
+            instance_ids: np array with shape(N,)
+            embeddings: np array with shape (N, D)
+            label_ids: np array with shape (N,)
+            filename_strings: (option)
+            label_names: (option)
+            attributes: (option) List of dict
+            probabilities: (option) np array with shape (N, #of classes)
+          Note:
+            - clear or reset container according to given arrays
+          Raises:
+            - embeddings are not 2D array
+            - # of embeddings not consistent with instance_ids
+            - # of label_ids not consistent with instance_ids
+            - # of label_names not consistent with instance_ids
+            - # of filename_strings not consistent with instance_ids
+            - # of attributes not consistent with instance_ids
+        """
+        # check internal size & loaded size
+        need_clear = False
+        need_reset = False
+        if not isinstance(instance_ids, np.ndarray):
+            instance_ids = np.asarray(instance_ids)
+        if not isinstance(embeddings, np.ndarray):
+            embeddings = np.asarray(embeddings)
+        if not isinstance(label_ids, np.ndarray):
+            label_ids = np.asarray(label_ids)
+        if len(embeddings.shape) != 2:
+            raise ValueError('Embedding shape should be 2D (N, d)')
+
+        if label_names is not None and not isinstance(label_names, np.ndarray):
+            label_names = np.asarray(label_names)
+
+        # check dimension
+        total_amount = instance_ids.shape[0]
+        emb_num, emb_size = embeddings.shape
+
+        if emb_num != total_amount:
+            raise ValueError('#of Instance does not match #of Embeddings, {} != {}'.format(
+                total_amount, emb_num))
+
+        if label_ids.shape[0] != total_amount:
+            raise ValueError('#of Instance does not match #of Label ids, {} != {}'.format(
+                total_amount, label_ids.shape[0]))
+
+        if label_names is not None and label_names.shape[0] != total_amount:
+            raise ValueError('#of Instance does not match #of Label names, {} != {}'.format(
+                total_amount, label_names.shape[0]))
+
+        if attributes is not None and len(attributes) != total_amount:
+            raise ValueError('#of Instance does not match #of Label names, {} != {}'.format(
+                total_amount, len(attributes)))
+
+        prob_size = 0
+        if probabilities is not None:
+            if not isinstance(probabilities, np.ndarray):
+                probabilities = np.asarray(probabilities)
+            prob_num, prob_size = probabilities.shape
+
+            if prob_num != total_amount:
+                raise ValueError('#of Instance does not match #of Probabilities, {} != {}'.format(
+                    total_amount, prob_num))
+
+        # TODO: Check three of them should be consistent
+        if not self.empty:
+            need_clear = True
+        if emb_num > self._container_size:
+            need_reset = True
+        if emb_size > self._embedding_size:
+            need_reset = True
+
+        # reset or clear
+        if need_reset:
+            self.reset(
+                container_size=total_amount,
+                embedding_size=emb_size,
+                probability_size=prob_size)
+        elif need_clear:
+            self.clear()
+
+        for idx in range(total_amount):
+            instance_id = instance_ids[idx]
+            label_id = label_ids[idx]
+            embedding = embeddings[idx]
 
             label_name = None
             if label_names is not None:
@@ -580,17 +746,127 @@ class EmbeddingContainer(object):
             if probabilities is not None:
                 probability = probabilities[idx]
 
-            attributes = None
-            if csv_reader is not None:
-                attributes = csv_reader.query_attributes_by_instance_id(instance_id)
+            attr_dict = None
+            if attributes is not None:
+                attr_dict = attributes[idx]
 
             self.add(instance_id=instance_id,
                      label_id=label_id,
                      label_name=label_name,
                      embedding=embedding,
                      probability=probability,
-                     attributes=attributes,
+                     attribute=attr_dict,
                      filename=filename)
+
+    def _from_cradle_internals(self, embeddings, meta_dict):
+
+        probabilities = None
+        if container_fields.probabilities in meta_dict:
+            probabilities = meta_dict[container_fields.probabilities]
+
+        assert container_fields.label_ids in meta_dict, 'Label ids must be provided in meta_dict'
+
+        extra_keys = [k for k in meta_dict.keys()
+                      if k not in [container_fields.label_names,
+                                   container_fields.instance_ids,
+                                   container_fields.label_ids,
+                                   container_fields.filename_strings]]
+
+        if container_fields.instance_ids in meta_dict:
+            instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
+        else:
+            # Use pseudo instance ids instead
+            instance_ids = np.arange(embeddings.shape[0])
+        label_ids = np.squeeze(meta_dict[container_fields.label_ids])
+        filename_strings, label_names = None, None
+
+        if container_fields.label_names in meta_dict:
+            label_names = np.squeeze(meta_dict[container_fields.label_names])
+
+        if container_fields.filename_strings in meta_dict:
+            filename_strings = np.squeeze(meta_dict[container_fields.filename_strings])
+
+        attributes = []
+        for idx in range(len(instance_ids)):
+            attr_dict = {}
+            for k in extra_keys:
+                attr_dict[k] = meta_dict[k][idx][0]
+            attributes.append(attr_dict)
+        if not attributes:
+            attributes = None
+
+        self._from_np_array(
+            instance_ids,
+            embeddings,
+            label_ids,
+            filename_strings,
+            label_names,
+            attributes,
+            probabilities)
+
+    def load(self, path):
+        """
+          Args:
+            path: path to EmbeddingContainer folder or .pkl
+          Raise:
+            - path does not exist
+            - given path is not folder nor .pkl
+            - given path can not be parsed
+        """
+        if not os.path.exists(path):
+            raise ValueError('Given path:{} does not exist')
+
+        if os.path.isdir(path):
+            print('Load embedding container from feat_obj format')
+            self._load_featobj(path)
+        elif os.path.isfile(path):
+            if not path.endswith('.pkl'):
+                raise ValueError('Given path:{} does not support')
+            print('Load embedding container from pickle format')
+            self._load_pkl(path)
+        else:
+            raise ValueError('Given path:{} does not support')
+
+    def _load_featobj(self, path):
+        """Load embedding from disk"""
+        # Create FeatureObject
+        feature_importer = FeatureObject()
+        feature_importer.load(path)
+
+        # type check
+        assert feature_importer.label_ids is None or feature_importer.label_ids.size > 0, 'label_ids cannot be empty'
+        assert feature_importer.embeddings is None or feature_importer.embeddings.size > 0, 'embeddings cannot be empty'
+
+        # Give sequential instance_ids if not specified
+        if feature_importer.instance_ids is None or feature_importer.instance_ids.size == 0:
+            instance_ids = np.arange(feature_importer.embeddings.shape[0])
+        else:
+            instance_ids = feature_importer.instance_ids
+
+        embeddings = feature_importer.embeddings
+        label_ids = feature_importer.label_ids
+        label_names = feature_importer.label_names
+        filename_strings = feature_importer.filename_strings
+        probabilities = feature_importer.probabilities
+
+        # Create AttributeTable
+        attributes = None
+        csv_file_path = os.path.join(path, 'attribute_table.csv')
+        if not os.path.exists(csv_file_path):
+            print('NOTICE: {} contains no attribute table'.format(csv_file_path))
+        else:
+            csv_reader = CsvReader({'path': csv_file_path})
+            attributes = [csv_reader.query_attributes_by_instance_id(idx) for idx in instance_ids]
+
+        self._from_np_array(
+            instance_ids=instance_ids,
+            embeddings=embeddings,
+            label_ids=label_ids,
+            label_names=label_names,
+            filename_strings=filename_strings,
+            probabilities=probabilities,
+            attributes=attributes)
+
         print('Container initialized.')
 
     def load_pkl(self, pkl_path):
@@ -599,6 +875,9 @@ class EmbeddingContainer(object):
           Args:
             pkl_path: A string, path to the pickle file
         """
+        self._load_pkl(pkl_path)
+
+    def _load_pkl(self, pkl_path):
         with open(pkl_path, 'rb') as pkl_file:
             db_data = pickle.load(pkl_file)
 
@@ -611,71 +890,30 @@ class EmbeddingContainer(object):
         if not isinstance(embeddings, (np.ndarray, np.generic)):
             embeddings = np.asarray(embeddings, np.float32)
         assert len(embeddings.shape) == 2, 'Embeddings should be 2D np array'
-        container_size, embedding_size = embeddings.shape
-        probability_size = 0
-        self._init_internals()
-        self._init_arrays(container_size,
-                          embedding_size,
-                          probability_size)
 
         meta_dict = None
         if container_fields.meta in db_data:
             meta_dict = db_data[container_fields.meta]
         assert meta_dict is not None, '{} contains no meta data'.format(pkl_path)
-        assert container_fields.label_ids in meta_dict, 'Label ids cannot found in meta_dict'
 
-        extra_keys = [k for k in meta_dict.keys()
-                      if k not in [container_fields.label_names,
-                                   container_fields.instance_ids,
-                                   container_fields.label_ids,
-                                   container_fields.filename_strings]]
-        if container_fields.instance_ids in meta_dict:
-            instance_ids = np.squeeze(meta_dict[container_fields.instance_ids])
-        else:
-            instance_ids = np.arange(container_size)
-        label_ids = meta_dict[container_fields.label_ids]
-        filename_strings, label_names = None, None
-        if container_fields.label_names in meta_dict:
-            label_names = meta_dict[container_fields.label_names]
-        if container_fields.filename_strings in meta_dict:
-            filename_strings = meta_dict[container_fields.filename_strings]
+        self._from_cradle_internals(embeddings, meta_dict)
 
-        for idx, instance_id in enumerate(instance_ids):
-            label_id = label_ids[idx]
-            embedding = embeddings[idx]
+        print('Container initialized from pickle file.')
 
-            label_name = None
-            if label_names is not None:
-                label_name = label_names[idx][0]
-
-            filename = None
-            if filename_strings is not None:
-                filename = filename_strings[idx][0]
-
-            probability = None
-            attributes = {}
-            for k in extra_keys:
-                attributes[k] = meta_dict[k][idx][0]
-            self.add(instance_id=instance_id,
-                     label_id=label_id,
-                     label_name=label_name,
-                     embedding=embedding,
-                     probability=probability,
-                     attributes=attributes,
-                     filename=filename)
-        print('Container initialized.')
-
-    # Add new functions
-    def get_instance_id_by_attribute(self, attribute_name):
+    def get_instance_id_by_attribute_value(self, attr_value):
         """
           Args:
             attribute_name: string
           Return:
             instance_ids: list, empty if query can not be found
         """
-        if attribute_name in self._instance_by_attribute:
-            return self._instance_by_attribute[attribute_name]
+        # From raw lists, should we use dataframe?
+        if attr_value in self._instance_by_attribute_value:
+            return self._instance_by_attribute_value[attr_value]
         return []
+
+    def get_instance_id_by_attribute_value_2(self, attr_value):
+        pass
 
     def get_attribute_by_instance_id(self, instance_id):
         """
@@ -684,22 +922,48 @@ class EmbeddingContainer(object):
           Return:
             attributes: list, empty if query can not be found
         """
+        # Should we use dataframe?
         if instance_id in self._attribute_by_instance:
             return self._attribute_by_instance[instance_id]
         return []
 
-    def get_instance_id_by_group_command(self, command):
+    def get_instance_id_by_attribute(self, attr_key, attr_val):
+        """Base function for attribute query
+          Args:
+            attr_key: string
+            attr_val: string
+          Return:
+            results: list of int, instance_ids
+          NOTE:
+            Attribute is a dict
+            e.g. attr_dict = {
+                              'category_name': 'coffee',
+                              'supercategory_name': 'bottle'
+                              }
         """
+        if attr_key not in self.attribute_keys or attr_val not in self.attribute_values:
+            return []
+        df = self._attribute_table.DataFrame
+        # Key Value are given
+        return df[df[attr_key] == attr_val][container_fields.instance_ids].tolist()
+
+    def get_instance_id_by_group_command(self, command):
+        """The interface with command parsing
           Args:
             command: string of query command in defined format
                 command = 'A+B-C'
-                where A, B, C are attribute_name
+                where A, B, C are attribute_value
+                TODO: Use new formating
+                e.g. source.A + (source.B & type.seen)
           Return:
-            results: list of integer
+            results would be two types?
+                - list of integer
+                - list of list
+            NOTE: Or should we turn results into dict{cmd: ids}
           NOtE: Special commands:
             - all
-            (TODO)- all_class
-            (TODO)- all_attribute
+            (TODO) - all_class
+            (TODO) - all_attribute
         """
         # Special Cases
         if command == attr_field.All:
@@ -769,13 +1033,13 @@ class EmbeddingContainer(object):
         # push first variable
 
         attr_name = operand_names.pop()
-        instance_ids = self.get_instance_id_by_attribute(attr_name)
+        instance_ids = self.get_instance_id_by_attribute_value(attr_name)
         _put_variable_in_stack(attr_name, instance_ids)
 
         if len(op_list) == len(operand_names):
             for attr_name, op_symbol in zip(operand_names, op_list):
                 ###
-                instance_ids = self.get_instance_id_by_attribute(attr_name)
+                instance_ids = self.get_instance_id_by_attribute_value(attr_name)
                 _put_variable_in_stack(attr_name, instance_ids)
                 instruction = InstructionSymbolTable[op_symbol]
                 _put_command_in_stack(instruction)

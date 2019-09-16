@@ -48,12 +48,14 @@ class AttributeTable(object):
                 attr = attr_dict.get(attr_type, None)
                 dict_attributes[attr_type].append(attr)
         self._attribute_df = pd.DataFrame(dict_attributes)
-        # remove buffer indexes
-        self.clear()
 
     @property
     def has_index(self):
         return self._attribute_df is not None
+
+    @property
+    def attributes(self):
+        return self._attribute_buffer
 
     @property
     def DataFrame(self):
@@ -116,3 +118,4 @@ class AttributeTable(object):
 
     def clear(self):
         self._init_internals()
+        self._attribute_df = None
