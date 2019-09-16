@@ -46,7 +46,7 @@ def main(args):
                 label_id = anno['cate_id']
 
             filename = anno['filename']
-            width, height = img_info['w'], img_widths['h']
+            width, height = img_info['w'], img_info['h']
             image_path = src_db.query_img_abspath_by_filename(filename)[0]
 
             # push
