@@ -21,7 +21,7 @@ class DetectorBase(object):
         self._pb_model_path = pb_model_path
         self._labelmap_path = labelmap_path
         self._num_classes = num_classes
-        self._model_status = None 
+        self._model_status = None
         self._labelmap = None
 
     @abstractmethod
