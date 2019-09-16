@@ -146,6 +146,9 @@ def extraction_application(configs, args):
         except:
             pass
     elif data_type == 'folder':
+        # TODO: Not tested yet
+        image_filenames = load_file_from_folder(data_dir)
+    elif data_type == 'nested':
         # folder contains raw images
         image_filenames, label_names = load_file_from_structure_folder(data_dir)
         # TODO: Create label id itself

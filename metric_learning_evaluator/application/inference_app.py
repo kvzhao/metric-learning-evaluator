@@ -45,7 +45,7 @@ parser.add_argument('--database', '-db', type=str, default=None,
 parser.add_argument('--out_dir', '-od', type=str, default=None,
                     help='Path to the output dir for saving report.')
 parser.add_argument('--data_type', '-dt', type=str, default=None,
-                    help='Type of given `data_dir`: datasetbackbone | folder | csv')
+                    help='Type of given `data_dir`: datasetbackbone | folder | nested | csv')
 
 APP_SIGNATURE = '[INFERENCE]'
 COMMAND_OPERATION_MAPPING = {
