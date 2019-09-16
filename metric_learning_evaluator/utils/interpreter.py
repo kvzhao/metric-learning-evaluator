@@ -1,4 +1,5 @@
-"""Interpreter for General list operations
+"""Interpreter & Executor
+for General list operations
 
     Supported operations:
         +: Join
@@ -28,6 +29,13 @@ InstructionSymbolTable = {
 }
 
 
+def _split_cross_reference_command(command):
+    m = re.match(r'(.+)->(.+)', command)
+    source = m.group(1)
+    target = m.group(2)
+    return source, target
+
+
 def _split_command_by_operator(operation):
     """
       Split operations and operands
@@ -42,9 +50,10 @@ def _split_command_by_operator(operation):
     return operands, op_list
 
 
+# TODO: This object is NOT READY
 class CommandExecutor(object):
     """
-      Is it a Pandas Wrapper?
+        Combine executable codes & data
     """
     def __init__(self, dataframe):
         self._df = dataframe
@@ -53,7 +62,7 @@ class CommandExecutor(object):
         self._interpreter = Interpreter()
 
     def execute(self, command):
-        """
+        """Get results from given commands
           Args:
             command: string
                 One line of commands - group or cross reference
@@ -64,61 +73,86 @@ class CommandExecutor(object):
           NOTE
             push values in `what_to_execute` dict
         """
+        codes = self._command_to_executable_codes(command)
+        print(codes)
+        return {}
+
+    def _query_column(self, cmd):
         pass
 
+    def _query_key_value_command(self, key, val, return_column='instance_id'):
+        """
+          Args:
+            cmd: string, format = item_key.item_value
+        """
+        return self._df.query('{}==\'{}\''.format(key, val))[return_column].tolist()
 
-def command_to_executable_codes(single_line_command):
-    """
-      single_line_command format
-        - operands
-    """
-    executable_command = {
-        interpreter_field.instructions: [],
-        interpreter_field.values: [],
-        interpreter_field.names: [],
-    }
+    # TODO: down grade this level
+    def _command_to_executable_codes(self, single_line_command):
+        """
+        single_line_command format
+            - operands
+        """
+        executable_command = {
+            interpreter_field.instructions: [],
+            interpreter_field.values: [],
+            interpreter_field.names: [],
+        }
 
-    def _translate_command(operation):
-        """Two operators are legal: +, -"""
-        operation = operation.replace(' ', '')
-        operation = re.sub(r'[(){}]', '', operation)
-        op_list = re.split(r'\w', operation)
-        operands = re.split(r'\+|\-', operation)
-        op_list = [op for op in op_list if op in ['+', '-']]
-        return operands, op_list
+        def _translate_command(operation):
+            """Operators
+                Logic operation
+                TODO: reconsideration
+            """
+            operation = operation.replace(' ', '')
+            operation = re.sub(r'[(){}]', '', operation)
+            op_list = re.split(r'\w', operation)
+            operands = re.split(r'\+|\-|\&|\~', operation)
+            op_list = [op for op in op_list if op in ['+', '-', '&', '~']]
+            return operands, op_list
 
-    def _put_variable_in_stack(name, a_list):
-        nonlocal stack_pointer
-        executable_command[interpreter_field.instructions].append(
-            (interpreter_field.LOAD_LIST, stack_pointer))
-        executable_command[interpreter_field.instructions].append(
-            (interpreter_field.STORE_NAME, stack_pointer))
-        executable_command[interpreter_field.instructions].append(
-            (interpreter_field.LOAD_NAME, stack_pointer))
-        executable_command[interpreter_field.names].append(name)
-        executable_command[interpreter_field.values].append(a_list)
-        stack_pointer += 1
+        def _put_variable_in_stack(name, a_list):
+            nonlocal stack_pointer
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.LOAD_LIST, stack_pointer))
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.STORE_NAME, stack_pointer))
+            executable_command[interpreter_field.instructions].append(
+                (interpreter_field.LOAD_NAME, stack_pointer))
+            executable_command[interpreter_field.names].append(name)
+            executable_command[interpreter_field.values].append(a_list)
+            stack_pointer += 1
 
-    def _put_command_in_stack(operator):
-        executable_command[interpreter_field.instructions].append(
-            (operator, None))
+        def _put_command_in_stack(operator):
+            executable_command[interpreter_field.instructions].append(
+                (operator, None))
 
-    stack_pointer = 0
-    operand_names, op_list = _translate_command(single_line_command)
-    # push first variable
+        stack_pointer = 0
+        operand_names, op_list = _translate_command(single_line_command)
+        # push first variable
 
-    attr_name = operand_names.pop()
-    instance_ids = self.get_instance_id_by_attribute_value(attr_name)
-    _put_variable_in_stack(attr_name, instance_ids)
+        print(operand_names)
+        print(op_list)
 
-    if len(op_list) == len(operand_names):
-        for attr_name, op_symbol in zip(operand_names, op_list):
-            ###
-            instance_ids = self.get_instance_id_by_attribute_value(attr_name)
-            _put_variable_in_stack(attr_name, instance_ids)
-            instruction = InstructionSymbolTable[op_symbol]
-            _put_command_in_stack(instruction)
-    return executable_command
+        #operand = operand_names.pop()
+        # TODO: Classifiy case
+
+        # instance_ids = self.get_instance_id_by_attribute_value(attr_name)
+        # put data into stack
+        # instance_ids = self._query_key_value_command(operand)
+        # _put_variable_in_stack(operand, instance_ids)
+
+        # TODO: What these codes do?
+        if len(op_list) == len(operand_names):
+            for operand, op_symbol in zip(operand_names, op_list):
+                # instance_ids = self.get_instance_id_by_attribute_value(attr_name)
+                # TODO: Decouple key, value
+                k, v = operand.split('.')
+                instance_ids = self._query_key_value_command(k, v)
+                _put_variable_in_stack(operand, instance_ids)
+                instruction = InstructionSymbolTable[op_symbol]
+                _put_command_in_stack(instruction)
+        return executable_command
 
 
 class Interpreter(object):
