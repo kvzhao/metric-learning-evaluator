@@ -49,6 +49,7 @@ def retrieval_application(configs, args):
     data_type = args.data_type
 
     with_groundtruth = False
+    from_dataset_backbone = False
 
     input_filenames = None
     label_names = None
@@ -56,6 +57,7 @@ def retrieval_application(configs, args):
 
     if data_type == 'datasetbackbone':
         with_groundtruth = True
+        from_dataset_backbone = True
         src_db = DatasetBackbone(data_dir)
         filenames = src_db.query_all_img_filenames()
         input_filenames = src_db.query_img_abspath_by_filename(filenames)
@@ -75,7 +77,14 @@ def retrieval_application(configs, args):
         raise ValueError('data_type:{} not supported.'.format(data_type))
 
     if with_groundtruth and label_ids is None:
-        pass
+        # create labelmap and assign id for each
+        if from_dataset_backbone:
+            pass
+        else:
+            label_name_set = set(label_names)
+            labelmap = {name: index
+                        for index, name in enumerate(label_name_set)}
+            label_ids = [labelmap[name] for name in label_names]
 
     retrieval_module = ImageRetrieval(configs)
 
@@ -119,9 +128,13 @@ def retrieval_application(configs, args):
 
             if with_groundtruth:
                 if label_names is not None:
+                    origin_label_name = _instance[img_fields.instance_label_name]
                     _instance[img_fields.instance_label_name] = label_names[idx]
+                    print('update name {} -> {}'.format(origin_label_name, label_names[idx]))
                 if label_ids is not None:
+                    origin_label_id = _instance[img_fields.instance_label_id]
                     _instance[img_fields.instance_label_id] = label_ids[idx]
+                    print('update id {} -> {}'.format(origin_label_id, label_ids[idx]))
 
             _inst_label_name = _instance[img_fields.instance_label_name]
             _inst_label_id = _instance[img_fields.instance_label_id]
