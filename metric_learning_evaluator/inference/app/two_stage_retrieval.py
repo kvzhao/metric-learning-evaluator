@@ -42,8 +42,6 @@ from metric_learning_evaluator.core.standard_fields import ConfigStandardFields 
 
 
 def retrieval_application(configs, args):
-
-    # parse static configs
     # parse arguments
     data_dir = args.data_dir
     out_dir = args.out_dir
@@ -51,16 +49,12 @@ def retrieval_application(configs, args):
 
     with_groundtruth = False
     if data_type == 'datasetbackbone':
-    # if os.path.exists(join(data_dir, 'dataset_backbone.db')):
-        # If the input is datasetbackbone
-        # Should Not be necessary
         with_groundtruth = True
         src_db = DatasetBackbone(data_dir)
         filenames = src_db.query_all_img_filenames()
         input_filenames = src_db.query_img_abspath_by_filename(filenames)
         print('Load input data from datasetbackbone with {} images.'.format(len(input_filenames)))
     elif data_type == 'folder':
-        # input_filenames = [join(data_dir, f) for f in listdir(data_dir) if isfile(join(data_dir, f))]
         input_filenames = load_file_from_folder(data_dir)
     else:
         raise ValueError('data_type:{} not supported.'.format(data_type))
@@ -76,7 +70,6 @@ def retrieval_application(configs, args):
         print('Notice: out_dir is not give, save to {} in default.'.format(out_dir))
     dst_db = scutils.scdata.DatasetBackbone(out_dir)
 
-    # NOTE: Suppose the input is dataset backbone.
     # TODO: Remove this
     predicted_image_objects = []
 
