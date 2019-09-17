@@ -11,7 +11,6 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.embedding_container_merger import EmbeddingContainerMerger
 
 
 def main(args):
@@ -22,19 +21,19 @@ def main(args):
     name_data_2 = args.name_2
     output_dir = args.output_dir
 
-    qd_container = EmbeddingContainer(name=name_data_1)
-    qd_container.load(data_dir_1)
+    container = EmbeddingContainer(name=name_data_1)
+    container.load(data_dir_1)
 
     db_container = EmbeddingContainer(name=name_data_2)
     db_container.load(data_dir_2)
 
-    merger = EmbeddingContainerMerger(keyword)
-    merged = merger.merge([qd_container, db_container])
+    container.merge(db_container, merge_key=keyword)
+    db_container.clear()
 
-    print(merged)
-    print(merged.DataFrame)
+    print(container)
+    print(container.DataFrame)
 
-    merged.save(output_dir)
+    container.save(output_dir)
 
 
 if __name__ == '__main__':

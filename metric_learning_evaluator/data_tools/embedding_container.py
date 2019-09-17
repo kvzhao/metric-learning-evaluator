@@ -138,6 +138,7 @@ class EmbeddingContainer(object):
                           self._embedding_size,
                           self._probability_size)
         self._attribute_table.clear()
+        self._index_df = None
 
     def _init_internals(self):
         """Internals & Indexes
@@ -602,6 +603,57 @@ class EmbeddingContainer(object):
         detail_table_path = os.path.join(path, 'indexes.csv')
         self._index_df.to_csv(detail_table_path)
         print("Save detailed indexed into \'{}\'".format(detail_table_path))
+
+    def merge(self, another, merge_key='merge_type'):
+        """Merge another container into current one
+          Args:
+            another: EmbeddingContainer
+          Raises:
+            - If embedding size of two containers are not same
+            - If probability size of two containers are not same
+          Note: If current container is empty, call from_embedding_container.
+          Note: Consider call another.clear()
+        """
+        if self.empty:
+            self.from_embedding_container(another)
+        # get arrays from another
+        total = another.counts + self.counts
+        if self.embedding_size != another.embedding_size:
+            raise ValueError('Embedding size of containers should be the same, {} != {}'.format(
+                self.embedding_size, another.embedding_size))
+        if self.probabilities is not None and another.probabilities is not None:
+            if self.probability_size != another.probability_size:
+                raise ValueError('Probability size of containers should be the same, {} != {}'.format(
+                    self.probability_size, another.probability_size))
+
+        merged_embeddings = []
+        current_internals = self._fetch_internals()
+        current_attributes = self._fetch_attributes()
+        another_internals = another._fetch_internals()
+        another_attributes = another._fetch_attributes()
+
+        pseudo_instance_ids = [*range(total)]
+        merged_embeddings.extend(self.embeddings.tolist())
+        merged_embeddings.extend(another.embeddings.tolist())
+
+        for int_key in [container_fields.label_ids,
+                        container_fields.label_names,
+                        container_fields.filename_strings]:
+            current_internals[int_key].extend(another_internals[int_key])
+
+        for attr in current_attributes:
+            attr[merge_key] = self.name
+        for attr in another_attributes:
+            attr[merge_key] = another.name
+        current_attributes.extend(another_attributes)
+
+        self._from_np_array(
+            instance_ids=pseudo_instance_ids,
+            embeddings=merged_embeddings,
+            label_ids=current_internals[container_fields.label_ids],
+            label_names=current_internals[container_fields.label_names],
+            filename_strings=current_internals[container_fields.filename_strings],
+            attributes=current_attributes)
 
     def from_embedding_container(self, another_container):
         """Direct copy data from another embedding container

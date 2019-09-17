@@ -40,7 +40,6 @@ import numpy as np
 from metric_learning_evaluator.builder import EvaluatorBuilder
 
 from metric_learning_evaluator.data_tools.embedding_container import EmbeddingContainer
-from metric_learning_evaluator.data_tools.embedding_container_merger import EmbeddingContainerMerger
 from metric_learning_evaluator.utils.switcher import switch
 
 # should cooperate add_container
@@ -135,22 +134,19 @@ def main():
               2. Add `query->anchor` command in cross_reference
               3. Change number of database
             """
-            merger = EmbeddingContainerMerger()
 
-            query_container = EmbeddingContainer(name='query')
+            container = EmbeddingContainer(name='query')
             anchor_container = EmbeddingContainer(name='anchor')
             # load query
             if data_type in ['embedding_container', 'embedding_db']:
-                query_container.load(data_dir)
+                container.load(data_dir)
             # load anchor
             if data_type in ['embedding_container', 'embedding_db']:
                 anchor_container.load(anchor_database_dir)
 
             # TODO: Modify this
-            container = merger.merge(
-                [query_container, anchor_container])
+            container.merge(anchor_container)
             # clear buffer
-            query_container.clear()
             anchor_container.clear()
 
             # Change config TODO: A little bit hacky, modify in future
