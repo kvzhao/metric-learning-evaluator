@@ -5,10 +5,10 @@
 
     Input:
         Saved EmbeddingContainer (with a folder)
-        ├── attribute.db
         ├── attribute_table.csv
         ├── embeddings.npy
         ├── filename_strings.npy
+        ├── indexes.csv
         ├── instance_ids.npy
         ├── label_ids.npy
         └── label_names.npy
@@ -124,15 +124,13 @@ def main():
         print('{} Executes {}'.format(APP_SIGNATURE, status))
         if case(status_fields.evaluate_single_container):
             container = EmbeddingContainer(name='single_container')
-            if data_type == 'embedding_container':
+            if data_type == 'embedding_container' or data_type == 'embedding_db':
                 container.load(data_dir)
-            elif data_type == 'embedding_db':
-                container.load_pkl(data_dir)
             # end of switch case
             break
 
         if case(status_fields.evaluate_query_anchor):
-            """
+            """TODO: Use native method: merge()
               1. Merge two containers
               2. Add `query->anchor` command in cross_reference
               3. Change number of database
@@ -142,16 +140,13 @@ def main():
             query_container = EmbeddingContainer(name='query')
             anchor_container = EmbeddingContainer(name='anchor')
             # load query
-            if data_type == 'embedding_container':
+            if data_type == 'embedding_container' or data_type == 'embedding_db':
                 query_container.load(data_dir)
-            elif data_type == 'embedding_db':
-                query_container.load_pkl(data_dir)
             # load anchor
-            if data_type == 'embedding_container':
+            if data_type == 'embedding_container' or data_type == 'embedding_db':
                 anchor_container.load(anchor_database_dir)
-            elif data_type == 'embedding_db':
-                anchor_container.load_pkl(anchor_database_dir)
 
+            # TODO: Modify this
             container = merger.merge(
                 [query_container, anchor_container])
             # clear buffer
