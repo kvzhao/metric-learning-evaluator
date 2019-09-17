@@ -161,3 +161,4 @@ def retrieval_application(configs, args):
     print('Save predicted results in DatasetBackbone to {}'.format(out_dir))
     container.save(out_dir + '/extracted_features')
     print('Save extracted embeddings to {}'.format(out_dir + '/extracted_features'))
+    print(container)
