@@ -108,7 +108,7 @@ class EmbeddingContainerMerger(object):
                                        label_id=label_id,
                                        label_name=label_name,
                                        embedding=feat,
-                                       attributes=attribute,
+                                       attribute=attribute,
                                        filename=filename)
             global_index += 1
 
