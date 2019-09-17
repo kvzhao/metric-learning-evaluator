@@ -160,6 +160,47 @@ class AutoVerification(object):
         if self._verbose:
             print(self._container)
 
+    def from_embedding_db(self, embedding_db):
+        """Read Cradle.EmbeddingDB format in memory.
+          Args:
+            embedding_db: EmbeddingDB from cradle.data_container.embedding_db
+          Raise:
+            NONE
+        """
+        if self._container is None:
+            self._container = EmbeddingContainer()
+            self._container.from_cradle_embedding_db(embedding_db)
+        else:
+            if self._verbose:
+                print('NOTICE: EmbeddingContainer already exist, reload')
+            self._container.clear()
+            self._container.from_cradle_embedding_db(embedding_db)
+            # Back to not ready (really?)
+            self.check_ready()
+
+        if self._verbose:
+            print(self._container)
+
+    def from_embedding_container(self, container):
+        """Read EmbeddingContainer in memory
+          Args:
+            container: EmbeddingContainer
+          Raise:
+            NONE
+        """
+        if self._container is None:
+            self._container = EmbeddingContainer()
+            self._container.from_embedding_container(container)
+        else:
+            if self._verbose:
+                print('NOTICE: EmbeddingContainer already exist, reload')
+            self._container.clear()
+            self._container.from_embedding_container(container)
+            self.check_ready()
+
+        if self._verbose:
+            print(self._container)
+
     def load_embedding_container(self, embedding_dir):
         """Load metric_learning_evaluator EmbeddingContainer folder.
           Args:
@@ -218,6 +259,34 @@ class AutoVerification(object):
             logic: if result is given but df not (or not consistent!?), execute join
         """
         self.load_embedding_db(embedding_pkl_path)
+
+        if result_container_path:
+            self.load_result_container(result_container_path)
+            self._join_indexes_df()
+        else:
+            # Check whether system path exists
+            pass
+
+        if joined_df_path:
+            self.load_joined_df(joined_df_path)
+        else:
+            # Check whether system path exists
+            pass
+
+    def load_mem(self, embedding_db, result_container_path=None, joined_df_path=None):
+        """
+          Args:
+            embedding_db: An object of Cradle EmbeddingDB
+            result_container_path: string, path to result container folder
+            joined_df_path: string, path to saved dataframe from pkl file
+
+          Procedure:
+            - Use given args first if given
+            - Check sys_config's path if result & joined dataframe exist
+          TODO:
+            logic: if result is given but df not (or not consistent!?), execute join
+        """
+        self.from_embedding_db(embedding_db)
 
         if result_container_path:
             self.load_result_container(result_container_path)
