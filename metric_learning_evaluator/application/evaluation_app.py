@@ -124,7 +124,7 @@ def main():
         print('{} Executes {}'.format(APP_SIGNATURE, status))
         if case(status_fields.evaluate_single_container):
             container = EmbeddingContainer(name='single_container')
-            if data_type == 'embedding_container' or data_type == 'embedding_db':
+            if data_type in ['embedding_container', 'embedding_db']:
                 container.load(data_dir)
             # end of switch case
             break
@@ -140,10 +140,10 @@ def main():
             query_container = EmbeddingContainer(name='query')
             anchor_container = EmbeddingContainer(name='anchor')
             # load query
-            if data_type == 'embedding_container' or data_type == 'embedding_db':
+            if data_type in ['embedding_container', 'embedding_db']:
                 query_container.load(data_dir)
             # load anchor
-            if data_type == 'embedding_container' or data_type == 'embedding_db':
+            if data_type in ['embedding_container', 'embedding_db']:
                 anchor_container.load(anchor_database_dir)
 
             # TODO: Modify this
