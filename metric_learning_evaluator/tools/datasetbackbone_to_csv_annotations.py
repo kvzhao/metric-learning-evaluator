@@ -22,7 +22,7 @@ def main(args):
 
     all_categories = src_db.query_all_category_names()
 
-    instance_ids, label_ids, label_names,  = [], [], []
+    instance_ids, label_ids, label_names = [], [], []
     image_paths, img_widths, img_heights = [], [], []
 
     for category_name in tqdm(all_categories):
