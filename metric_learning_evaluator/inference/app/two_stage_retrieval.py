@@ -47,6 +47,12 @@ def retrieval_application(configs, args):
     data_dir = args.data_dir
     out_dir = args.out_dir
     data_type = args.data_type
+    label_map_path = configs.labelmap_path
+    has_labelmap = False
+
+    if label_map_path is not None:
+        has_labelmap = True
+        # Load label map
 
     with_groundtruth = False
     from_dataset_backbone = False
@@ -79,6 +85,8 @@ def retrieval_application(configs, args):
     if with_groundtruth and label_ids is None:
         # create labelmap and assign id for each
         if from_dataset_backbone:
+            pass
+        elif has_labelmap:
             pass
         else:
             label_name_set = set(label_names)
