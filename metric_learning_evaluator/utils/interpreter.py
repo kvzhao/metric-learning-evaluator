@@ -1,6 +1,4 @@
-"""Interpreter & Executor
-for General list operations
-
+"""Interpreter & Executor for general list operations
     Supported operations:
         +: Join
         -: Remove
@@ -57,7 +55,6 @@ class CommandExecutor(object):
     """
     def __init__(self, dataframe):
         self._df = dataframe
-
         # operate data given standard commands
         self._interpreter = Interpreter()
 
@@ -72,10 +69,20 @@ class CommandExecutor(object):
             name, list?
           NOTE
             push values in `what_to_execute` dict
+
+          Steps:
+            1. check command type (cref or grp)
+            2. fetch instance ids
+            3. convert operation codes
+            4. execute logic operations
         """
+        # TODO: Do not check pattern here
         codes = self._command_to_executable_codes(command)
-        print(codes)
-        return {}
+        self._interpreter.run_code(codes)
+        ret_instance_ids = self._interpreter.fetch()
+        return {
+            command: ret_instance_ids
+        }
 
     def _query_column(self, cmd):
         pass
@@ -129,18 +136,9 @@ class CommandExecutor(object):
 
         stack_pointer = 0
         operand_names, op_list = _translate_command(single_line_command)
-        # push first variable
-
-        print(operand_names)
-        print(op_list)
-
-        #operand = operand_names.pop()
-        # TODO: Classifiy case
-
-        # instance_ids = self.get_instance_id_by_attribute_value(attr_name)
-        # put data into stack
-        # instance_ids = self._query_key_value_command(operand)
-        # _put_variable_in_stack(operand, instance_ids)
+        operand = operand_names.pop()
+        instance_ids = self._query_key_value_command(*operand.split('.'))
+        _put_variable_in_stack(operand, instance_ids)
 
         # TODO: What these codes do?
         if len(op_list) == len(operand_names):
