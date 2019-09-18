@@ -145,7 +145,9 @@ def main():
                 anchor_container.load(anchor_database_dir)
 
             # TODO: Modify this
-            container.merge(anchor_container)
+            container.merge(anchor_container,
+                            merge_key='merge_record',
+                            label_id_rearrange=True)
             # clear buffer
             anchor_container.clear()
 

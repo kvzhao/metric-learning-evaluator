@@ -604,10 +604,12 @@ class EmbeddingContainer(object):
         self._index_df.to_csv(detail_table_path)
         print("Save detailed indexed into \'{}\'".format(detail_table_path))
 
-    def merge(self, another, merge_key='merge_type'):
+    def merge(self, another, merge_key='merge_type', label_id_rearrange=False):
         """Merge another container into current one
           Args:
             another: EmbeddingContainer
+            merge_key: String, column name for merging records
+            label_id_rearrange: Boolean, regenerate label_id according to given label_names
           Raises:
             - If embedding size of two containers are not same
             - If probability size of two containers are not same
@@ -640,6 +642,12 @@ class EmbeddingContainer(object):
                         container_fields.label_names,
                         container_fields.filename_strings]:
             current_internals[int_key].extend(another_internals[int_key])
+        if label_id_rearrange:
+            label_name_set = set(current_internals[container_fields.label_names])
+            label_map = {name: label_id for label_id, name in enumerate(label_name_set)}
+            current_internals[container_fields.label_ids] = [
+                label_map[name] for name in current_internals[container_fields.label_names]
+            ]
 
         for attr in current_attributes:
             attr[merge_key] = self.name
