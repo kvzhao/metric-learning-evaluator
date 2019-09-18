@@ -226,3 +226,4 @@ def extraction_application(configs, args):
         container.save(out_dir)
     container.save(out_dir)
     print("Save all extracted features at {}".format(out_dir))
+    print(container)
