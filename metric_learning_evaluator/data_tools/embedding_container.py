@@ -25,11 +25,10 @@ from metric_learning_evaluator.data_tools.feature_object import FeatureObject
 from metric_learning_evaluator.data_tools.attribute_table import AttributeTable
 from metric_learning_evaluator.query.csv_reader import CsvReader
 
-from metric_learning_evaluator.utils.interpreter import Interpreter
-from metric_learning_evaluator.utils.interpreter import InstructionSymbolTable
-from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_field
 from metric_learning_evaluator.core.standard_fields import EmbeddingContainerStandardFields as container_fields
+
+from metric_learning_evaluator.utils.interpreter import CommandExecutor
 
 
 class EmbeddingContainer(object):
@@ -95,13 +94,13 @@ class EmbeddingContainer(object):
         self._index_df = None
         self._attribute_table = AttributeTable()
         self._interpreter = None
+        self._cmd_executor = None
 
         self._re_init(
             container_size=container_size,
             embedding_size=embedding_size,
             probability_size=probability_size,
             name=name)
-        self._interpreter = Interpreter()
         print('Container:{} created'.format(self._name))
 
     def __repr__(self):
@@ -169,7 +168,7 @@ class EmbeddingContainer(object):
         self._instance_id_by_label = defaultdict(list)
         self._instance_by_attribute_key = {}
         self._instance_by_attribute_value = {}
-        self._attribute_by_instance = defaultdict(list)
+        self._attribute_by_instance = {}
         self._attribute_keys = set()
         self._attribute_values = set()
 
@@ -298,6 +297,10 @@ class EmbeddingContainer(object):
             self._index_df = pd.merge(self._index_df, attr_df,
                                       on=container_fields.instance_ids,
                                       how='inner')
+        print('Index Table Created')
+        if self._cmd_executor is not None:
+            print('NOTICE: ReInitialize command executor')
+        self._cmd_executor = CommandExecutor(self.DataFrame)
 
     def get_embedding_by_instance_ids(self, instance_ids):
         """Fetch batch of embedding vectors by given instance ids."""
@@ -817,6 +820,7 @@ class EmbeddingContainer(object):
                      probability=probability,
                      attribute=attr_dict,
                      filename=filename)
+        self.createIndex(recreate=True)
 
     def _from_cradle_internals(self, embeddings, meta_dict):
 
@@ -975,17 +979,23 @@ class EmbeddingContainer(object):
     def get_instance_id_by_attribute_value_2(self, attr_value):
         pass
 
-    def get_attribute_by_instance_id(self, instance_id):
+    def get_attribute_by_instance_ids(self, instance_ids):
         """
           Args:
-            instance_id: int
+            instance_ids: int or list
           Return:
-            attributes: list, empty if query can not be found
+            attributes: dict or list of dict
         """
         # Should we use dataframe?
-        if instance_id in self._attribute_by_instance:
-            return self._attribute_by_instance[instance_id]
-        return []
+        if not (type(instance_ids) is int or type(instance_ids) is list):
+            if isinstance(instance_ids, (np.ndarray, np.generic)):
+                instance_ids = instance_ids.tolist()
+            else:
+                raise ValueError('instance_ids should be int or list.')
+        if isinstance(instance_ids, int):
+            if instance_ids in self._attribute_by_instance:
+                return self._attribute_by_instance[instance_ids]
+        return [self._attribute_by_instance.get(inst_id, {}) for inst_id in instance_ids]
 
     def get_instance_id_by_attribute(self, attr_key, attr_val):
         """Base function for attribute query
@@ -1016,11 +1026,9 @@ class EmbeddingContainer(object):
                 TODO: Use new formating
                 e.g. source.A + (source.B & type.seen)
           Return:
-            results would be two types?
-                - list of integer
-                - list of list
-            NOTE: Or should we turn results into dict{cmd: ids}
-          NOtE: Special commands:
+            queried_instance_ids: A list of integers
+
+          NOTE: Special commands:
             - all
             (TODO) - all_class
             (TODO) - all_attribute
@@ -1028,12 +1036,12 @@ class EmbeddingContainer(object):
         # Special Cases
         if command == attr_field.All:
             return self.instance_ids
-
+        if not self.has_index:
+            self.createIndex()
         # General Case
-        executable_codes = self._translate_command_to_executable(command)
-        self._interpreter.run_code(executable_codes)
-        results = self._interpreter.fetch()
-        self._interpreter.clear()
+        results = []
+        if self._cmd_executor is not None:
+            results = self._cmd_executor.execute(command)
         return results
 
     def get_instance_id_by_cross_reference_command(self, command):
@@ -1050,57 +1058,7 @@ class EmbeddingContainer(object):
             source = m.group(1)
             target = m.group(2)
             return source, target
-
         source_command, target_command = _split_cross_reference_command(command)
-        source_result = self.get_instance_id_by_group_command(source_command)
-        target_result = self.get_instance_id_by_group_command(target_command)
-        return source_result, target_result
-
-    def _translate_command_to_executable(self, single_line_command):
-        executable_command = {
-            interpreter_field.instructions: [],
-            interpreter_field.values: [],
-            interpreter_field.names: [],
-        }
-
-        def _translate_command(operation):
-            """Two operators are legal: +, -"""
-            operation = operation.replace(' ', '')
-            operation = re.sub(r'[(){}]', '', operation)
-            op_list = re.split(r'\w', operation)
-            operands = re.split(r'\+|\-', operation)
-            op_list = [op for op in op_list if op in ['+', '-']]
-            return operands, op_list
-
-        def _put_variable_in_stack(name, a_list):
-            nonlocal stack_pointer
-            executable_command[interpreter_field.instructions].append(
-                (interpreter_field.LOAD_LIST, stack_pointer))
-            executable_command[interpreter_field.instructions].append(
-                (interpreter_field.STORE_NAME, stack_pointer))
-            executable_command[interpreter_field.instructions].append(
-                (interpreter_field.LOAD_NAME, stack_pointer))
-            executable_command[interpreter_field.names].append(name)
-            executable_command[interpreter_field.values].append(a_list)
-            stack_pointer += 1
-
-        def _put_command_in_stack(operator):
-            executable_command[interpreter_field.instructions].append(
-                (operator, None))
-
-        stack_pointer = 0
-        operand_names, op_list = _translate_command(single_line_command)
-        # push first variable
-
-        attr_name = operand_names.pop()
-        instance_ids = self.get_instance_id_by_attribute_value(attr_name)
-        _put_variable_in_stack(attr_name, instance_ids)
-
-        if len(op_list) == len(operand_names):
-            for attr_name, op_symbol in zip(operand_names, op_list):
-                ###
-                instance_ids = self.get_instance_id_by_attribute_value(attr_name)
-                _put_variable_in_stack(attr_name, instance_ids)
-                instruction = InstructionSymbolTable[op_symbol]
-                _put_command_in_stack(instruction)
-        return executable_command
+        source_ret = self.get_instance_id_by_group_command(source_command)
+        target_ret = self.get_instance_id_by_group_command(target_command)
+        return source_ret, target_ret

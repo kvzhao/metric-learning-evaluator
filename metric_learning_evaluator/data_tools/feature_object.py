@@ -15,6 +15,7 @@ from metric_learning_evaluator.core.standard_fields import FeatureObjectStandard
 
 # TODO: @kv add bounding box
 
+
 class FeatureObjectBase(object):
 
     def __init__(self):

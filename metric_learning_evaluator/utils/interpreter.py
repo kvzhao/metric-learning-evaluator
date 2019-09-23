@@ -1,254 +1,400 @@
-"""Interpreter & Executor for general list operations
-    Supported operations:
-        +: Join
-        -: Remove
-        &: And
-    TODO:
-        ~: Exclusive
-    TODO: @kv redesign is needed. Reconsider the role when pandas is used.
+""" SQI - Simple Query Interpreter
+  The interpreter is designed to processing metric learning query commands
+
+  Each `symbol` inside comands will be translated to list in the interpreter.
+
+  The major reference of these source codes originate from the following: https://ruslanspivak.com/lsbasi-part1/
+  @kv
 """
 
 import os
 import sys
-
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
-import re
+###############################################################################
+#                                                                             #
+#  LEXER                                                                      #
+#                                                                             #
+###############################################################################
 
-from metric_learning_evaluator.core.standard_fields import InterpreterStandardField as interpreter_field
-
-# Change name
-InstructionSymbolTable = {
-    '+': 'JOIN',
-    '&': 'AND',
-    '-': 'REMOVE',
-    '#': 'PRINT',
-}
-
-
-def _split_cross_reference_command(command):
-    m = re.match(r'(.+)->(.+)', command)
-    source = m.group(1)
-    target = m.group(2)
-    return source, target
-
-
-def _split_command_by_operator(operation):
-    """
-      Split operations and operands
-        source.Vis + source.uS85 & type.seen -> 
-        ['source.Vis', 'source.uS85', 'type.seen'], ['+', '&']
-    """
-    operation = operation.replace(' ', '')
-    operation = re.sub(r'[(){}]', '', operation)
-    op_list = re.split(r'\w', operation)
-    operands = re.split(r'\+|\-|\&', operation)
-    op_list = [op for op in op_list if op in ['+', '-', '&']]
-    return operands, op_list
+# Token types
+#
+# EOF (end-of-file) token is used to indicate that
+# there is no more input left for lexical analysis
+# legacy
+INTEGER, PLUS, MINUS, MUL, DIV, = (
+    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV',
+)
+# Keywords used in evaluator
+AND = 'AND'
+NOT = 'NOT'
+OR = 'OR'
+XOR = 'XOR'
+SYMBOL = 'SYMBOL'
+LPAREN = '('
+RPAREN = ')'
+EOF = 'EOF'
 
 
-# TODO: This object is NOT READY
 class CommandExecutor(object):
-    """
-        Combine executable codes & data
-    """
     def __init__(self, dataframe):
-        self._df = dataframe
-        # operate data given standard commands
-        self._interpreter = Interpreter()
+        """Dataframe query command executor
+          Args:
+            dataframe: Pandas DataFrame
+        """
+
+        self.dataframe = dataframe
 
     def execute(self, command):
-        """Get results from given commands
-          Args:
-            command: string
-                One line of commands - group or cross reference
-          Returns:
-            dict of list?
-            list of list?
-            name, list?
-          NOTE
-            push values in `what_to_execute` dict
+        lexer = Lexer(command)
+        parser = Parser(lexer)
+        interpreter = Interpreter(parser, self.dataframe)
+        return interpreter.interpret()
 
-          Steps:
-            1. check command type (cref or grp)
-            2. fetch instance ids
-            3. convert operation codes
-            4. execute logic operations
+
+class Token(object):
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
+
+    def __str__(self):
+        """String representation of the class instance.
+
+        Examples:
+            Token(SYMBOL, 'SU.seen') -> convert to []
+            Token(INTEGER, 3)
+            Token(PLUS, '+')
+            Token(MUL, '*')
         """
-        # TODO: Do not check pattern here
-        codes = self._command_to_executable_codes(command)
-        self._interpreter.run_code(codes)
-        ret_instance_ids = self._interpreter.fetch()
-        return {
-            command: ret_instance_ids
-        }
+        return 'Token({type}, {value})'.format(
+            type=self.type,
+            value=repr(self.value)
+        )
 
-    def _query_column(self, cmd):
-        pass
+    def __repr__(self):
+        return self.__str__()
 
-    def _query_key_value_command(self, key, val, return_column='instance_id'):
+
+class Lexer(object):
+    def __init__(self, text):
+        # client string input, e.g. "4 + 2 * 3 - 6 / 2"
+        self.text = text
+        # self.pos is an index into self.text
+        self.pos = 0
+        self.current_char = self.text[self.pos]
+        self.word_buffer = ''
+
+    def error(self):
+        raise Exception('Invalid character')
+
+    def forward(self):
+        """Advance the `pos` pointer to the next symbol.
         """
-          Args:
-            cmd: string, format = item_key.item_value
-        """
-        return self._df.query('{}==\'{}\''.format(key, val))[return_column].tolist()
-
-    # TODO: down grade this level
-    def _command_to_executable_codes(self, single_line_command):
-        """
-        single_line_command format
-            - operands
-        """
-        executable_command = {
-            interpreter_field.instructions: [],
-            interpreter_field.values: [],
-            interpreter_field.names: [],
-        }
-
-        def _translate_command(operation):
-            """Operators
-                Logic operation
-                TODO: reconsideration
-            """
-            operation = operation.replace(' ', '')
-            operation = re.sub(r'[(){}]', '', operation)
-            op_list = re.split(r'\w', operation)
-            operands = re.split(r'\+|\-|\&|\~', operation)
-            op_list = [op for op in op_list if op in ['+', '-', '&', '~']]
-            return operands, op_list
-
-        def _put_variable_in_stack(name, a_list):
-            nonlocal stack_pointer
-            executable_command[interpreter_field.instructions].append(
-                (interpreter_field.LOAD_LIST, stack_pointer))
-            executable_command[interpreter_field.instructions].append(
-                (interpreter_field.STORE_NAME, stack_pointer))
-            executable_command[interpreter_field.instructions].append(
-                (interpreter_field.LOAD_NAME, stack_pointer))
-            executable_command[interpreter_field.names].append(name)
-            executable_command[interpreter_field.values].append(a_list)
-            stack_pointer += 1
-
-        def _put_command_in_stack(operator):
-            executable_command[interpreter_field.instructions].append(
-                (operator, None))
-
-        stack_pointer = 0
-        operand_names, op_list = _translate_command(single_line_command)
-        operand = operand_names.pop()
-        instance_ids = self._query_key_value_command(*operand.split('.'))
-        _put_variable_in_stack(operand, instance_ids)
-
-        # TODO: What these codes do?
-        if len(op_list) == len(operand_names):
-            for operand, op_symbol in zip(operand_names, op_list):
-                # instance_ids = self.get_instance_id_by_attribute_value(attr_name)
-                # TODO: Decouple key, value
-                k, v = operand.split('.')
-                instance_ids = self._query_key_value_command(k, v)
-                _put_variable_in_stack(operand, instance_ids)
-                instruction = InstructionSymbolTable[op_symbol]
-                _put_command_in_stack(instruction)
-        return executable_command
-
-
-class Interpreter(object):
-    """
-      Operate data with given standard operation commands.
-      e.g
-      execution_commands = {
-            'instructions': [
-                ('LOAD_LIST', 0),
-                ('STORE_NAME', 0),
-                ('LOAD_LIST', 1),
-                ('STORE_NAME', 1),
-                ('LOAD_NAME', 0),
-                ('LOAD_NAME', 1),
-                ('JOIN', None),
-            ],
-            'values': [
-                [1, 3, 5],
-                [2, 3, 5, 7],
-            ],
-            'names': [
-                'A',
-                'B',
-                'C',
-            ],
-        }
-      }
-    """
-    def __init__(self):
-        self.stack = []
-        self.environment = {}
-
-    def STORE_NAME(self, name):
-        a_list = self.stack.pop()
-        self.environment[name] = a_list
-
-    def LOAD_NAME(self, name):
-        a_list = self.environment[name]
-        self.stack.append(a_list)
-
-    def LOAD_LIST(self, a_list):
-        if not isinstance(a_list, list):
-            return
-        self.stack.append(a_list)
-
-    def JOIN(self):
-        # join two list
-        arr_1 = self.stack.pop()
-        arr_2 = self.stack.pop()
-        result = arr_1 + list(set(arr_2) - set(arr_1))
-        self.stack.append(result)
-
-    def AND(self):
-        # logic and two list
-        arr_1 = self.stack.pop()
-        arr_2 = self.stack.pop()
-        result = list(set(arr_1) & set(arr_2))
-        self.stack.append(result)
-
-    def REMOVE(self):
-        # mutual exclusive two list
-        arr_1 = self.stack.pop()
-        arr_2 = self.stack.pop()
-        # TODO @kv: checkout this logic
-        result = list(set(arr_1) ^ set(arr_2))
-        self.stack.append(result)
-
-    def PRINT(self):
-        ans = self.stack.pop()
-        print(ans)
-        self.stack.append(ans)
-
-    def fetch(self):
-        if self.stack:
-            return self.stack.pop()
-        return []
-
-    def clear(self):
-        self.stack = []
-        self.environment = {}
-
-    def parse_argument(self, instruction, argument, what_to_execute):
-        # return a dict: `what_to_execute`
-        values = ['LOAD_LIST']
-        names = ['LOAD_NAME', 'STORE_NAME']
-        if instruction in values:
-            argument = what_to_execute['values'][argument]
-        elif instruction in names:
-            argument = what_to_execute['names'][argument]
-        return argument
-
-    def run_code(self, what_to_execute):
-        instructions = what_to_execute['instructions']
-        for each_step in instructions:
-            instruction, argument = each_step
-            argument = self.parse_argument(instruction, argument, what_to_execute)
-            bytecode_method = getattr(self, instruction)
-            if argument is None:
-                bytecode_method()
+        # clear buffer
+        self.word_buffer = ''
+        while self.current_char is not None and \
+            (self.current_char.isalpha()
+                or self.current_char == '.'
+                or self.current_char == '_'):
+            # print('forwarding', self.current_char)
+            self.pos += 1
+            self.word_buffer += self.current_char
+            if self.pos >= len(self.text):
+                self.current_char = None  # Indicates end of input
             else:
-                bytecode_method(argument)
+                # next char
+                self.current_char = self.text[self.pos]
+
+    def advance(self):
+        """Advance the `pos` pointer and set the `current_char` variable."""
+        self.pos += 1
+        if self.pos > len(self.text) - 1:
+            self.current_char = None  # Indicates end of input
+        else:
+            self.current_char = self.text[self.pos]
+
+    def skip_whitespace(self):
+        while self.current_char is not None and self.current_char.isspace():
+            self.advance()
+
+    def integer(self):
+        """Return a (multidigit) integer consumed from the input."""
+        result = ''
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+        return int(result)
+
+    def get_next_token(self):
+        """Lexical analyzer (also known as scanner or tokenizer)
+
+        This method is responsible for breaking a sentence
+        apart into tokens. One token at a time.
+        """
+        print('current -> {} (pos = {})'.format(self.current_char, self.pos))
+        while self.current_char is not None:
+
+            if self.current_char.isspace():
+                self.skip_whitespace()
+                continue
+
+            if self.current_char.isalpha():
+                self.forward()
+                print(self.word_buffer)
+                return Token(SYMBOL, self.word_buffer)
+
+            if self.current_char == '+':
+                self.advance()
+                return Token(OR, '+')
+
+            if self.current_char == '^':
+                self.advance()
+                return Token(XOR, '^')
+
+            if self.current_char == '&':
+                self.advance()
+                return Token(AND, '&')
+
+            if self.current_char == '~':
+                self.advance()
+                return Token(NOT, '~')
+
+            if self.current_char == '(':
+                self.advance()
+                return Token(LPAREN, '(')
+
+            if self.current_char == ')':
+                self.advance()
+                return Token(RPAREN, ')')
+
+            self.error()
+
+        return Token(EOF, None)
+
+
+###############################################################################
+#                                                                             #
+#  PARSER                                                                     #
+#                                                                             #
+###############################################################################
+
+class AST(object):
+    pass
+
+
+class BinOp(AST):
+    def __init__(self, left, op, right):
+        self.left = left
+        self.token = self.op = op
+        self.right = right
+
+
+class Num(AST):
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+
+
+class UnaryOp(AST):
+    def __init__(self, op, expr):
+        self.token = self.op = op
+        self.expr = expr
+
+
+class Symbol(AST):
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+        print('[SYMBOL] token={}, value={}'.format(self.token, self.value))
+
+
+# Interpreter
+class Parser(object):
+    def __init__(self, lexer):
+        self.lexer = lexer
+        # set current token to the first token taken from the input
+        self.current_token = self.lexer.get_next_token()
+
+    def error(self):
+        raise Exception('Invalid syntax')
+
+    def eat(self, token_type):
+        # compare the current token type with the passed token
+        # type and if they match then "eat" the current token
+        # and assign the next token to the self.current_token,
+        # otherwise raise an exception.
+        print('what i eaten: {}'.format(token_type))
+        if self.current_token.type == token_type:
+            self.current_token = self.lexer.get_next_token()
+            print(self.current_token)
+        else:
+            self.error()
+
+    def factor(self):
+        """factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN"""
+        token = self.current_token
+        if token.type == LPAREN:
+            self.eat(LPAREN)
+            node = self.expr()
+            self.eat(RPAREN)
+            return node
+        # NOTE: where we can modified
+        elif token.type == SYMBOL:
+            self.eat(SYMBOL)
+            return Symbol(token)
+        elif token.type == AND:
+            self.eat(AND)
+            node = UnaryOp(token, self.factor())
+            return node
+        elif token.type == OR:
+            self.eat(OR)
+            node = UnaryOp(token, self.factor())
+            return node
+        elif token.type == XOR:
+            self.eat(XOR)
+            node = UnaryOp(token, self.factor())
+            return node
+        elif token.type == NOT:
+            self.eat(NOT)
+            node = UnaryOp(token, self.factor())
+            return node
+
+    def term(self):
+        """term : factor ((MUL | DIV) factor)*"""
+        node = self.factor()
+
+        while self.current_token.type in (AND, XOR, OR):
+            token = self.current_token
+            if token.type == AND:
+                self.eat(AND)
+            elif token.type == XOR:
+                self.eat(XOR)
+            elif token.type == OR:
+                self.eat(OR)
+
+            node = BinOp(left=node, op=token, right=self.factor())
+        return node
+
+    def expr(self):
+        """
+        expr   : term ((PLUS | MINUS) term)*
+        term   : factor ((MUL | DIV) factor)*
+        factor : (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN
+        """
+        node = self.term()
+
+        while self.current_token.type in (NOT):
+            token = self.current_token
+            if token.type == NOT:
+                self.eat(NOT)
+
+            node = BinOp(left=node, op=token, right=self.term())
+
+        return node
+
+    def parse(self):
+        node = self.expr()
+        if self.current_token.type != EOF:
+            self.error()
+        return node
+
+
+###############################################################################
+#                                                                             #
+#  INTERPRETER                                                                #
+#                                                                             #
+###############################################################################
+
+class NodeVisitor(object):
+    def visit(self, node, cond=None):
+        method_name = 'visit_' + type(node).__name__
+        visitor = getattr(self, method_name, self.generic_visit)
+        if cond is not None:
+            return visitor(node, cond)
+        return visitor(node)
+
+    def generic_visit(self, node):
+        raise Exception('No visit_{} method'.format(type(node).__name__))
+
+
+# Executor
+class Interpreter(NodeVisitor):
+    def __init__(self, parser, dataframe):
+        """
+          Args:
+            parser
+            dataframe
+        """
+        self.parser = parser
+        self.dataframe = dataframe
+
+    def visit_BinOp(self, node):
+        """Binary operation
+            - PLUS (+)
+            - AND (&)
+        """
+        if node.op.type == OR:
+            # TODO: list operation
+            left_arr = self.visit(node.left)
+            right_arr = self.visit(node.right)
+            return left_arr + list(set(right_arr) - set(left_arr))
+        elif node.op.type == AND:
+            # TODO:
+            left_arr = self.visit(node.left)
+            right_arr = self.visit(node.right)
+            return list(set(left_arr) & set(right_arr))
+        elif node.op.type == XOR:
+            # TODO:
+            left_arr = self.visit(node.left)
+            right_arr = self.visit(node.right)
+            return list(set(left_arr) ^ set(right_arr))
+
+    def visit_Num(self, node):
+        return node.value
+
+    def visit_UnaryOp(self, node):
+        op = node.op.type
+        if op == NOT:
+            return self.visit(node.expr, 'not')
+
+    def visit_Symbol(self, node, query_mode='direct'):
+        """Visit `Symbol` Token and query list from given df
+            node.value is `supercategory_name.菓子`
+            we should query df @here (?)
+            query_mode:
+                - direct: query with given key, value
+                - not: query all other values except the given one
+                - all
+        """
+        _return_column = 'instance_id'
+
+        def _query_key_value_command(key, val, return_column='instance_id'):
+            """
+            Args:
+                cmd: string, format = item_key.item_value
+            NOTE:
+              if val is nan would be dropped
+            """
+            return self.dataframe.query('{}==\'{}\''.format(key, val))[return_column].tolist()
+        operand_symbol = node.value
+        ret_list = []
+        if query_mode == 'direct':
+            key, val = operand_symbol.split('.')
+            ret_list.extend(_query_key_value_command(key, val, _return_column))
+        if query_mode == 'not':
+            key, val = operand_symbol.split('.')
+            others = [other for other in self.dataframe[key].unique()
+                      if other != val]
+            for other_val in others:
+                ret_list.extend(_query_key_value_command(key, other_val, _return_column))
+        if query_mode == 'all':
+            ret_list.extend(
+                self.dataframe[_return_column].tolist())
+        return ret_list
+
+    def interpret(self):
+        tree = self.parser.parse()
+        if tree is None:
+            return []
+        return self.visit(tree)

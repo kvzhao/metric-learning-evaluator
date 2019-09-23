@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The repo provides an metric learning evaluation tool which support online (training time) evaluation and offline performance & report generation. Several features the evaluator provides
+The repo provides the metric learning evaluation tool which support online (training time) evaluation and offline performance & report generation. Several features the evaluator provides
 1. Modularization of each performance measures
 2. Efficient and reusable data container
 3. Several command line tools for smooth data manipulation
@@ -26,29 +26,35 @@ Two command-line tools will be installed
 - `ml-inference`
 
 ### Dependencies and `hnswlib`
-Run installation script
+Run the script to install
 ```bash
   sh install_hnsw.sh
 ```
 
-## Usage
-
-Extract features
-```
-ml-inference -c configs/ -dd <path_to_dataset_backbone> -od <path_to_feature_object>
-```
-
-Evaluate performance
-
-```
-ml-evaluation -c configs/eval_config.yml -dd <path_to_feature_object>
-```
+## Applications
+Two major application (command-line tools) are provided
+- Evaluation app
+  - `ml-evaluation`
+  - provide detector, extractor and two-stage inference tasks
+- Inference app
+  - `ml-inference`
+  - single or two containers
 
 
-### Applications
+### Inference application
 **Extract features and save as EmbeddingContainier**
 Two kinds of input are supported
 - folder
+  - plan directory of images
+  ```bash
+        -- 45141164/
+        |-- 20190810-123145_877.JPG
+        |-- 20190810-123149_617.JPG
+        |-- 20190810-123153_477.JPG
+        |-- 20190810-123157_403.JPG
+        `-- 20190810-123201_115.JPG
+  ```
+- nested
   - structure folder, for example
   ```bash
         20190815_repeated/
@@ -102,7 +108,12 @@ cd hnswlib/python_bindings
 python3 setup.py install
 ```
 
-## Usage
+### Evaluation application
+**Evaluate on single embebbind container**
+
+**Evaluate on two containers, query & anchor are given**
+
+## (Deprecated) Usage Details
 How to use evaluator?
 - Online mode
 
