@@ -97,7 +97,6 @@ class Lexer(object):
             (self.current_char.isalpha()
                 or self.current_char == '.'
                 or self.current_char == '_'):
-            # print('forwarding', self.current_char)
             self.pos += 1
             self.word_buffer += self.current_char
             if self.pos >= len(self.text):
@@ -132,7 +131,6 @@ class Lexer(object):
         This method is responsible for breaking a sentence
         apart into tokens. One token at a time.
         """
-        print('current -> {} (pos = {})'.format(self.current_char, self.pos))
         while self.current_char is not None:
 
             if self.current_char.isspace():
@@ -141,7 +139,6 @@ class Lexer(object):
 
             if self.current_char.isalpha():
                 self.forward()
-                print(self.word_buffer)
                 return Token(SYMBOL, self.word_buffer)
 
             if self.current_char == '+':
@@ -206,7 +203,6 @@ class Symbol(AST):
     def __init__(self, token):
         self.token = token
         self.value = token.value
-        print('[SYMBOL] token={}, value={}'.format(self.token, self.value))
 
 
 # Interpreter
@@ -224,10 +220,8 @@ class Parser(object):
         # type and if they match then "eat" the current token
         # and assign the next token to the self.current_token,
         # otherwise raise an exception.
-        print('what i eaten: {}'.format(token_type))
         if self.current_token.type == token_type:
             self.current_token = self.lexer.get_next_token()
-            print(self.current_token)
         else:
             self.error()
 
