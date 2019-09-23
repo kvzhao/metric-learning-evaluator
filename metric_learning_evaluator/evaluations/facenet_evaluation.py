@@ -162,9 +162,10 @@ class FacenetEvaluation(MetricEvaluationBase):
             sampled_pairs[sample_fields.pair_B])
         ground_truth_is_same = np.asarray(sampled_pairs[sample_fields.is_same])
 
+        # TODO: Change naming or use other functions
         predicted_is_same = euclidean_distance_filter(pair_a_embeddings,
-                                                     pair_b_embeddings,
-                                                     self._distance_thresholds)
+                                                      pair_b_embeddings,
+                                                      self._distance_thresholds)
 
         for threshold in self._distance_thresholds:
             classification_metrics = ClassificationMetrics()
