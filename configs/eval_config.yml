@@ -8,6 +8,7 @@
 database:
     database_type: CSV
     database_config:
+        # attribute table would auto-load if off-line
         path: feature-examples/container_example/attribute_table.csv
 
 # index agent option: HNSW | Numpy (not recommended)
@@ -26,7 +27,7 @@ evaluation_options:
     # Implemented Evaluations
     FacenetEvaluation:
         sampling:
-            # uniform | amount_weighted | amount_inverse_weighted
+            # uniform | (TODO) amount_weighted | (TODO) amount_inverse_weighted
             class_sample_method: uniform
             instance_sample_method: uniform
             num_of_pairs: 1000
