@@ -233,6 +233,8 @@ class MetricStandardFields:
     var = 'VAR'
     validation_rate = 'validation_rate'
     accuracy = 'accuracy'
+    mean_accuracy = 'mean_accuracy'
+    mean_validation_rate = 'mean_validation_rate'
     # Top k accuracy
     top_k_accuracy = 'top_k_accuracy'
     top_k_hit_accuracy = 'top_k_hit_accuracy'
