@@ -99,6 +99,8 @@ class FacenetEvaluation(MetricEvaluationBase):
         dist_end = distance_thres[eval_fields.end]
         dist_step = distance_thres[eval_fields.step]
         # TODO @kv: Do we need sanity check for start < end?
+        if dist_start > dist_end:
+            raise ValueError('FaceEvaluation: distance threshold start > end')
         self._distance_thresholds = np.arange(dist_start, dist_end, dist_step)
 
         # Attributes
@@ -211,10 +213,26 @@ class FacenetEvaluation(MetricEvaluationBase):
             fpr.append(classification_metrics.false_positive_rate)
             val.append(classification_metrics.validation_rate)
             classification_metrics.clear()
+
+        if self.metrics.get(metric_fields.mean_accuracy, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.mean_accuracy,
+                np.mean(accuracy))
         print('Accuracy: %2.5f+-%2.5f' % (np.mean(accuracy), np.std(accuracy)))
-        print('Validation rate: %2.5f' % (np.mean(val)))
+        if self.metrics.get(metric_fields.mean_validation_rate, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.mean_validation_rate,
+                np.mean(val))
+        if self.metrics.get(metric_fields.area_under_curve, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.area_under_curve,
+                metrics.auc(fpr, tpr))
+        # TODO: Problematic AUC value
         auc = metrics.auc(fpr, tpr)
         print('Area Under Curve (AUC): %1.3f' % auc)
-        # TODO: Problematic
-        eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
-        print('Equal Error Rate (EER): %1.3f' % eer)
+        # TODO: Problematic EER value
+        # eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
+        # print('Equal Error Rate (EER): %1.3f' % eer)

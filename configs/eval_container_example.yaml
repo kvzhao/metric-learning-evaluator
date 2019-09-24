@@ -34,19 +34,22 @@ evaluation_options:
             ratio_of_positive_pair: 0.2
 
         metric:
-            accuracy:            true
-            validation_rate:     true
-            false_accept_rate:   true
-            true_positive_rate:  true
-            false_positive_rate: true
+            accuracy:             false
+            validation_rate:      false
+            false_accept_rate:    false
+            true_positive_rate:   false 
+            false_positive_rate:  false
+            mean_accuracy:        true
+            mean_validation_rate: true
+            area_under_curve:     true
 
         distance_measure:
             function:
                 - euclidean
             threshold:
-                start: 0.05
-                end: 0.80
-                step: 0.05
+                start: 0.01
+                end: 1.0
+                step: 0.01
         attribute:
             group:
         option:
