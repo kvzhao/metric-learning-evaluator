@@ -119,6 +119,8 @@ class FacenetEvaluation(MetricEvaluationBase):
     def metric_names(self):
         _metric_names = []
         for _metric_name, _content in self.metrics.items():
+            if not self.metrics.get(_metric_name, False):
+                continue
             if _content is None:
                 continue
             for _attr_name in self.attributes:
