@@ -17,6 +17,9 @@ import numpy as np
 from collections import defaultdict
 from collections import namedtuple
 from collections import Counter
+from sklearn import metrics
+from scipy import interpolate
+from scipy.optimize import brentq
 
 from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
@@ -167,6 +170,7 @@ class FacenetEvaluation(MetricEvaluationBase):
                                                       pair_b_embeddings,
                                                       self._distance_thresholds)
 
+        accuracy, tpr, fpr, val = [], [], [], []
         for threshold in self._distance_thresholds:
             classification_metrics = ClassificationMetrics()
 
@@ -202,17 +206,15 @@ class FacenetEvaluation(MetricEvaluationBase):
                     metric_fields.false_positive_rate,
                     classification_metrics.false_positive_rate,
                     condition={'thres': threshold})
+            accuracy.append(classification_metrics.accuracy)
+            tpr.append(classification_metrics.true_positive_rate)
+            fpr.append(classification_metrics.false_positive_rate)
+            val.append(classification_metrics.validation_rate)
             classification_metrics.clear()
-
-    def _compute_roc(self):
-        """ROC Curve
-        """
-        pass
-
-    def _compute_err_rate(self):
-        """Equal Error Rate (EER)
-            Equal Error Rate (EER) is the point on the ROC curve
-            that corresponds to have an equal probability of miss-classifying a positive or negative sample.
-            This point is obtained by intersecting the ROC curve with a diagonal of the unit square.
-        """
-        pass
+        print('Accuracy: %2.5f+-%2.5f' % (np.mean(accuracy), np.std(accuracy)))
+        print('Validation rate: %2.5f' % (np.mean(val)))
+        auc = metrics.auc(fpr, tpr)
+        print('Area Under Curve (AUC): %1.3f' % auc)
+        # TODO: Problematic
+        eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
+        print('Equal Error Rate (EER): %1.3f' % eer)
