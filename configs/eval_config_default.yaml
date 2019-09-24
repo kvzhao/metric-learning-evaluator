@@ -19,8 +19,8 @@ container_size: 100000
 
 chosen_evaluations:
     - FacenetEvaluation
-    #- RankingEvaluation
-    #- ClassificationEvaluation
+    - RankingEvaluation
+    - ClassificationEvaluation
 
 # Configurations for evaluator:
 evaluation_options:
