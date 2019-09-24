@@ -168,7 +168,6 @@ def main():
                                  args.prob_size,
                                  config_dict,
                                  mode='offline')
-    print('evaluator metric names: {}'.format(evaluator.metric_names))
     print(container)
     evaluator.add_container(container)
     evaluator.evaluate()
