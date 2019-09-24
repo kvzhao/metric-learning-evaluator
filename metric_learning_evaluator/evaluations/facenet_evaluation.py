@@ -68,9 +68,9 @@ class FacenetEvaluation(MetricEvaluationBase):
         self._default_values = {
             eval_fields.distance_measure: {
                 eval_fields.threshold: {
-                    eval_fields.start: 0.5,
-                    eval_fields.end: 1.5,
-                    eval_fields.step: 0.2
+                    eval_fields.start: 0.1,
+                    eval_fields.end: 0.7,
+                    eval_fields.step: 0.1
                 }
             },
             eval_fields.sampling: {
@@ -169,6 +169,8 @@ class FacenetEvaluation(MetricEvaluationBase):
 
         for threshold in self._distance_thresholds:
             classification_metrics = ClassificationMetrics()
+
+            # Must calculate accuracy
             classification_metrics.add_inputs(
                 predicted_is_same[threshold], ground_truth_is_same)
             self.result_container.add(
@@ -176,26 +178,30 @@ class FacenetEvaluation(MetricEvaluationBase):
                 metric_fields.accuracy,
                 classification_metrics.accuracy,
                 condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.validation_rate,
-                classification_metrics.validation_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.false_accept_rate,
-                classification_metrics.false_accept_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.true_positive_rate,
-                classification_metrics.true_positive_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.false_positive_rate,
-                classification_metrics.false_positive_rate,
-                condition={'thres': threshold})
+            if self.metrics.get(metric_fields.validation_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.validation_rate,
+                    classification_metrics.validation_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.false_accept_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.false_accept_rate,
+                    classification_metrics.false_accept_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.true_positive_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.true_positive_rate,
+                    classification_metrics.true_positive_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.false_positive_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.false_positive_rate,
+                    classification_metrics.false_positive_rate,
+                    condition={'thres': threshold})
             classification_metrics.clear()
 
     def _compute_roc(self):
