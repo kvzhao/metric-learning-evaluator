@@ -260,6 +260,8 @@ class MetricStandardFields:
     true_positive_rate = 'true_positive_rate'
     false_positive_rate = 'false_positive_rate'
 
+    k_fold = 'k_fold'
+
 
 class QueryDatabaseStandardFields:
     # Support only csv

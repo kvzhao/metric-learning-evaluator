@@ -90,7 +90,6 @@ evaluation_options:
                 - 5
                 - 10
             mAP: true
-            per_category: false # TODO:
 
         distance_measure:
             function:
