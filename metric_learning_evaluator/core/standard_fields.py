@@ -205,6 +205,7 @@ class AttributeTableStandardFields:
     label_id = 'label_id'
     label_name = 'label_name'
     image_path = 'image_path'
+    filename_string = 'filename_string'
 
 
 class IndexAgentStandardFields:
@@ -297,6 +298,15 @@ class InterpreterStandardField:
     instructions = 'instructions'
     values = 'values'
     names = 'names'
+
+    AND = 'AND'
+    NOT = 'NOT'
+    OR = 'OR'
+    XOR = 'XOR'
+    SYMBOL = 'SYMBOL'
+    LPAREN = '('
+    RPAREN = ')'
+    EOF = 'EOF'
 
 
 class SampleStrategyStandardFields:

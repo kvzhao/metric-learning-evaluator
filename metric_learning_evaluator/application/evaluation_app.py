@@ -144,7 +144,6 @@ def main():
             if data_type in ['embedding_container', 'embedding_db']:
                 anchor_container.load(anchor_database_dir)
 
-            # TODO: Modify this
             container.merge(anchor_container,
                             merge_key='merge_record',
                             label_id_rearrange=True)
@@ -152,12 +151,13 @@ def main():
             anchor_container.clear()
 
             # Change config TODO: A little bit hacky, modify in future
+            # TODO: It seems not work well
             _opt = config_fields.evaluation_options
             _rank = 'RankingEvaluation'
             _attr = config_fields.attribute
             _cref = config_fields.cross_reference
             _smp = config_fields.sampling
-            _cmd = 'query->anchor'
+            _cmd = 'merge_record.query -> merge_record.anchor'
             if _cmd not in config_dict[_opt][_rank][_attr][_cref]:
                 config_dict[_opt][_rank][_attr][_cref].append(_cmd)
             config_dict[_opt][_rank][_smp]['num_of_db_instance_per_class'] = 1000

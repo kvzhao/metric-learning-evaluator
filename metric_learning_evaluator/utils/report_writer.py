@@ -5,14 +5,14 @@ import sys
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
+import collections
 import numpy as np
 from metric_learning_evaluator.data_tools.result_container import ResultContainer
 from pytablewriter import MarkdownTableWriter
 
+
 class ReportWriter(object):
     def __init__(self, container):
-        #if isinstance(container, ResultContainer):
-        #    raise ValueError('The given container should be type of ResultContainer')
         self._container = container
 
     @property
@@ -29,8 +29,10 @@ class ReportWriter(object):
 
     @property
     def event_report(self):
+        # TODO: Use pandas dataframe's feature
         _all_reports = ''
-        all_events = self._container.events
+        all_events = collections.OrderedDict(sorted(
+            self._container.events.items(), key=lambda t: len(t[0])))
         for attr, event_list in all_events.items():
             writer = MarkdownTableWriter()
             writer.title = attr
@@ -59,4 +61,3 @@ class ReportWriter(object):
             writer.value_matrix = values
             _all_reports += writer.dumps()
         return _all_reports
-

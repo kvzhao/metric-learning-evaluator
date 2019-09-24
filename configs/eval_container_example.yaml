@@ -4,15 +4,14 @@
 # NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
 #       and with the key: `evaluator`.
 
-# TODO: Change name to `attribute_database`
 # database: CSV (the only supported format)
 database:
-    database_type: #CSV
+    database_type: CSV
     database_config:
-        path: misc/sample_features/attribute_table.csv
+        # attribute table would auto-load if off-line
+        path: feature-examples/container_example/attribute_table.csv
 
-# index agent option: Numpy | HNSW
-# TODO: taking care about importing lib not installed
+# index agent option: HNSW | Numpy (not recommended)
 index_agent: HNSW
 
 # upper-bound of the evaluation instances
@@ -28,7 +27,7 @@ evaluation_options:
     # Implemented Evaluations
     FacenetEvaluation:
         sampling:
-            # uniform | amount_weighted | amount_inverse_weighted
+            # uniform | (TODO) amount_weighted | (TODO) amount_inverse_weighted
             class_sample_method: uniform
             instance_sample_method: uniform
             num_of_pairs: 1000
@@ -45,9 +44,9 @@ evaluation_options:
             function:
                 - euclidean
             threshold:
-                start: 0.25
-                end: 1.5
-                step: 0.25
+                start: 0.05
+                end: 0.80
+                step: 0.05
         attribute:
             group:
         option:
@@ -63,6 +62,7 @@ evaluation_options:
         metric:
             top_k_hit_accuracy:
                 - 1
+                - 3
                 - 5
 
         distance_measure:
@@ -76,7 +76,7 @@ evaluation_options:
         sampling:
             class_sample_method: uniform
             instance_sample_method: uniform
-            num_of_db_instance_per_class: 10
+            num_of_db_instance_per_class: 20
             num_of_query_class: all_class
             num_of_query_instance_per_class: 1000 # TODO: all_instance
             maximum_of_sampled_data: 10000
@@ -87,20 +87,26 @@ evaluation_options:
                 - 5
                 - 10
             mAP: true
+            per_category: false # TODO:
 
         distance_measure:
             function:
             threshold:
-
-        # As a section of codes
-        attribute: # developing
-            # if `query` & `database` are not defined, sampling instead
+        # Section of query codes
+        attribute:
             cross_reference:
-                - query->database
-            # e.g attribute_name `color` with values `red`, `blue` or 'yellow'.
+                - type.query -> type.anchor
+                - type.query & SU.seen -> type.anchor & SU.seen # SeenToSeen
+                - type.query & SU.seen -> type.anchor & (SU.seen + SU.unseen) # SeenToTotal
+                - type.query & SU.unseen -> type.anchor & SU.unseen # UnseenToUnseen
+                - type.query & SU.unseen -> type.anchor & (SU.seen + SU.unseen) # UnseenToTotal
             group:
                 - all
+                - supercategory_name.飲料  # is 飲料
+                - ~supercategory_name.飲料 # not 飲料
+                - supercategory_name.飲料 + supercategory_name.菓子 # inclusive-or
+                - supercategory_name.飲料 ^ supercategory_name.菓子 # exclusive-or
+                - (supercategory_name.飲料 + supercategory_name.菓子) & (manufacturer_name.株式会社 ロッテ)
 
         option:
-
 # OPTIONS OF EACH ITEMS

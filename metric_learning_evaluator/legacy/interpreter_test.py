@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(
 
 from metric_learning_evaluator.utils.interpreter import Interpreter
 
+
 class InterpreterTestCase(unittest.TestCase):
 
     def test_join(self):
@@ -24,8 +25,8 @@ class InterpreterTestCase(unittest.TestCase):
                 ('JOIN', None),
             ],
             'values': [
-                [1,3,5],
-                [2,3,5,7],
+                [1, 3, 5],
+                [2, 3, 5, 7],
             ],
             'names': [
                 'A',
@@ -37,7 +38,7 @@ class InterpreterTestCase(unittest.TestCase):
         interpreter = Interpreter()
         interpreter.run_code(what_to_execute)
         outcome = interpreter.fetch()
-        target = [1,2,3,5,7]
+        target = [1, 2, 3, 5, 7]
 
         self.assertCountEqual(outcome, target)
 
