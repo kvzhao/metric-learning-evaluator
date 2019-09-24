@@ -87,6 +87,7 @@ evaluation_options:
                 - 5
                 - 10
             mAP: true
+            per_category: false # TODO:
 
         distance_measure:
             function:
@@ -98,7 +99,7 @@ evaluation_options:
                 - type.query & SU.seen -> type.anchor & SU.seen # SeenToSeen
                 - type.query & SU.seen -> type.anchor & (SU.seen + SU.unseen) # SeenToTotal
                 - type.query & SU.unseen -> type.anchor & SU.unseen # UnseenToUnseen
-                - type.query & SU.useen -> type.anchor & (SU.seen + SU.unseen) # UnseenToTotal
+                - type.query & SU.unseen -> type.anchor & (SU.seen + SU.unseen) # UnseenToTotal
             group:
                 - all
                 - supercategory_name.飲料  # is 飲料

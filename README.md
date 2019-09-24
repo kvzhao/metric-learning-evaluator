@@ -31,6 +31,11 @@ Run the script to install
   sh install_hnsw.sh
 ```
 
+### Quick Start
+```bash
+ ml-evaluation -c configs/eval_container_example.yaml -dd feature-examples/container_example/
+```
+
 ## Applications
 Two major application (command-line tools) are provided
 - Evaluation app
