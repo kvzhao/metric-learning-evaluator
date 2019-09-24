@@ -17,6 +17,9 @@ import numpy as np
 from collections import defaultdict
 from collections import namedtuple
 from collections import Counter
+from sklearn import metrics
+from scipy import interpolate
+from scipy.optimize import brentq
 
 from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
@@ -68,9 +71,9 @@ class FacenetEvaluation(MetricEvaluationBase):
         self._default_values = {
             eval_fields.distance_measure: {
                 eval_fields.threshold: {
-                    eval_fields.start: 0.5,
-                    eval_fields.end: 1.5,
-                    eval_fields.step: 0.2
+                    eval_fields.start: 0.1,
+                    eval_fields.end: 0.7,
+                    eval_fields.step: 0.1
                 }
             },
             eval_fields.sampling: {
@@ -162,50 +165,56 @@ class FacenetEvaluation(MetricEvaluationBase):
             sampled_pairs[sample_fields.pair_B])
         ground_truth_is_same = np.asarray(sampled_pairs[sample_fields.is_same])
 
+        # TODO: Change naming or use other functions
         predicted_is_same = euclidean_distance_filter(pair_a_embeddings,
-                                                     pair_b_embeddings,
-                                                     self._distance_thresholds)
+                                                      pair_b_embeddings,
+                                                      self._distance_thresholds)
 
+        accuracy, tpr, fpr, val = [], [], [], []
         for threshold in self._distance_thresholds:
             classification_metrics = ClassificationMetrics()
+
             classification_metrics.add_inputs(
                 predicted_is_same[threshold], ground_truth_is_same)
-            self.result_container.add(
-                attr_name,
-                metric_fields.accuracy,
-                classification_metrics.accuracy,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.validation_rate,
-                classification_metrics.validation_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.false_accept_rate,
-                classification_metrics.false_accept_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.true_positive_rate,
-                classification_metrics.true_positive_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.false_positive_rate,
-                classification_metrics.false_positive_rate,
-                condition={'thres': threshold})
+            if self.metrics.get(metric_fields.accuracy, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.accuracy,
+                    classification_metrics.accuracy,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.validation_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.validation_rate,
+                    classification_metrics.validation_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.false_accept_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.false_accept_rate,
+                    classification_metrics.false_accept_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.true_positive_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.true_positive_rate,
+                    classification_metrics.true_positive_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.false_positive_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.false_positive_rate,
+                    classification_metrics.false_positive_rate,
+                    condition={'thres': threshold})
+            accuracy.append(classification_metrics.accuracy)
+            tpr.append(classification_metrics.true_positive_rate)
+            fpr.append(classification_metrics.false_positive_rate)
+            val.append(classification_metrics.validation_rate)
             classification_metrics.clear()
-
-    def _compute_roc(self):
-        """ROC Curve
-        """
-        pass
-
-    def _compute_err_rate(self):
-        """Equal Error Rate (EER)
-            Equal Error Rate (EER) is the point on the ROC curve
-            that corresponds to have an equal probability of miss-classifying a positive or negative sample.
-            This point is obtained by intersecting the ROC curve with a diagonal of the unit square.
-        """
-        pass
+        print('Accuracy: %2.5f+-%2.5f' % (np.mean(accuracy), np.std(accuracy)))
+        print('Validation rate: %2.5f' % (np.mean(val)))
+        auc = metrics.auc(fpr, tpr)
+        print('Area Under Curve (AUC): %1.3f' % auc)
+        # TODO: Problematic
+        eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
+        print('Equal Error Rate (EER): %1.3f' % eer)

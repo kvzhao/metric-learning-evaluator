@@ -21,15 +21,8 @@ from metric_learning_evaluator.utils.sample_strategy import SampleStrategy
 from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
+from metric_learning_evaluator.core.standard_fields import ClassificationEvaluationStandardFields as cls_fields
 
-
-class ClassificationEvaluationStandardFields(object):
-    # Some keys only used in ranking evaluation
-    top_1_hit_accuracy = 'top_1_hit_accuracy'
-    top_k_hit_accuracy = 'top_k_hit_accuracy'
-    mAP = 'mAP'
-
-cls_fields = ClassificationEvaluationStandardFields
 
 class ClassificationEvaluation(MetricEvaluationBase):
 
@@ -49,12 +42,11 @@ class ClassificationEvaluation(MetricEvaluationBase):
             metric_fields.mAP,
         ]
 
-        print ('Create {}'.format(self._evaluation_name))
+        print('Create {}'.format(self._evaluation_name))
         self.show_configs()
 
     @property
     def metric_names(self):
-        # How to make this easier?
         _metric_names = []
         for _metric_name, _content in self.metrics.items():
             for _attr_name in self.attributes:
@@ -76,9 +68,9 @@ class ClassificationEvaluation(MetricEvaluationBase):
         """Compute Accuracy.
             Get compute classification metrics with categorical scores and label from embedding_container.
           Args:
-            embedding_container, EmbeddingContainer 
+            embedding_container: EmbeddingContainer
           Return:
-            results, ResultContainer
+            results: ResultContainer
         """
 
         # check the size is non-zero

@@ -26,17 +26,7 @@ from metric_learning_evaluator.core.standard_fields import MetricStandardFields 
 from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attr_fields
 from metric_learning_evaluator.core.standard_fields import SampleStrategyStandardFields as sample_fields
-
-class RankingEvaluationStandardFields(object):
-    # Some keys only used in ranking evaluation
-    start = 'start'
-    end = 'end'
-    step = 'step'
-    top_k_hit_accuracy = 'top_k_hit_accuracy'
-    mAP = 'mAP'
-    sampling = 'sampling'
-
-ranking_fields = RankingEvaluationStandardFields
+from metric_learning_evaluator.core.standard_fields import RankingEvaluationStandardFields as ranking_fields
 
 
 class RankingEvaluation(MetricEvaluationBase):
@@ -105,10 +95,6 @@ class RankingEvaluation(MetricEvaluationBase):
         self.result_container = ResultContainer()
 
         # ===== Groupings =====
-        # should we go through items?
-        group_items = self.configs.attribute_group_items
-        cref_items = self.configs.attribute_cross_reference_items
-
         for group_cmd in self.group_commands:
             instance_ids_given_attribute = \
                 embedding_container.get_instance_id_by_group_command(group_cmd)
@@ -121,8 +107,6 @@ class RankingEvaluation(MetricEvaluationBase):
                                   label_ids_given_attribute, embedding_container)
 
         # ====== Cross References =====
-        # NOTE: How to handle db & query here?
-        # Command: A->B. Sample on both A & B, then retrieve A from B.
         for cref_cmd in self.cross_reference_commands:
             query_instance_ids, database_instance_ids = \
                 embedding_container.get_instance_id_by_cross_reference_command(cref_cmd)
