@@ -170,14 +170,14 @@ class FacenetEvaluation(MetricEvaluationBase):
         for threshold in self._distance_thresholds:
             classification_metrics = ClassificationMetrics()
 
-            # Must calculate accuracy
             classification_metrics.add_inputs(
                 predicted_is_same[threshold], ground_truth_is_same)
-            self.result_container.add(
-                attr_name,
-                metric_fields.accuracy,
-                classification_metrics.accuracy,
-                condition={'thres': threshold})
+            if self.metrics.get(metric_fields.accuracy, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.accuracy,
+                    classification_metrics.accuracy,
+                    condition={'thres': threshold})
             if self.metrics.get(metric_fields.validation_rate, True):
                 self.result_container.add(
                     attr_name,
