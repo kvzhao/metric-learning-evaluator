@@ -878,18 +878,18 @@ class EmbeddingContainer(object):
             - given path can not be parsed
         """
         if not os.path.exists(path):
-            raise ValueError('Given path:{} does not exist')
+            raise ValueError('Given path:{} does not exist'.format(path))
 
         if os.path.isdir(path):
             print('Load embedding container from feat_obj format')
             self._load_featobj(path)
         elif os.path.isfile(path):
             if not path.endswith('.pkl'):
-                raise ValueError('Given path:{} does not support')
+                raise ValueError('Given path:{} does not support'.format(path))
             print('Load embedding container from pickle format')
             self._load_pkl(path)
         else:
-            raise ValueError('Given path:{} does not support')
+            raise ValueError('Given path:{} does not support'.format(path))
 
     def _load_featobj(self, path):
         """Load embedding from disk"""
