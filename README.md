@@ -170,6 +170,30 @@ NOTE: Off-line mode not fully supported now.
 
 
 ## System Overview
+```bash
+metric_learning_evaluator/
+├── analysis
+├── application
+├── config_parser
+├── core
+├── data_tools
+├── deploy
+├── evaluations
+├── index
+├── inference
+│   ├── app
+│   ├── components
+│   ├── pipeline
+│   ├── scripts
+│   └── utils
+│       └── protos
+├── legacy
+├── metrics
+├── query
+├── tools
+└── utils
+    └── legacy
+```
 
 [Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
 
