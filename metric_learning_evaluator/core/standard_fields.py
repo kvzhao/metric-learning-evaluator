@@ -233,6 +233,8 @@ class MetricStandardFields:
     var = 'VAR'
     validation_rate = 'validation_rate'
     accuracy = 'accuracy'
+    mean_accuracy = 'mean_accuracy'
+    mean_validation_rate = 'mean_validation_rate'
     # Top k accuracy
     top_k_accuracy = 'top_k_accuracy'
     top_k_hit_accuracy = 'top_k_hit_accuracy'
@@ -257,6 +259,8 @@ class MetricStandardFields:
     false_negative = 'false_negative'
     true_positive_rate = 'true_positive_rate'
     false_positive_rate = 'false_positive_rate'
+
+    k_fold = 'k_fold'
 
 
 class QueryDatabaseStandardFields:

@@ -13,8 +13,6 @@ from metric_learning_evaluator.core.registered import REGISTERED_EVALUATION_OBJE
 from metric_learning_evaluator.core.registered import REGISTERED_DATABASE_TYPE
 from metric_learning_evaluator.core.registered import REGISTERED_INDEX_AGENT
 
-from pprint import pprint
-
 
 class ConfigParser(object):
     """Evaluator Configuration:
@@ -292,13 +290,10 @@ class EvaluationConfigParser(object):
     @property
     def attribute_section(self):
         # return: A dict
-        if not self._has_database or config_fields.attribute not in self._eval_config:
+        _attr = self._eval_config.get(config_fields.attribute, None)
+        if _attr is None:
             return {}
-        else:
-            _attr = self._eval_config[config_fields.attribute]
-            if _attr is None: 
-                return {}
-            return _attr
+        return _attr
 
     @property
     def attributes(self):

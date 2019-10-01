@@ -158,9 +158,12 @@ def main():
             _cref = config_fields.cross_reference
             _smp = config_fields.sampling
             _cmd = 'merge_record.query -> merge_record.anchor'
+            config_dict[_opt][_rank][_attr][_cref] = list(
+                filter(None, config_dict[_opt][_rank][_attr][_cref]))
             if _cmd not in config_dict[_opt][_rank][_attr][_cref]:
                 config_dict[_opt][_rank][_attr][_cref].append(_cmd)
             config_dict[_opt][_rank][_smp]['num_of_db_instance_per_class'] = 1000
+            # end of switch case
             break
 
     # Build and run evaluation
@@ -168,7 +171,6 @@ def main():
                                  args.prob_size,
                                  config_dict,
                                  mode='offline')
-    print('evaluator metric names: {}'.format(evaluator.metric_names))
     print(container)
     evaluator.add_container(container)
     evaluator.evaluate()

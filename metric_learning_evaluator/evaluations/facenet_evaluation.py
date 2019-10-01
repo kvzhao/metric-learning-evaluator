@@ -71,9 +71,9 @@ class FacenetEvaluation(MetricEvaluationBase):
         self._default_values = {
             eval_fields.distance_measure: {
                 eval_fields.threshold: {
-                    eval_fields.start: 0.1,
+                    eval_fields.start: 0.01,
                     eval_fields.end: 0.7,
-                    eval_fields.step: 0.1
+                    eval_fields.step: 0.01
                 }
             },
             eval_fields.sampling: {
@@ -81,6 +81,20 @@ class FacenetEvaluation(MetricEvaluationBase):
                 facenet_fields.class_sample_method: facenet_fields.random_sample
             }
         }
+        # metrics with condition
+        self._metric_with_threshold = [
+            metric_fields.accuracy,
+            metric_fields.validation_rate,
+            metric_fields.false_accept_rate,
+            metric_fields.true_positive_rate,
+            metric_fields.false_positive_rate,
+        ]
+        # metrics without condition
+        self._metric_without_threshold = [
+            metric_fields.mean_accuracy,
+            metric_fields.mean_validation_rate,
+            metric_fields.area_under_curve,
+        ]
 
         # Set default values for must-have configs
         for _config in self._must_have_config:
@@ -99,6 +113,8 @@ class FacenetEvaluation(MetricEvaluationBase):
         dist_end = distance_thres[eval_fields.end]
         dist_step = distance_thres[eval_fields.step]
         # TODO @kv: Do we need sanity check for start < end?
+        if dist_start > dist_end:
+            raise ValueError('FaceEvaluation: distance threshold start > end')
         self._distance_thresholds = np.arange(dist_start, dist_end, dist_step)
 
         # Attributes
@@ -117,13 +133,19 @@ class FacenetEvaluation(MetricEvaluationBase):
     def metric_names(self):
         _metric_names = []
         for _metric_name, _content in self.metrics.items():
+            if not self.metrics.get(_metric_name, False):
+                continue
             if _content is None:
                 continue
             for _attr_name in self.attributes:
-                for threshold in self._distance_thresholds:
-                    _name = '{}/{}@thres={}'.format(
-                        _attr_name, _metric_name, threshold)
+                if _metric_name in self._metric_without_threshold:
+                    _name = '{}/{}'.format(_attr_name, _metric_name)
                     _metric_names.append(_name)
+                if _metric_name in self._metric_with_threshold:
+                    for threshold in self._distance_thresholds:
+                        _name = '{}/{}@thres={}'.format(
+                            _attr_name, _metric_name, threshold)
+                        _metric_names.append(_name)
         return _metric_names
 
     def compute(self, embedding_container):
@@ -211,10 +233,26 @@ class FacenetEvaluation(MetricEvaluationBase):
             fpr.append(classification_metrics.false_positive_rate)
             val.append(classification_metrics.validation_rate)
             classification_metrics.clear()
+
+        if self.metrics.get(metric_fields.mean_accuracy, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.mean_accuracy,
+                np.mean(accuracy))
         print('Accuracy: %2.5f+-%2.5f' % (np.mean(accuracy), np.std(accuracy)))
-        print('Validation rate: %2.5f' % (np.mean(val)))
+        if self.metrics.get(metric_fields.mean_validation_rate, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.mean_validation_rate,
+                np.mean(val))
+        if self.metrics.get(metric_fields.area_under_curve, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.area_under_curve,
+                metrics.auc(fpr, tpr))
+        # TODO: Problematic AUC value
         auc = metrics.auc(fpr, tpr)
         print('Area Under Curve (AUC): %1.3f' % auc)
-        # TODO: Problematic
-        eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
-        print('Equal Error Rate (EER): %1.3f' % eer)
+        # TODO: Problematic EER value
+        # eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
+        # print('Equal Error Rate (EER): %1.3f' % eer)

@@ -103,6 +103,7 @@ class RankingEvaluation(MetricEvaluationBase):
             label_ids_given_attribute = \
                 embedding_container.get_label_by_instance_ids(instance_ids_given_attribute)
 
+            # TODO: Can we do k-fold? only if the function pass result back
             self._sample_and_rank(group_cmd, instance_ids_given_attribute,
                                   label_ids_given_attribute, embedding_container)
 
