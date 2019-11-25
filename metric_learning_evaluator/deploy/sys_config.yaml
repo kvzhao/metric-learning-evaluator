@@ -1,0 +1,6 @@
+workspace:
+  root: /tmp/auto_verification_workspace
+  result_container_name: temp_results
+  joined_df_name: temp_df
+
+truncation: 100

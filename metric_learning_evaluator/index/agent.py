@@ -8,7 +8,6 @@ import numpy as np
 
 from metric_learning_evaluator.index.np_agent import NumpyAgent
 from metric_learning_evaluator.index.hnsw_agent import HNSWAgent
-from metric_learning_evaluator.utils.switcher import switch
 from metric_learning_evaluator.core.standard_fields import ConfigStandardFields as config_fields
 
 # TODO: Import from core but conflict
@@ -38,6 +37,10 @@ class IndexAgent:
             instance_ids, embeddings, distance_measure, ef_construction, num_threads, M)
 
     def search(self, query_embeddings, top_k=10):
+        """
+          Returns:
+            A tuple of (batch_indices, batch_distances)
+        """
         return self.agent_engine.search(query_embeddings, top_k)
 
     def distance_matrix(self, target=None):

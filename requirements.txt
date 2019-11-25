@@ -3,3 +3,4 @@ pyyaml
 scipy
 sklearn
 pytablewriter
+pandas

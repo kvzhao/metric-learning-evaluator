@@ -27,26 +27,32 @@ class FeatureExtractor(FeatureExtractorBase):
         """Initialization"""
         # load labelmap
         # load graph
-        self.graph = tf.Graph()
-        with self.graph.as_default():
-            config = tf.ConfigProto(allow_soft_placement=True)
-            config.gpu_options.per_process_gpu_memory_fraction = 0.3
-            self.sess = tf.Session(graph=self.graph)
-            tf.saved_model.loader.load(self.sess,
-                                       [tf.saved_model.tag_constants.SERVING],
-                                       self._pb_model_path)
+        self._graph = tf.Graph()
+        with self._graph.as_default() as graph:
+            graph_def = tf.GraphDef()
+            
+            with tf.gfile.GFile(self._pb_model_path, 'rb') as fid:
+                    serialized_graph = fid.read()
+                    graph_def.ParseFromString(serialized_graph)
+                    tf.import_graph_def(graph_def, name='')
+                
+            self.sess = tf.Session(graph=graph)
+
             # get tensor
             try:
                 self.images_placeholder =\
-                    self.graph.get_tensor_by_name("input:0")
+                    graph.get_tensor_by_name("input:0")
                 self.embeddings =\
-                    self.graph.get_tensor_by_name("embeddings:0")
+                    graph.get_tensor_by_name("embeddings:0")
+                self._phase_train_placeholder =\
+                    graph.get_tensor_by_name("phase_train:0")
             except Exception as e:
                 print(e)
                 print('Can not find tensor name starts with "<name>",'
                           'try "import/<name>"')
-                self.images_placeholder = self.graph.get_tensor_by_name("import/input:0")
-                self.embeddings = self.graph.get_tensor_by_name("import/embeddings:0")
+                self.images_placeholder = graph.get_tensor_by_name("import/input:0")
+                self.embeddings = graph.get_tensor_by_name("import/embeddings:0")
+                self._phase_train_placeholder = graph.get_tensor_by_name("import/phase_train:0")
 
         print('Feature Extractor Initialized, Model Loaded from : {}'.format(self._pb_model_path))
 
@@ -62,6 +68,7 @@ class FeatureExtractor(FeatureExtractorBase):
             instance_images = np.expand_dims(instance_images, 0)
         feed_dict = {
             self.images_placeholder: instance_images,
+            self._phase_train_placeholder: False
         }
 
         embeddings = self.sess.run(self.embeddings, feed_dict=feed_dict)

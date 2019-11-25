@@ -1,73 +1,107 @@
 # Metric Learning Evaluator
 
-## System Architecture Overview
+## Introduction
 
-[Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
+The repo provides the metric learning evaluation tool which support online (training time) evaluation and offline performance & report generation. Several features the evaluator provides
+1. Modularization of each performance measures
+2. Efficient and reusable data container
+3. Several command line tools for smooth data manipulation
 
-![](figures/tf-metric-evaluator_v0.3.png)
+TODO: This version is targeted for 1.0.0 publish.
+1. Ready for deployment
+2. Online evaluation: more detailed measures (e.g. purity, margin..)
+3. Offline evaluation: complete report generation
+4. DB-verification supports
 
-
-## Quick Start
-
-### Installation
-
-### Usage
-
-Extract features
-```
-ml-inference -c configs/ -dd <path_to_dataset_backbone> -od <path_to_feature_object>
-```
-
-Evaluate performance
-
-```
-ml-evaluation -c configs/eval_config.yml -dd <path_to_feature_object>
-```
-
-### Modules & Components
-- `application`: Command-line applications
-- `analysis`: Analysis tools
-- `core`: Define standard fields
-- config_parser
-- `evaluations`: Customized applications for measuring model performance
-- `metrics`: Computational objects used in evaluations
-- `index`: Provide fast algorithm for query features and distance functions
-- `query`: Attribute database general interface
-- `tools`: Scripts for some utilities
-  - NOTE: should we promote to analysis tool?
-- `data_tools`: General data containers including embedding, attribute and result containers
-- `utils`: Contains sampler, switcher
-- `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
-
-
-### Roadmap and TODOs
-
-#### Roadmap
-- inference
-- analysis
-- front-end gui
-
-#### TODO
-- Save out data reside in container.
-  - Consider concatenating each containers
-- Manifold
-  - locality
-  - input robustness
-  - margin search
-  - find reasonable center
-- ImageContainer?
-  - ContainerBaseObject?
-  - <T>Container <-> <T>Object
-
-- Change cmdline name, design operation logic
 
 ## Installation
+
+Install **metric_learning_evaluator**
+
 ```
 python setup.py install
 ```
-Two command-line tools will be installed: `ml-evaluation` and `ml-inference`.
+Two command-line tools will be installed
+- `ml-evaluation`
+- `ml-inference`
 
-### Intallation of `hnswlib`
+### Dependencies and `hnswlib`
+Run the script to install
+```bash
+  sh install_hnsw.sh
+```
+
+### Quick Start
+```bash
+ ml-evaluation -c configs/eval_container_example.yaml -dd feature-examples/container_example/
+```
+
+## Applications
+Two major application (command-line tools) are provided
+- Evaluation app
+  - `ml-evaluation`
+  - provide detector, extractor and two-stage inference tasks
+- Inference app
+  - `ml-inference`
+  - single or two containers
+
+
+### Inference application
+**Extract features and save as EmbeddingContainier**
+Two kinds of input are supported
+- folder
+  - plan directory of images
+  ```bash
+        -- 45141164/
+        |-- 20190810-123145_877.JPG
+        |-- 20190810-123149_617.JPG
+        |-- 20190810-123153_477.JPG
+        |-- 20190810-123157_403.JPG
+        `-- 20190810-123201_115.JPG
+  ```
+- nested
+  - structure folder, for example
+  ```bash
+        20190815_repeated/
+        |-- 45141164
+        |   |-- 20190810-123145_877.JPG
+        |   |-- 20190810-123149_617.JPG
+        |   |-- 20190810-123153_477.JPG
+        |   |-- 20190810-123157_403.JPG
+        |   `-- 20190810-123201_115.JPG
+        |-- 45164804
+        |   |-- 20190810-123406_888.JPG
+        |   |-- 20190810-123411_307.JPG
+        |   |-- 20190810-123414_922.JPG
+        |   |-- 20190810-123419_248.JPG
+        |   `-- 20190810-123422_616.JPG
+        |-- 45173639
+        |   |-- 20190810-124026_046.JPG
+        |   |-- 20190810-124030_040.JPG
+        |   |-- 20190810-124033_827.JPG
+        |   |-- 20190810-124037_939.JPG
+        |   `-- 20190810-124041_653.JPG
+  ```
+- csv
+  - column name convention
+  ```
+  image_path,instance_id,label_id,label_name,type,seen_or_unseen,source
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00002515.jpg,2515,1,An-donuts,bread,unseen,Fuko
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00003441.jpg,3441,1,An-donuts,bread,unseen,Fuko
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00000085.jpg,85,1,An-donuts,bread,unseen,Fuko
+  /vol/08812401/kevin.zhao/SRData/Standard/merged/SRMega/images/00000056.jpg,56,1,An-donuts,bread,unseen,Fuko
+  ```
+
+Execution command
+```bash
+  ml-inference -c extract_config.yaml \
+               -t extract \
+               -dd <image_folder or csv_path> \
+               -dt folder \
+               -od <output_folder_path>
+```
+- dt (data_type) can be `csv` or `folder`
+
 
 Source: [hnswlib](https://github.com/nmslib/hnswlib)
 Binding installation
@@ -79,7 +113,12 @@ cd hnswlib/python_bindings
 python3 setup.py install
 ```
 
-## Usage
+### Evaluation application
+**Evaluate on single embebbind container**
+
+**Evaluate on two containers, query & anchor are given**
+
+## (Deprecated) Usage Details
 How to use evaluator?
 - Online mode
 
@@ -128,6 +167,93 @@ ml_evaluator -c eval_config.yml -dd extracted_embeddings_facenet-centerloss-batc
 ```
 
 NOTE: Off-line mode not fully supported now.
+
+
+## System Overview
+```bash
+metric_learning_evaluator/
+├── analysis
+├── application
+├── config_parser
+├── core
+├── data_tools
+├── deploy
+├── evaluations
+├── index
+├── inference
+│   ├── app
+│   ├── components
+│   ├── pipeline
+│   ├── scripts
+│   └── utils
+│       └── protos
+├── legacy
+├── metrics
+├── query
+├── tools
+└── utils
+    └── legacy
+```
+
+[Slide: Introduction to metric learning evaluator](https://docs.google.com/presentation/d/1kSiPbLofAJ1W46IV0TKONhhGPCtsuis3RWezKKR88x8/edit?usp=sharing)
+
+![](figures/tf-metric-evaluator_v0.3.png)
+
+
+### Modules & Components
+- `application`: Command-line applications
+- `analysis`: Analysis tools
+- `core`: Define standard fields
+- config_parser
+- `evaluations`: Customized applications for measuring model performance
+- `metrics`: Computational objects used in evaluations
+- `index`: Provide fast algorithm for query features and distance functions
+- `query`: Attribute database general interface
+- `tools`: Scripts for some utilities
+  - NOTE: should we promote to analysis tool?
+- `data_tools`: General data containers including embedding, attribute and result containers
+- `utils`: Contains sampler, switcher
+- `inference`: Tools for extracting features, detect boxes and pre-labeling, which can be used calling `ml-inference`.
+
+### Supported Data Format
+
+#### Label map
+Save in json, with two layers structure (dict of dict)
+```
+  {
+    "": {
+    }
+  }
+```
+
+#### Attribute table
+Save in csv format, with 4 must have column names:
+```
+```
+
+#### Data CSV
+
+#### EmbeddingContainer & EmbeddingDB
+- EmbeddingContainer: The container is fully supported in evaluation system
+- EmbeddingDB: `metric_learning_evaluator` provides seamless conversion methods to Cradle EmbeddingDB if it follows several convention
+
+##### EmbeddingContainer
+
+##### EmbeddingDB
+Several keywords should be provided in `meta_dict`
+```python
+meta_dict = {
+  'instance_ids'  : [],
+  'label_ids'     : [],
+  'label_names'   : [],
+}
+```
+
+
+### Roadmap
+- inference
+- analysis
+- front-end gui
 
 ## ISSUES
 - Pushed embeddings are more than container size.

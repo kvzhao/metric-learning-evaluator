@@ -17,6 +17,9 @@ import numpy as np
 from collections import defaultdict
 from collections import namedtuple
 from collections import Counter
+from sklearn import metrics
+from scipy import interpolate
+from scipy.optimize import brentq
 
 from metric_learning_evaluator.core.standard_fields import MetricStandardFields as metric_fields
 from metric_learning_evaluator.core.standard_fields import AttributeStandardFields as attribute_fields
@@ -68,9 +71,9 @@ class FacenetEvaluation(MetricEvaluationBase):
         self._default_values = {
             eval_fields.distance_measure: {
                 eval_fields.threshold: {
-                    eval_fields.start: 0.5,
-                    eval_fields.end: 1.5,
-                    eval_fields.step: 0.2
+                    eval_fields.start: 0.01,
+                    eval_fields.end: 0.7,
+                    eval_fields.step: 0.01
                 }
             },
             eval_fields.sampling: {
@@ -78,6 +81,20 @@ class FacenetEvaluation(MetricEvaluationBase):
                 facenet_fields.class_sample_method: facenet_fields.random_sample
             }
         }
+        # metrics with condition
+        self._metric_with_threshold = [
+            metric_fields.accuracy,
+            metric_fields.validation_rate,
+            metric_fields.false_accept_rate,
+            metric_fields.true_positive_rate,
+            metric_fields.false_positive_rate,
+        ]
+        # metrics without condition
+        self._metric_without_threshold = [
+            metric_fields.mean_accuracy,
+            metric_fields.mean_validation_rate,
+            metric_fields.area_under_curve,
+        ]
 
         # Set default values for must-have configs
         for _config in self._must_have_config:
@@ -96,6 +113,8 @@ class FacenetEvaluation(MetricEvaluationBase):
         dist_end = distance_thres[eval_fields.end]
         dist_step = distance_thres[eval_fields.step]
         # TODO @kv: Do we need sanity check for start < end?
+        if dist_start > dist_end:
+            raise ValueError('FaceEvaluation: distance threshold start > end')
         self._distance_thresholds = np.arange(dist_start, dist_end, dist_step)
 
         # Attributes
@@ -114,13 +133,19 @@ class FacenetEvaluation(MetricEvaluationBase):
     def metric_names(self):
         _metric_names = []
         for _metric_name, _content in self.metrics.items():
+            if not self.metrics.get(_metric_name, False):
+                continue
             if _content is None:
                 continue
             for _attr_name in self.attributes:
-                for threshold in self._distance_thresholds:
-                    _name = '{}/{}@thres={}'.format(
-                        _attr_name, _metric_name, threshold)
+                if _metric_name in self._metric_without_threshold:
+                    _name = '{}/{}'.format(_attr_name, _metric_name)
                     _metric_names.append(_name)
+                if _metric_name in self._metric_with_threshold:
+                    for threshold in self._distance_thresholds:
+                        _name = '{}/{}@thres={}'.format(
+                            _attr_name, _metric_name, threshold)
+                        _metric_names.append(_name)
         return _metric_names
 
     def compute(self, embedding_container):
@@ -162,50 +187,72 @@ class FacenetEvaluation(MetricEvaluationBase):
             sampled_pairs[sample_fields.pair_B])
         ground_truth_is_same = np.asarray(sampled_pairs[sample_fields.is_same])
 
+        # TODO: Change naming or use other functions
         predicted_is_same = euclidean_distance_filter(pair_a_embeddings,
-                                                     pair_b_embeddings,
-                                                     self._distance_thresholds)
+                                                      pair_b_embeddings,
+                                                      self._distance_thresholds)
 
+        accuracy, tpr, fpr, val = [], [], [], []
         for threshold in self._distance_thresholds:
             classification_metrics = ClassificationMetrics()
+
             classification_metrics.add_inputs(
                 predicted_is_same[threshold], ground_truth_is_same)
-            self.result_container.add(
-                attr_name,
-                metric_fields.accuracy,
-                classification_metrics.accuracy,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.validation_rate,
-                classification_metrics.validation_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.false_accept_rate,
-                classification_metrics.false_accept_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.true_positive_rate,
-                classification_metrics.true_positive_rate,
-                condition={'thres': threshold})
-            self.result_container.add(
-                attr_name,
-                metric_fields.false_positive_rate,
-                classification_metrics.false_positive_rate,
-                condition={'thres': threshold})
+            if self.metrics.get(metric_fields.accuracy, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.accuracy,
+                    classification_metrics.accuracy,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.validation_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.validation_rate,
+                    classification_metrics.validation_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.false_accept_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.false_accept_rate,
+                    classification_metrics.false_accept_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.true_positive_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.true_positive_rate,
+                    classification_metrics.true_positive_rate,
+                    condition={'thres': threshold})
+            if self.metrics.get(metric_fields.false_positive_rate, True):
+                self.result_container.add(
+                    attr_name,
+                    metric_fields.false_positive_rate,
+                    classification_metrics.false_positive_rate,
+                    condition={'thres': threshold})
+            accuracy.append(classification_metrics.accuracy)
+            tpr.append(classification_metrics.true_positive_rate)
+            fpr.append(classification_metrics.false_positive_rate)
+            val.append(classification_metrics.validation_rate)
             classification_metrics.clear()
 
-    def _compute_roc(self):
-        """ROC Curve
-        """
-        pass
-
-    def _compute_err_rate(self):
-        """Equal Error Rate (EER)
-            Equal Error Rate (EER) is the point on the ROC curve
-            that corresponds to have an equal probability of miss-classifying a positive or negative sample.
-            This point is obtained by intersecting the ROC curve with a diagonal of the unit square.
-        """
-        pass
+        if self.metrics.get(metric_fields.mean_accuracy, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.mean_accuracy,
+                np.mean(accuracy))
+        print('Accuracy: %2.5f+-%2.5f' % (np.mean(accuracy), np.std(accuracy)))
+        if self.metrics.get(metric_fields.mean_validation_rate, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.mean_validation_rate,
+                np.mean(val))
+        if self.metrics.get(metric_fields.area_under_curve, True):
+            self.result_container.add(
+                attr_name,
+                metric_fields.area_under_curve,
+                metrics.auc(fpr, tpr))
+        # TODO: Problematic AUC value
+        auc = metrics.auc(fpr, tpr)
+        print('Area Under Curve (AUC): %1.3f' % auc)
+        # TODO: Problematic EER value
+        # eer = brentq(lambda x: 1. - x - interpolate.interp1d(fpr, tpr, fill_value="extrapolate")(x), 0., 1.)
+        # print('Equal Error Rate (EER): %1.3f' % eer)

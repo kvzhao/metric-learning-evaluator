@@ -93,6 +93,7 @@ class ConfigParserStandardFields:
 class ConfigStandardFields:
     """Items for Evaluation Configuration"""
 
+    # === Evaluation Configs ===
     # Key of database
     database = 'database'
 
@@ -131,12 +132,16 @@ class ConfigStandardFields:
     embedding_size = 'embedding_size'
     prob_size = 'prob_size'
 
+    # === Inference Configs ===
+    embedding_container_capacity = 'embedding_container_capacity'
+    extractor_settings = 'extractor_settings'
+
 
 class ApplicationStatusStandardFields:
     not_determined = 'not_determined'
     # evaluation applications
     evaluate_single_container = 'evaluate_single_container'
-    evaluate_query_database = 'evaluate_query_database'
+    evaluate_query_anchor = 'evaluate_query_anchor'
     # inference applications
     inference_feature_extraction = 'inference_feature_extraction'
 
@@ -149,6 +154,24 @@ class ImageObjectStandardFields:
     instance_feature = 'instance_feature'
     instance_label_id = 'instance_label_id'
     instance_label_name = 'instance_label_name'
+
+
+class ImageRetrievalStandardFields:
+    detector_settings = 'detector_settings'
+    extractor_settings = 'extractor_settings'
+    num_classes = 'num_classes'
+    model_path = 'model_path'
+    labelmap_path = 'labelmap_path'
+    image_size = 'image_size'
+    embedding_size = 'embedding_size'
+    database_path = 'database_path'
+
+
+class DetectorStandardFields:
+    num_detections = 'num_detections'
+    detection_classes = 'detection_classes'
+    detection_boxes = 'detection_boxes'
+    detection_scores = 'detection_scores'
 
 
 class FeatureObjectStandardFields:
@@ -182,6 +205,7 @@ class AttributeTableStandardFields:
     label_id = 'label_id'
     label_name = 'label_name'
     image_path = 'image_path'
+    filename_string = 'filename_string'
 
 
 class IndexAgentStandardFields:
@@ -209,6 +233,8 @@ class MetricStandardFields:
     var = 'VAR'
     validation_rate = 'validation_rate'
     accuracy = 'accuracy'
+    mean_accuracy = 'mean_accuracy'
+    mean_validation_rate = 'mean_validation_rate'
     # Top k accuracy
     top_k_accuracy = 'top_k_accuracy'
     top_k_hit_accuracy = 'top_k_hit_accuracy'
@@ -233,6 +259,8 @@ class MetricStandardFields:
     false_negative = 'false_negative'
     true_positive_rate = 'true_positive_rate'
     false_positive_rate = 'false_positive_rate'
+
+    k_fold = 'k_fold'
 
 
 class QueryDatabaseStandardFields:
@@ -274,6 +302,15 @@ class InterpreterStandardField:
     instructions = 'instructions'
     values = 'values'
     names = 'names'
+
+    AND = 'AND'
+    NOT = 'NOT'
+    OR = 'OR'
+    XOR = 'XOR'
+    SYMBOL = 'SYMBOL'
+    LPAREN = '('
+    RPAREN = ')'
+    EOF = 'EOF'
 
 
 class SampleStrategyStandardFields:
@@ -325,3 +362,51 @@ class SampleStrategyStandardFields:
     db_label_ids = 'db_label_ids'
     database_instance_ids = 'database_instance_ids'
     database_label_ids = 'database_label_ids'
+
+
+class TwoStageInferenceStandardFields:
+    pass
+
+
+class AutoVerificationStandardFields:
+    type = 'type'
+    query = 'query'
+    anchor = 'anchor'
+
+    k = 'k'
+    top_k = 'top_k'
+    truncation = 'truncation'
+
+    embedding = 'embedding'
+    instance_id = 'instance_id'
+    label_id = 'label_id'
+    label_name = 'label_name'
+
+    retrieved_type = 'retrieved_type'
+    query_instance_id = 'query_instance_id'
+    query_label_id = 'query_label_id'
+    query_label_name = 'query_label_name'
+    retrieved_instance_id = 'retrieved_instance_id'
+    retrieved_distance = 'retrieved_distance'
+
+    sys_config = 'sys_config'
+    run_config = 'run_config'
+
+    embedding_db_path = 'embedding_db_path'
+    embedding_db_name = 'embedding_db_name'
+    result_container_path = 'result_container_path'
+    result_container_name = 'result_container_name'
+    joined_df_path = 'joined_df_path'
+    joined_df_name = 'joined_df_name'
+
+    workspace_path = 'workspace'
+    root_path = 'root'
+
+    run_type = 'run_type'
+    report = 'report'
+    anchor_selection = 'anchor_selection'
+
+    chosen_measures = 'chosen_measures'
+    measure_options = 'measure_options'
+    top_k_accuracy_instance = 'top_k_accuracy_instance'
+    purity = 'purity'

@@ -2,11 +2,50 @@
   Image and Bounding Box Tools
 """
 
+import os
+from os import listdir
+from os.path import join
+from os.path import isfile
+
 import cv2
 import numpy as np
 
 
+def load_file_from_structure_folder(folder_path, ext=('.png', '.jpg', '.jpeg')):
+    """Load files with extentions from structure folder
+      Args:
+        folder_path: string
+      Return:
+        filenames: List of files satisfied given image extention
+        foldernames: Folder names for each files
+    """
+    filenames, foldernames = [], []
+    for root, _, _ in os.walk(folder_path):
+        img_files = load_file_from_folder(root, ext)
+        filenames.extend(img_files)
+        foldernames.extend([root.split('/')[-1]] * len(img_files))
+    print('{} contains {} images in total'.format(folder_path, len(filenames)))
+    return filenames, foldernames
+
+
+def load_file_from_folder(folder_path, ext=('.png', '.jpg', '.jpeg')):
+    """
+      Args:
+        folder_path: string
+      Return:
+        filenames: list of file paths with extension
+    """
+    filenames = [join(folder_path, f) for f in listdir(folder_path)
+                 if isfile(join(folder_path, f)) and f.lower().endswith(ext)]
+    print('Load {} images from {}'.format(len(filenames), folder_path))
+    return filenames
+
+
 def read_jpeg_image(filename, size=None):
+    """
+      Args:
+        filename: A string of single image path
+    """
     if not isinstance(filename, str):
         raise ValueError('_read_jpeg: image filename must be string, but get {}'.format(
             type(filename)))

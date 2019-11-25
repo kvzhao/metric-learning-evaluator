@@ -1,0 +1,105 @@
+
+# NOTE: `embedding_size` and `prob_size` are external parameters
+
+# NOTE: The following section will be embedded in `default_config.yml` in `tf-metric-learning` repo
+#       and with the key: `evaluator`.
+
+# database: CSV (the only supported format)
+database:
+    database_type:
+    database_config:
+        # attribute table would auto-load if off-line
+        path:
+
+# index agent option: HNSW | Numpy (not recommended)
+index_agent: HNSW
+
+# upper-bound of the evaluation instances
+container_size: 100000
+
+chosen_evaluations:
+    - FacenetEvaluation
+    - RankingEvaluation
+    - ClassificationEvaluation
+
+# Configurations for evaluator:
+evaluation_options:
+    # Implemented Evaluations
+    FacenetEvaluation:
+        sampling:
+            # uniform | (TODO) amount_weighted | (TODO) amount_inverse_weighted
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_pairs: 1000
+            ratio_of_positive_pair: 0.2
+
+        metric:
+            accuracy:             false
+            validation_rate:      false
+            false_accept_rate:    false
+            true_positive_rate:   false 
+            false_positive_rate:  false
+            mean_accuracy:        true
+            mean_validation_rate: true
+            area_under_curve:     true
+
+        distance_measure:
+            function:
+                - euclidean
+            threshold:
+                start: 0.01
+                end: 1.0
+                step: 0.01
+        attribute:
+            group:
+        option:
+
+    ClassificationEvaluation:
+        sampling:
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_sampled_class: all_class
+            num_of_sampled_instance_per_class: all_instance
+            maximum_of_sampled_data: 100000
+
+        metric:
+            top_k_hit_accuracy:
+                - 1
+                - 3
+                - 5
+
+        distance_measure:
+
+        attribute:
+            group:
+                - all
+        option:
+
+    RankingEvaluation:
+        sampling:
+            class_sample_method: uniform
+            instance_sample_method: uniform
+            num_of_db_instance_per_class: 20
+            num_of_query_class: all_class
+            num_of_query_instance_per_class: 1000 # TODO: all_instance
+            maximum_of_sampled_data: 10000
+
+        metric:
+            top_k_hit_accuracy:
+                - 1
+                - 5
+                - 10
+            mAP: true
+
+        distance_measure:
+            function:
+            threshold:
+        # Section of query codes
+        attribute:
+            cross_reference:
+                -
+            group:
+                - all
+
+        option:
+# OPTIONS OF EACH ITEMS

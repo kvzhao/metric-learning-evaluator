@@ -13,12 +13,6 @@ sys.path.insert(0, os.path.abspath(
 from abc import ABCMeta
 from abc import abstractmethod
 
-class DetectorStandardFields:
-    num_detections = 'num_detections'
-    detection_classes = 'detection_classes'
-    detection_boxes = 'detection_boxes'
-    detection_scores = 'detection_scores'
-
 
 class DetectorBase(object):
 
@@ -27,8 +21,7 @@ class DetectorBase(object):
         self._pb_model_path = pb_model_path
         self._labelmap_path = labelmap_path
         self._num_classes = num_classes
-
-        self._model_status = None # use this?
+        self._model_status = None
         self._labelmap = None
 
     @abstractmethod

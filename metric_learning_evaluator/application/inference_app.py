@@ -7,6 +7,7 @@
     - extract_feature
     - two_stage
     - cropbox
+    NOTE: data_type depends on task options
 """
 
 import os
@@ -24,6 +25,9 @@ from metric_learning_evaluator.inference.app.agnostic_detection import detection
 from metric_learning_evaluator.inference.app.sequential_feature_extraction import extraction_application
 from metric_learning_evaluator.core.standard_fields import ApplicationStatusStandardFields as status_fields
 
+from metric_learning_evaluator.inference.utils.image_utils import load_file_from_folder
+from metric_learning_evaluator.inference.utils.image_utils import load_file_from_structure_folder
+
 import argparse
 
 parser = argparse.ArgumentParser('Command-line Metric Learning Inference Tool')
@@ -40,11 +44,29 @@ parser.add_argument('--database', '-db', type=str, default=None,
                     help='Path to the source dataset, with type folder')
 parser.add_argument('--out_dir', '-od', type=str, default=None,
                     help='Path to the output dir for saving report.')
-parser.add_argument('--data_type', '-dt', type=str, default='datasetbackbone',
-                    help='Type of given `data_dir`: datasetbackbone | folder | csv')
+parser.add_argument('--data_type', '-dt', type=str, default=None,
+                    help='Type of given `data_dir`: datasetbackbone | folder | nested | csv')
 
 APP_SIGNATURE = '[INFERENCE]'
-COMMAND_OPERATION_MAPPING = {}
+COMMAND_OPERATION_MAPPING = {
+    'extract': extraction_application,
+    'detect': detection_application,
+    'two_stage': retrieval_application,
+}
+
+
+"""
+  input data type
+    - single image?
+    - csv
+    - folder (folder of files)
+    - nested (folder of folder)
+    - datasetbackbone
+
+  output will be handled inside each application (?)
+
+  config can directly passed into application
+"""
 
 
 def main():
@@ -53,10 +75,12 @@ def main():
     task_job = args.task
     config_path = args.config
 
+    data_type = args.data_type
+    data_dir = args.data_dir
+
     if not config_path:
         # TODO @kv: Generate the default config.
         raise ValueError('inference configuration must be assigned!')
-
     try:
         with open(config_path, 'r') as fp:
             config_dict = yaml.load(fp)

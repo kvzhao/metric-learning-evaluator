@@ -105,4 +105,6 @@ class ResultContainer(object):
 
     def clear(self):
         self._results = {}
+        self._results = pd.DataFrame()
+        self._event_buffer = pd.DataFrame()
         print('Clear result container.')

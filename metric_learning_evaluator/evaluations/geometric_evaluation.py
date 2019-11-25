@@ -21,7 +21,6 @@ from metric_learning_evaluator.data_tools.result_container import ResultContaine
 
 from metric_learning_evaluator.index.agent import IndexAgent
 
-import matplotlib.pyplot as plt
 
 class GeometricEvaluation(MetricEvaluationBase):
 
