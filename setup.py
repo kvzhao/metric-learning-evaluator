@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-VERSION = '0.1.4'
+VERSION = '1.0.0'
 
 # ml, short for `metric learning`
 EVAL_APP_NAME = 'ml-evaluation'
@@ -15,6 +15,7 @@ AUTHORS = 'kv, jeff, lotus, bird, dennis'
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as f:
         return f.read()
+
 
 install_requires = [
     'pyyaml',
@@ -54,7 +55,6 @@ inference_setup_info = dict(
     description='Metric Learning Inference Tool',
     long_discription=read('README.md'),
     license='BSD',
-    #install_requires=install_requires,
     include_package_data=True,
     packages=find_packages(),
     entry_points={
