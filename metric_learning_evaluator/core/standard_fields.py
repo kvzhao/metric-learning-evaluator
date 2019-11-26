@@ -132,9 +132,7 @@ class ConfigStandardFields:
     embedding_size = 'embedding_size'
     prob_size = 'prob_size'
 
-    # === Inference Configs ===
     embedding_container_capacity = 'embedding_container_capacity'
-    extractor_settings = 'extractor_settings'
 
 
 class ApplicationStatusStandardFields:
@@ -363,9 +361,6 @@ class SampleStrategyStandardFields:
     database_instance_ids = 'database_instance_ids'
     database_label_ids = 'database_label_ids'
 
-
-class TwoStageInferenceStandardFields:
-    pass
 
 
 class AutoVerificationStandardFields:

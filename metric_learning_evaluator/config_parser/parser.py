@@ -38,10 +38,10 @@ class ConfigParser(object):
         ]
 
         for req in minimum_requirements_of_config:
-            if not req in self._configs:
+            if req not in self._configs:
                 raise ValueError('''The given configuration is not legal. It should
                     contain `chosen_evaluation`, `container_size` and `database`.''')
-        if not config_fields.chosen_evaluations in self._configs:
+        if config_fields.chosen_evaluations not in self._configs:
             print('NOTICE: None of evaluation options are selected, use {} as default.'.format(
                 eval_fields.facenet))
             self._configs[config_fields.chosen_evaluations] = [eval_fields.facenet]

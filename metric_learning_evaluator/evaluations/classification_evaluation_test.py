@@ -11,6 +11,7 @@ from metric_learning_evaluator.evaluator.classification_evaluation import Classi
 
 import unittest
 
+
 class TestClassificationEvaluation(unittest.TestCase):
     """
       Format of per_eval_config:

@@ -27,8 +27,7 @@ from metric_learning_evaluator.core.standard_fields import ConfigStandardFields 
 from metric_learning_evaluator.core.standard_fields import EvaluationStandardFields as eval_fields
 from metric_learning_evaluator.core.standard_fields import QueryDatabaseStandardFields as query_fields
 
-
-# NOTICE: Make sure each function passed correctness test. 
+# NOTICE: Make sure each function passed correctness test.
 REGISTERED_EVALUATION_OBJECTS = {
     eval_fields.ranking: RankingEvaluation,
     eval_fields.facenet: FacenetEvaluation,
