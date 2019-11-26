@@ -2,11 +2,10 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 
 # ml, short for `metric learning`
 EVAL_APP_NAME = 'ml-evaluation'
-INFERENCE_APP_NAME = 'ml-inference'
 ROOT_FOLDER = 'metric_learning_evaluator'
 APP_FOLDER = 'application'
 AUTHORS = 'kv, jeff, lotus, bird, dennis'
@@ -47,24 +46,3 @@ eval_setup_info = dict(
 )
 # Install evaluation
 setup(**eval_setup_info)
-
-inference_setup_info = dict(
-    name='metric-learning-inference',
-    author=AUTHORS,
-    version=VERSION,
-    description='Metric Learning Inference Tool',
-    long_discription=read('README.md'),
-    license='BSD',
-    include_package_data=True,
-    packages=find_packages(),
-    entry_points={
-        'console_scripts': [
-            '{app_name} = {root_folder}.{app_folder}.inference_app:main'.format(
-                app_name=INFERENCE_APP_NAME,
-                root_folder=ROOT_FOLDER,
-                app_folder=APP_FOLDER)
-        ],
-    },
-)
-# Install inference tools
-setup(**inference_setup_info)
