@@ -23,6 +23,7 @@ from pprint import pprint
 
 import pickle
 
+
 def main(args):
     data_dir = args.data_dir
     out_dir = args.out_dir

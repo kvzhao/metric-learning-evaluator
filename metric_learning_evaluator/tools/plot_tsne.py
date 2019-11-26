@@ -24,6 +24,7 @@ def main(args):
     tsne.run()
     tsne.save_fig(out_dir)
 
+
 if __name__ == '__main__':
     import argparse
 

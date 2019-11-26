@@ -7,6 +7,7 @@ from data_container import ResultContainer
 import unittest
 from collections import defaultdict
 
+
 class TestEmbeddingContainer(unittest.TestCase):
     def test_init(self):
         container_size = 32
