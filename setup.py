@@ -18,6 +18,7 @@ def read(fname):
 
 install_requires = [
     'pyyaml',
+    'numpy',
     'scipy',
     'sklearn',
     'pandas',
@@ -28,10 +29,10 @@ eval_setup_info = dict(
     name='metric-learning-evaluator',
     author=AUTHORS,
     version=VERSION,
-    description='Metric Learing Evaluation Tool',
+    description='Metric Learing Evaluation Toolkit',
     long_discription=read('README.md'),
     license='BSD',
-    url='http://awsgit.viscovery.co/Cybertron/metric-learning-evaluator',
+    url='https://github.com/kvzhao/metric-learning-evaluator/',
     install_requires=install_requires,
     include_package_data=True,
     packages=find_packages(),
