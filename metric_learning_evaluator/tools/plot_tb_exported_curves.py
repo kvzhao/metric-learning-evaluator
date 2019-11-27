@@ -2,7 +2,7 @@
   A script for drawing tensorboard exported data.
 
   Example:
-    python metric_learning_evaluator/tools/plot_tb_exported_curves.py 
+    python metric_learning_evaluator/tools/plot_tb_exported_curves.py
         -f run_triplet-rank_all_top_k_hit_accuracy@k=1 run_triplet-rank_all_top_k_hit_accuracy@k=5
         -l top_1 top_5
         -t Accuracy

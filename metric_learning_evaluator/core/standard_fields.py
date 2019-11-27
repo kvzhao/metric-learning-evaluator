@@ -132,9 +132,7 @@ class ConfigStandardFields:
     embedding_size = 'embedding_size'
     prob_size = 'prob_size'
 
-    # === Inference Configs ===
     embedding_container_capacity = 'embedding_container_capacity'
-    extractor_settings = 'extractor_settings'
 
 
 class ApplicationStatusStandardFields:
@@ -337,7 +335,7 @@ class SampleStrategyStandardFields:
     num_of_sampled_instance_per_class = 'num_of_sampled_instance_per_class'
 
     num_of_db_class = 'num_of_db_class'
-    num_of_db_instance = 'num_of_db_instance' # DEPRECATE THIS
+    num_of_db_instance = 'num_of_db_instance'
     num_of_db_instance_per_class = 'num_of_db_instance_per_class'
     num_of_query_class = 'num_of_query_class'
     num_of_query_instance_per_class = 'num_of_query_instance_per_class'
@@ -362,51 +360,3 @@ class SampleStrategyStandardFields:
     db_label_ids = 'db_label_ids'
     database_instance_ids = 'database_instance_ids'
     database_label_ids = 'database_label_ids'
-
-
-class TwoStageInferenceStandardFields:
-    pass
-
-
-class AutoVerificationStandardFields:
-    type = 'type'
-    query = 'query'
-    anchor = 'anchor'
-
-    k = 'k'
-    top_k = 'top_k'
-    truncation = 'truncation'
-
-    embedding = 'embedding'
-    instance_id = 'instance_id'
-    label_id = 'label_id'
-    label_name = 'label_name'
-
-    retrieved_type = 'retrieved_type'
-    query_instance_id = 'query_instance_id'
-    query_label_id = 'query_label_id'
-    query_label_name = 'query_label_name'
-    retrieved_instance_id = 'retrieved_instance_id'
-    retrieved_distance = 'retrieved_distance'
-
-    sys_config = 'sys_config'
-    run_config = 'run_config'
-
-    embedding_db_path = 'embedding_db_path'
-    embedding_db_name = 'embedding_db_name'
-    result_container_path = 'result_container_path'
-    result_container_name = 'result_container_name'
-    joined_df_path = 'joined_df_path'
-    joined_df_name = 'joined_df_name'
-
-    workspace_path = 'workspace'
-    root_path = 'root'
-
-    run_type = 'run_type'
-    report = 'report'
-    anchor_selection = 'anchor_selection'
-
-    chosen_measures = 'chosen_measures'
-    measure_options = 'measure_options'
-    top_k_accuracy_instance = 'top_k_accuracy_instance'
-    purity = 'purity'
