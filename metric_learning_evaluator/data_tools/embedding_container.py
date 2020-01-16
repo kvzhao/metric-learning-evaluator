@@ -61,6 +61,8 @@ class EmbeddingContainer(object):
       TODO: Now, it is the branch to refactor the query interface
       TODO: More flexible size reset.
       TODO: Add bounding box
+      TODO: Add landmark
+      TODO: There are cases that no embedding at all
       ==============================================================================================
     """
 

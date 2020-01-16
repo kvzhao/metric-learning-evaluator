@@ -40,7 +40,7 @@ class FeatureObjectBase(object):
     def __repr__(self):
         res = ''
         for _name, _arr in self._array_name_map.items():
-            if not _arr is None:
+            if _arr is not None:
                 res += '{}: {}\n'.format(_name, _arr.shape)
         return res
 
