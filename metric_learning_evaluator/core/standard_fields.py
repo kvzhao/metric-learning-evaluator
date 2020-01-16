@@ -180,6 +180,8 @@ class FeatureObjectStandardFields:
     instance_ids = 'instance_ids'
     filename_strings = 'filename_strings'
     super_labels = 'super_labels'
+    bounding_boxes = 'bounding_boxes'
+    landmarks = 'landmarks'
 
 
 class ResultContainerStandardFields:
